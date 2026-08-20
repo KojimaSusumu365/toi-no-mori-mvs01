@@ -709,6 +709,41 @@ var tests = new List<SpecTest>
         using var response = await reviewer.GetAsync("/api/admin/questions?status=UNKNOWN");
         SpecAssert.Equal(HttpStatusCode.BadRequest, response.StatusCode, "An unknown status filter must be rejected.");
     }),
+    new("TC-ACC-MVS01-072-API", "ADR-0009-D7", "tenant監査をAuditor専用の上限付きAPIで取得", async () =>
+    {
+        using var editor = fixture.AuthenticatedClient("audit-owner", "Editor");
+        var created = await CreateDraftAsync(editor, "auditor boundary");
+
+        using var reviewer = fixture.AuthenticatedClient("audit-reviewer", "Reviewer");
+        using var reviewerResponse = await reviewer.GetAsync("/api/ops/audit?limit=50");
+        SpecAssert.Equal(HttpStatusCode.Forbidden, reviewerResponse.StatusCode, "Reviewer membership alone must not read tenant audit records.");
+
+        using var auditor = fixture.AuthenticatedClient("tenant-auditor", "Auditor");
+        using var auditResponse = await auditor.GetAsync($"/api/ops/audit/questions/{created.Id}?limit=50");
+        SpecAssert.Equal(HttpStatusCode.OK, auditResponse.StatusCode, "Auditor must read bounded audit metadata for the current tenant.");
+        var audit = await auditResponse.Content.ReadFromJsonAsync<JsonElement>();
+        SpecAssert.True(
+            audit.ValueKind == JsonValueKind.Array
+            && audit.EnumerateArray().Any(record => record.GetProperty("targetId").GetGuid() == created.Id),
+            "The question audit route must return the requested target metadata.");
+
+        using var otherTenantAuditor = fixture.AuthenticatedClient(
+            "other-tenant-auditor",
+            "Auditor",
+            externalOrganizationId: "org-other");
+        using var otherTenantResponse = await otherTenantAuditor.GetAsync($"/api/ops/audit/questions/{created.Id}?limit=50");
+        var otherTenantAudit = await otherTenantResponse.Content.ReadFromJsonAsync<JsonElement>();
+        SpecAssert.Equal(HttpStatusCode.OK, otherTenantResponse.StatusCode, "A mapped Auditor may query only their own tenant boundary.");
+        SpecAssert.Equal(0, otherTenantAudit.GetArrayLength(), "Another tenant must not observe the target audit metadata.");
+
+        using var zeroLimit = await auditor.GetAsync("/api/ops/audit?limit=0");
+        using var excessiveLimit = await auditor.GetAsync("/api/ops/audit?limit=201");
+        SpecAssert.Equal(HttpStatusCode.BadRequest, zeroLimit.StatusCode, "Audit limit must be positive.");
+        SpecAssert.Equal(HttpStatusCode.BadRequest, excessiveLimit.StatusCode, "Audit limit must not exceed 200.");
+
+        using var retiredRoute = await auditor.GetAsync("/api/admin/audit");
+        SpecAssert.Equal(HttpStatusCode.NotFound, retiredRoute.StatusCode, "The unbounded legacy audit route must be removed.");
+    }),
     new("TC-ACC-MVS01-059", "REQ-MVS01-SEC-006", "過大な審査理由をAPI境界で拒否", async () =>
     {
         using var editor = fixture.AuthenticatedClient("reason-owner", "Editor");

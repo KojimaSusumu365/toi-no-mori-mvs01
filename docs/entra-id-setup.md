@@ -45,7 +45,8 @@
 | Display name | Value | 用途 |
 |---|---|---|
 | Question Editor | `Editor` | 下書き作成・更新・レビュー申請 |
-| Question Reviewer | `Reviewer` | 差戻し・承認・取り下げ・監査閲覧 |
+| Question Reviewer | `Reviewer` | 差戻し・承認・取り下げ |
+| Tenant Auditor | `Auditor` | 同一tenantの許可リスト型監査metadata閲覧 |
 
 Enterprise applicationsのUsers and groupsから担当者または管理したsecurity groupへ割り当てる。Microsoft公式仕様では、user sign-in時のapp roleはID tokenの`roles` claimに入る。アプリ設定は`RoleClaimType=roles`とする。
 

@@ -168,20 +168,6 @@ def tc071_pg() -> tuple[bool, str]:
     )
 
 
-def tc072() -> tuple[bool, str]:
-    source = read("src/ToiNoMori.Api/ApiEndpointMappings.cs")
-    required = [
-        "/api/ops/audit/questions/{id}",
-        "/api/ops/audit?",
-        'RequireAuthorization("Auditor")',
-        "limit > 200",
-    ]
-    missing = [value for value in required if value not in source]
-    if "/api/admin/audit" in source:
-        missing.append("removal of /api/admin/audit")
-    return (not missing, "missing " + ", ".join(missing) if missing else "bounded ops audit API present")
-
-
 def tc073() -> tuple[bool, str]:
     return require_across(
         [
@@ -297,7 +283,6 @@ CONTRACTS: list[Contract] = [
     ("TC-ACC-MVS01-070-API", "API", ["ADR-0009-D5", "ADR-0009-D6"], tc070),
     ("TC-ACC-MVS01-071-API", "API", ["ADR-0009-D1", "ADR-0010-D2"], tc071_api),
     ("TC-ACC-MVS01-071-PG", "PostgreSQL", ["ADR-0010-D1", "RVR-N01"], tc071_pg),
-    ("TC-ACC-MVS01-072-API", "API", ["ADR-0009-D7"], tc072),
     ("TC-ACC-MVS01-073-PG", "PostgreSQL", ["ADR-0009-D9"], tc073),
     ("TC-ACC-MVS01-076-MOB", "Mobile", ["ADR-0008-D1", "ADR-0009-D7"], tc076),
     ("TC-ACC-MVS01-077-OIDC", "OIDC", ["ADR-0007-D2", "ADR-0008-D1"], tc077),

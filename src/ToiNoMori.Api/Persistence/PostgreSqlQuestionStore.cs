@@ -390,6 +390,8 @@ public sealed class PostgreSqlQuestionStore(
 
     public Task<IReadOnlyList<AuditRecord>> ReadAuditAsync(
         Guid tenantId,
+        Guid? targetId,
+        int limit,
         CancellationToken cancellationToken) =>
         TranslateAvailabilityAsync<IReadOnlyList<AuditRecord>>(async () =>
         {
@@ -401,11 +403,16 @@ public sealed class PostgreSqlQuestionStore(
                 SELECT id, tenant_id, actor_subject, target_id, action, result, correlation_id, occurred_at
                 FROM audit_events
                 WHERE tenant_id = @tenant_id
-                ORDER BY sequence_id;
+                  AND (@target_id IS NULL OR target_id = @target_id)
+                ORDER BY occurred_at DESC, sequence_id DESC
+                LIMIT @limit;
                 """,
                 connection,
                 transaction);
-            command.Parameters.AddWithValue("tenant_id", tenantId);
+            command.Parameters.Add("tenant_id", NpgsqlDbType.Uuid).Value = tenantId;
+            command.Parameters.Add("target_id", NpgsqlDbType.Uuid).Value =
+                targetId is { } value ? value : DBNull.Value;
+            command.Parameters.Add("limit", NpgsqlDbType.Integer).Value = Math.Clamp(limit, 1, 200);
             var results = new List<AuditRecord>();
             await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {

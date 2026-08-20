@@ -82,3 +82,7 @@ T2では各contractを次のnative behavioral testへ置換する。
 - T4 外部受入: 未着手。
 
 赤は欠陥を確認した証拠であり、製品の合格数へ含めない。既存基準線63件もこの環境では再実行していないため、今回の成果物で「85件合格」とは表現しない。
+
+## Stage 6R-5移管記録
+
+`TC-ACC-MVS01-072-API`はAuditor専用tenant監査APIのnative挙動試験へ移管したため、本registryから除外した。残存contractは10件であり、`--assert-red`で10/10 expected RED、harness error 0を確認する。

@@ -579,12 +579,13 @@ var tests = new List<SpecTest>
         var retryResult = await ReadQuestionAsync(retry);
         SpecAssert.Equal(published.Version, retryResult.Version, "An approval retry must return the stored response.");
 
-        var auditResponse = await reviewer.GetAsync("/api/admin/audit");
-        var audit = await auditResponse.Content.ReadFromJsonAsync<AuditRecord[]>() ?? [];
-        var approvalCount = audit.Count(record =>
-            record.TargetId == published.Id
-            && record.Action == "question.approve"
-            && record.Result == "success");
+        using var auditor = fixture.AuthenticatedClient("tx-auditor", "Auditor");
+        var auditResponse = await auditor.GetAsync($"/api/ops/audit/questions/{published.Id}?limit=50");
+        var audit = await auditResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var approvalCount = audit.EnumerateArray().Count(record =>
+            record.GetProperty("targetId").GetGuid() == published.Id
+            && record.GetProperty("action").GetString() == "question.approve"
+            && record.GetProperty("result").GetString() == "success");
         SpecAssert.Equal(1, approvalCount, "A committed approval must have exactly one success audit event.");
     }),
     new("TC-ACC-MVS01-026", "REQ-MVS01-AVL-001", "アプリ再起動後も公開データを取得可能", async () =>

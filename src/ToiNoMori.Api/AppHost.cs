@@ -63,7 +63,11 @@ public static class AppHost
             .AddPolicy("Reviewer", policy => policy
                 .RequireAuthenticatedUser()
                 .RequireClaim(mfaClaimType, mfaClaimValue)
-                .RequireRole("Reviewer"));
+                .RequireRole("Reviewer"))
+            .AddPolicy("Auditor", policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(mfaClaimType, mfaClaimValue)
+                .RequireRole("Auditor"));
 
         builder.Services.AddRateLimiter(rateLimiter =>
         {
@@ -113,6 +117,7 @@ public static class AppHost
                 + "font-src 'self'; manifest-src 'self'; object-src 'none'";
             context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
             if (context.Request.Path.StartsWithSegments("/api/admin")
+                || context.Request.Path.StartsWithSegments("/api/ops")
                 || context.Request.Path.StartsWithSegments("/bff")
                 || context.Request.Path == "/app/"
                 || context.Request.Path == "/app/index.html")

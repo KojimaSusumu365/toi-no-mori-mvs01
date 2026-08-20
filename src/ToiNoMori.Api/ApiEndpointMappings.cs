@@ -50,14 +50,23 @@ public static class ApiEndpointMappings
             .RequireAuthorization("Reviewer")
             .AddEndpointFilter<RequireCsrfFilter>();
 
-        app.MapGet("/api/admin/audit", async (
+        app.MapGet("/api/ops/audit", (
+            int? limit,
             HttpContext httpContext,
             IQuestionStore store,
             CancellationToken cancellationToken) =>
-            await ExecuteAsync(async () => Results.Ok(await store.ReadAuditAsync(
-                TenantResolver.Current(httpContext),
-                cancellationToken))))
-            .RequireAuthorization("Reviewer")
+            ReadAudit(null, limit, httpContext, store, cancellationToken))
+            .RequireAuthorization("Auditor")
+            .AddEndpointFilter<RequireTenantFilter>();
+
+        app.MapGet("/api/ops/audit/questions/{id:guid}", (
+            Guid id,
+            int? limit,
+            HttpContext httpContext,
+            IQuestionStore store,
+            CancellationToken cancellationToken) =>
+            ReadAudit(id, limit, httpContext, store, cancellationToken))
+            .RequireAuthorization("Auditor")
             .AddEndpointFilter<RequireTenantFilter>();
 
         var publicApi = app.MapGroup("/api/public/questions")
@@ -86,6 +95,32 @@ public static class ApiEndpointMappings
                 .ToArray();
             return Results.Ok(results);
         }));
+    }
+
+    private static Task<IResult> ReadAudit(
+        Guid? targetId,
+        int? limit,
+        HttpContext httpContext,
+        IQuestionStore store,
+        CancellationToken cancellationToken)
+    {
+        var boundedLimit = limit ?? 50;
+        if (boundedLimit is < 1 or > 200)
+        {
+            return Task.FromResult<IResult>(Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["limit"] = ["limit must be between 1 and 200."]
+            }));
+        }
+
+        return ExecuteAsync(async () => Results.Ok(
+            (await store.ReadAuditAsync(
+                TenantResolver.Current(httpContext),
+                targetId,
+                boundedLimit,
+                cancellationToken))
+            .Select(AuditRecordResponse.From)
+            .ToArray()));
     }
 
     private static Task<IResult> FindAdministrativeQuestion(
