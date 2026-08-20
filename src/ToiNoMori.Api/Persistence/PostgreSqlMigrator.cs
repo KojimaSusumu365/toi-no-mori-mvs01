@@ -52,6 +52,12 @@ public sealed class PostgreSqlMigrator(
             await ExecuteAsync(
                 connection,
                 transaction,
+                "SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED;",
+                null,
+                cancellationToken);
+            await ExecuteAsync(
+                connection,
+                transaction,
                 "INSERT INTO schema_migrations (version, applied_at) VALUES (@version, @applied_at);",
                 command =>
                 {

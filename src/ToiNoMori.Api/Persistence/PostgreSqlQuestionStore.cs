@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Npgsql;
+using NpgsqlTypes;
 using ToiNoMori.Domain;
 
 namespace ToiNoMori.Api.Persistence;
@@ -576,7 +577,10 @@ public sealed class PostgreSqlQuestionStore(
         command.Parameters.AddWithValue("published_at", (object?)snapshot.PublishedAt ?? DBNull.Value);
         command.Parameters.AddWithValue("review_reason", (object?)snapshot.ReviewReason ?? DBNull.Value);
         command.Parameters.AddWithValue("withdrawal_reason", (object?)snapshot.WithdrawalReason ?? DBNull.Value);
-        command.Parameters.AddWithValue("approved_version", (object?)snapshot.ApprovedVersion ?? DBNull.Value);
+        command.Parameters.AddWithValue(
+            "approved_version",
+            NpgsqlDbType.Integer,
+            (object?)snapshot.ApprovedVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("approved_by", (object?)snapshot.ApprovedBy ?? DBNull.Value);
     }
 
