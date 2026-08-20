@@ -21,6 +21,7 @@ if [[ -z "${POSTGRES_RUN_AS+x}" ]]; then
     fi
 fi
 POSTGRES_DB_USER="${POSTGRES_DB_USER:-${POSTGRES_RUN_AS:-$(id -un)}}"
+POSTGRES_APPLICATION_ROLE="${MVS01_DR_POSTGRES_APPLICATION_ROLE:-mvs01_dr_app}"
 PRIMARY_PORT="${MVS01_DR_PRIMARY_PORT:-55432}"
 RECOVERY_PORT="${MVS01_DR_RECOVERY_PORT:-55433}"
 API_PORT="${MVS01_DR_API_PORT:-5083}"
@@ -102,6 +103,25 @@ start_cluster() {
     fi
 }
 
+create_application_role() {
+    local port="$1"
+    run_postgres "$POSTGRES_BIN_DIR/psql" \
+        --host=127.0.0.1 \
+        --port="$port" \
+        --username="$POSTGRES_DB_USER" \
+        --dbname=postgres \
+        --no-psqlrc \
+        --set=ON_ERROR_STOP=1 \
+        --set="application_role=$POSTGRES_APPLICATION_ROLE" \
+        <<'SQL' >/dev/null
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+CREATE ROLE :"application_role"
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+GRANT CONNECT ON DATABASE postgres TO :"application_role";
+REVOKE CREATE ON SCHEMA public FROM :"application_role";
+SQL
+}
+
 wait_for_url() {
     local url="$1"
     for _ in $(seq 1 120); do
@@ -117,13 +137,15 @@ start_api() {
     local port="$1"
     local database_port="$2"
     local log_file="$3"
-    local connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_DB_USER;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+    local application_connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_APPLICATION_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+    local migration_connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_DB_USER;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
 
     env \
         ASPNETCORE_ENVIRONMENT=Testing \
         ASPNETCORE_URLS="http://127.0.0.1:$port" \
         Persistence__Provider=PostgreSql \
-        ConnectionStrings__PostgreSql="$connection_string" \
+        ConnectionStrings__PostgreSql="$application_connection_string" \
+        ConnectionStrings__PostgreSqlMigrator="$migration_connection_string" \
         dotnet "$PROJECT_ROOT/src/ToiNoMori.Api/bin/Release/net10.0/ToiNoMori.Api.dll" \
         >"$log_file" 2>&1 &
     API_PID="$!"
@@ -177,15 +199,20 @@ openssl req -x509 \
 chmod 600 "$DR_TEMP/signer.key" "$DR_TEMP/recovery.key"
 
 start_cluster primary "$PRIMARY_PORT"
+create_application_role "$PRIMARY_PORT"
 start_api "$API_PORT" "$PRIMARY_PORT" "$DR_TEMP/primary-api.log"
 stop_api
 
 "${psql_primary[@]}" >/dev/null <<'SQL'
+BEGIN;
+SET CONSTRAINTS ALL DEFERRED;
 INSERT INTO questions (
-    id, title, body, tags, status, version, owner_subject,
-    created_at, updated_at, published_at, review_reason)
+    id, tenant_id, title, body, tags, status, version, owner_subject,
+    created_at, updated_at, published_at, review_reason, withdrawal_reason,
+    approved_version, approved_by, published_revision_id)
 VALUES (
     '00000000-0000-0000-0000-000000000030',
+    '7b48e239-07ef-4b34-a1fb-7f4fc7ff1673',
     'DR sentinel publication',
     'This record proves isolated disaster recovery.',
     ARRAY['dr', 'recovery'],
@@ -195,18 +222,46 @@ VALUES (
     clock_timestamp(),
     clock_timestamp(),
     clock_timestamp(),
-    NULL);
+    NULL,
+    NULL,
+    3,
+    'dr-reviewer',
+    '00000000-0000-0000-0000-000000000030');
+
+INSERT INTO question_revisions (
+    tenant_id, id, question_id, version, title, body, tags, status,
+    owner_subject, created_at, recorded_at, published_at, review_reason,
+    withdrawal_reason, approved_version, approved_by)
+VALUES (
+    '7b48e239-07ef-4b34-a1fb-7f4fc7ff1673',
+    '00000000-0000-0000-0000-000000000030',
+    '00000000-0000-0000-0000-000000000030',
+    3,
+    'DR sentinel publication',
+    'This record proves isolated disaster recovery.',
+    ARRAY['dr', 'recovery'],
+    'PUBLISHED',
+    'dr-owner',
+    clock_timestamp(),
+    clock_timestamp(),
+    clock_timestamp(),
+    NULL,
+    NULL,
+    3,
+    'dr-reviewer');
 
 INSERT INTO audit_events (
-    id, actor_subject, target_id, action, result, correlation_id, occurred_at)
+    id, tenant_id, actor_subject, target_id, action, result, correlation_id, occurred_at)
 VALUES (
     '00000000-0000-0000-0000-000000000031',
+    '7b48e239-07ef-4b34-a1fb-7f4fc7ff1673',
     'dr-reviewer',
     '00000000-0000-0000-0000-000000000030',
     'question.approve',
     'success',
     'dr-drill-seed',
     clock_timestamp());
+COMMIT;
 SQL
 
 mkdir -p "$DR_TEMP/backups"
@@ -273,6 +328,7 @@ snapshot_started_at="$(jq -r '.snapshotStartedAtUtc' "$DR_TEMP/validation/manife
 disaster_epoch="$(date -u +%s)"
 stop_cluster "$DR_TEMP/primary"
 start_cluster recovery "$RECOVERY_PORT"
+create_application_role "$RECOVERY_PORT"
 
 mkdir -p "$DR_TEMP/recovered-payload"
 recovery_report="$(env \

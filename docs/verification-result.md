@@ -1,4 +1,4 @@
-# MVS-01 Stage 6R-4 検証結果
+# MVS-01 Stage 6R-5 検証結果
 
 - 検証日: 2026-08-20
 - SDK/runtime: .NET SDK 10.0.400 / .NET・ASP.NET Core runtime 10.0.11 / C# 14
@@ -6,23 +6,26 @@
 - DB/driver: PostgreSQL 18.6 toolchain / Npgsql 10.0.3
 - 構成: Release
 
-## Stage 6R-4 最新判定
+## Stage 6R-5 最新判定
 
 | 検査 | 今回の結果 |
 |---|---|
 | Solution Release build | 合格。警告0、エラー0 |
 | 試験ID一意性 | 合格 |
 | Domain仕様テスト | 12/12 合格 |
-| API/BFF仕様テスト | 36/36 合格。TC-065/066-API/069を含む |
-| Mobile Web仕様テスト | 5/6。承認済みAuditor仕様に対する既知TC-055だけRED |
+| API/BFF仕様テスト | 37/37 合格。Auditor専用TC-072-APIを含む |
+| Mobile Web仕様テスト | 6/6。TC-055をAuditor専用境界へGREEN化 |
 | OIDC browser protocol E2E | 7/7 合格。試験IdPは組織claimを発行 |
-| 今回実行したnative test | 60/61 合格 |
-| PostgreSQL実DB統合テスト | 10件build合格、0件実行。Stage 6R-4新規5件は未合格 |
+| 今回ローカル実行した非DB native test | 62/62 合格 |
+| PostgreSQL実DB統合テスト | GitHub Actions Run #4で10/10合格。Stage 6R-5全体回帰では再実行待ち |
 | Stage 6R-4C CI構成契約 | 6/6 合格。action SHA固定・read-only・非root/件数判定を確認 |
 | Stage 6R-4C root失敗閉鎖 | 合格。native suite未開始、exit 2、accepted=false |
-| Stage 6R残存契約 | 11/11 expected RED、harness error 0 |
-| DR暗号化・隔離復元 | 4件未実行 |
-| T3追跡総数 | 承認済み85件＋補助TC-066-API 1件＝86件。未完了 |
+| Stage 6R-5 CI構成契約 | 8/8合格。exact-count 76件・非root・native・artifactを強制 |
+| Stage 6R残存契約 | 10/10 expected RED、harness error 0 |
+| DR暗号化・隔離復元 | 現行DB role境界へ更新済み。GitHub全体回帰で4件実行待ち |
+| Draft PR全体回帰 | Domain 12、API 37、Mobile 6、OIDC 7、PostgreSQL 10、DR 4＝76件。GitHub実行待ち |
+
+Stage 6R-5では既知Mobile REDを見た目だけで閉じず、Reviewerを403とするAuditor専用`/api/ops/audit`、tenant不可視、1〜200件上限、許可リストDTO、旧`/api/admin/audit`廃止をnative API TC-072で固定した。変更前はMobile 5/6、API新規試験36/37、変更後はMobile 6/6、API 37/37である。
 
 APIの失敗先行では、実装前に既存33件が合格し、TC-065はclaim欠落でも201、TC-069は他所有者が403となって2件が赤だった。実装後は35/35。追加ループで404本文差も除去し、他所有者・他tenant・不存在を同じProblem Detailsへ固定した。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create machine-readable evidence for the Stage 6R-4C native DB gate."""
+"""Create machine-readable evidence for the Stage 6R-5 full regression gate."""
 
 from __future__ import annotations
 
@@ -15,18 +15,25 @@ from pathlib import Path
 
 RESULT = re.compile(r"^# result: (\d+) passed; (\d+) failed; (\d+) total$")
 TEST_LINE = re.compile(r"^(ok|not ok) \d+ - (TC-(?:ACC|PERF)-MVS01-[0-9]{3}(?:-[A-Z]+)?)")
+WARNING_COUNT = re.compile(r"^\s*(\d+) Warning\(s\)$", re.MULTILINE)
+ERROR_COUNT = re.compile(r"^\s*(\d+) Error\(s\)$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
 class SuiteContract:
     key: str
+    label: str
     heading: str
     expected: int
 
 
 SUITES = (
-    SuiteContract("api", "# ToiNoMori.Api specification tests", 37),
-    SuiteContract("postgresql", "# ToiNoMori PostgreSQL integration tests", 10),
+    SuiteContract("domain", "Domain", "# ToiNoMori.Domain specification tests", 12),
+    SuiteContract("api", "API", "# ToiNoMori.Api specification tests", 37),
+    SuiteContract("mobile", "Mobile", "# ToiNoMori mobile web specification tests", 6),
+    SuiteContract("oidc", "OIDC E2E", "# ToiNoMori OIDC browser protocol E2E tests", 7),
+    SuiteContract("postgresql", "PostgreSQL", "# ToiNoMori PostgreSQL integration tests", 10),
+    SuiteContract("dr", "DR", "# ToiNoMori disaster-recovery specification tests", 4),
 )
 
 
@@ -55,9 +62,9 @@ def parse_suites(log_text: str) -> dict[str, dict[str, object]]:
         test_match = TEST_LINE.match(line)
         if test_match:
             collection = "passedTestIds" if test_match.group(1) == "ok" else "failedTestIds"
-            cast_list = results[current][collection]
-            if isinstance(cast_list, list):
-                cast_list.append(test_match.group(2))
+            values = results[current][collection]
+            if isinstance(values, list):
+                values.append(test_match.group(2))
             continue
         result_match = RESULT.match(line)
         if result_match:
@@ -80,12 +87,15 @@ def acceptance_status(
     uid: int,
     execution_mode: str,
     suites: dict[str, dict[str, object]],
+    test_ids_unique: bool,
+    build_clean: bool,
 ) -> tuple[bool, dict[str, bool]]:
     checks = {
         "nonRootRunner": uid != 0,
         "nativeExecution": execution_mode == "native",
-        "api37Of37": suites["api"]["status"] == "passed",
-        "postgresql10Of10": suites["postgresql"]["status"] == "passed",
+        "testIdsUnique": test_ids_unique,
+        "buildClean": build_clean,
+        **{f"{suite.key}{suite.expected}Of{suite.expected}": suites[suite.key]["status"] == "passed" for suite in SUITES},
         "gateExitCodeZero": gate_exit_code == 0,
     }
     return all(checks.values()), checks
@@ -94,20 +104,27 @@ def acceptance_status(
 def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, object]:
     log_text = log_bytes.decode("utf-8", errors="replace")
     suites = parse_suites(log_text)
+    warning_counts = [int(value) for value in WARNING_COUNT.findall(log_text)]
+    error_counts = [int(value) for value in ERROR_COUNT.findall(log_text)]
+    build_clean = bool(warning_counts and error_counts) and all(value == 0 for value in warning_counts + error_counts)
+    test_ids_unique = "test ID uniqueness: PASSED" in log_text
     accepted, checks = acceptance_status(
         gate_exit_code=args.gate_exit_code,
         uid=args.uid,
         execution_mode=args.execution_mode,
         suites=suites,
+        test_ids_unique=test_ids_unique,
+        build_clean=build_clean,
     )
     is_github = os.environ.get("GITHUB_ACTIONS") == "true"
     return {
         "schemaVersion": "1.0",
-        "stage": "6R-4C",
-        "gate": "nonroot-native-postgresql",
+        "stage": "6R-5",
+        "gate": "draft-pr-full-regression",
         "status": "accepted" if accepted else "rejected",
         "isSimulated": args.execution_mode != "native",
         "executionMode": args.execution_mode,
+        "measurementScope": "native process integration; DR uses isolated local primary/recovery processes, not cloud-region failover",
         "startedAtUtc": args.started_at,
         "finishedAtUtc": args.finished_at,
         "source": {
@@ -142,25 +159,27 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
 
 def write_summary(path: Path, evidence: dict[str, object]) -> None:
     suites = evidence["suites"]
-    assert isinstance(suites, dict)
     checks = evidence["acceptance"]
+    assert isinstance(suites, dict)
     assert isinstance(checks, dict)
     lines = [
-        "# Stage 6R-4C non-root PostgreSQL CI",
+        "# Stage 6R-5 Draft PR full regression",
         "",
         f"判定: **{evidence['status']}**",
         "",
         "| Gate | 結果 |",
         "|---|---|",
     ]
-    for label, key in (("API", "api"), ("PostgreSQL", "postgresql")):
-        suite = suites[key]
-        assert isinstance(suite, dict)
-        total = suite["total"] if suite["total"] is not None else "未実行"
-        passed = suite["passed"] if suite["passed"] is not None else 0
-        lines.append(f"| {label} | {passed}/{total} ({suite['status']}) |")
+    for suite in SUITES:
+        result = suites[suite.key]
+        assert isinstance(result, dict)
+        total = result["total"] if result["total"] is not None else "未実行"
+        passed = result["passed"] if result["passed"] is not None else 0
+        lines.append(f"| {suite.label} | {passed}/{total} ({result['status']}) |")
     lines.extend(
         [
+            f"| 試験ID一意性 | {checks['testIdsUnique']} |",
+            f"| Build警告0・エラー0 | {checks['buildClean']} |",
             f"| 非root runner | {checks['nonRootRunner']} |",
             f"| native実行 | {checks['nativeExecution']} |",
             f"| gate終了コード | {evidence['gateExitCode']} |",
