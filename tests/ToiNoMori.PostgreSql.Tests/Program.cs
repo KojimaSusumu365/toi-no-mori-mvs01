@@ -355,13 +355,14 @@ var tests = new List<SpecTest>
             "The same external key in another tenant must not collide.");
 
         await using var dataSource = NpgsqlDataSource.Create(connectionString);
+        await using var migrationDataSource = NpgsqlDataSource.Create(migrationConnectionString);
         var tenantB = Guid.Parse("a46f716d-6f13-4e98-a7e0-a04228ba0a90");
         var countA = await CountIdempotencyAsync(dataSource, TenantIds.Mvs01, sharedKey);
         var countB = await CountIdempotencyAsync(dataSource, tenantB, sharedKey);
         SpecAssert.Equal(1L, countA, "Tenant A must see exactly its own idempotency record.");
         SpecAssert.Equal(1L, countB, "Tenant B must see exactly its own idempotency record.");
 
-        await ExpireIdempotencyAsync(dataSource, TenantIds.Mvs01, sharedKey);
+        await ExpireIdempotencyAsync(migrationDataSource, TenantIds.Mvs01, sharedKey);
         using var tenantASecondCreate = await tenantAEditor.PostAsJsonAsync(
             "/api/admin/questions",
             ValidContent("idem a after expiry"));
