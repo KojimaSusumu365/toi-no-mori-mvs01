@@ -1,0 +1,12 @@
+{
+  "name": "問いの森",
+  "short_name": "問いの森",
+  "description": "公開された問いを探し、MFAを完了した担当者が編集するWebアプリです。",
+  "lang": "ja",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f1e8",
+  "theme_color": "#153d35"
+}

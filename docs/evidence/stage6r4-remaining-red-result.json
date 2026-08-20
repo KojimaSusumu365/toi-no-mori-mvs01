@@ -1,0 +1,168 @@
+{
+  "stage": "6R-4",
+  "purpose": "remaining failure-first contracts after tenant API green and PostgreSQL tenant tests prepared; failed is expected and is not acceptance",
+  "startedAtUtc": "2026-08-20T21:08:11.431813+00:00",
+  "environment": {
+    "python": "3.12.13",
+    "dotnet": "10.0.400",
+    "postgresql": "postgres (PostgreSQL) 18.6"
+  },
+  "testCount": 11,
+  "failedCount": 11,
+  "passedCount": 0,
+  "harnessErrorCount": 0,
+  "evidenceHash": "sha256:eb2ff5449254b9663f7e8b45459437833adb52f61e94acb682c6247eda9bc89c",
+  "isSimulated": false,
+  "measurementScope": "local-static-contract",
+  "results": [
+    {
+      "testId": "TC-ACC-MVS01-070-API",
+      "layer": "API",
+      "requirementIds": [
+        "ADR-0009-D5",
+        "ADR-0009-D6"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing 'X-Request-ID', 'request_id', 'correlation_id'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-071-API",
+      "layer": "API",
+      "requirementIds": [
+        "ADR-0009-D1",
+        "ADR-0010-D2"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing 'AccessDenialAuditEnvelope', 'access.unauthenticated', 'csrf.missing_or_invalid', 'access.rate_limited', 'resource.not_visible_or_missing', 'AuditOutcomeRecorded', 'suppressed'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-071-PG",
+      "layer": "PostgreSQL",
+      "requirementIds": [
+        "ADR-0010-D1",
+        "RVR-N01"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing 'platform_security_events', 'PlatformAuditor', 'access.unauthenticated', 'tenant.claim_missing', 'tenant.claim_invalid_or_unmapped'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-072-API",
+      "layer": "API",
+      "requirementIds": [
+        "ADR-0009-D7"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing /api/ops/audit/questions/{id}, /api/ops/audit?, RequireAuthorization(\"Auditor\"), limit > 200, removal of /api/admin/audit",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-073-PG",
+      "layer": "PostgreSQL",
+      "requirementIds": [
+        "ADR-0009-D9"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing 'REVOKE UPDATE, DELETE, TRUNCATE', 'prevent_audit_mutation', 'prevent_revision_mutation', 'BEFORE UPDATE OR DELETE'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-076-MOB",
+      "layer": "Mobile",
+      "requirementIds": [
+        "ADR-0008-D1",
+        "ADR-0009-D7"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "src/ToiNoMori.Api/wwwroot/app/app.js: missing 'hasRole(\"Auditor\")', 'approvalEtag', 'response.status === 409'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-077-OIDC",
+      "layer": "OIDC",
+      "requirementIds": [
+        "ADR-0007-D2",
+        "ADR-0008-D1"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing 'tenant mapping', 'TC-ACC-MVS01-077-OIDC', 'self approval'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-078-DR",
+      "layer": "DR",
+      "requirementIds": [
+        "ADR-0007-D5",
+        "ADR-0008-D3"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "scripts/test-disaster-recovery.sh: missing 'TC-ACC-MVS01-078-DR', 'isSimulated', 'measurementScope', 'artifactHash', 'fk_published_revision_same_question', 'platform_security_events'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-080-API",
+      "layer": "API",
+      "requirementIds": [
+        "ADR-0009-D8"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing 'IAuditSink', 'TimeSpan', 'audit_write_failures_total', 'audit_write_duration', 'fallback'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-ACC-MVS01-081-API",
+      "layer": "API",
+      "requirementIds": [
+        "ADR-0008-D4"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "src/ToiNoMori.Api/Contracts.cs: missing 'WithdrawalReason', 'EditorQuestionResponse', 'ReviewerQuestionResponse'",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    },
+    {
+      "testId": "TC-PERF-MVS01-002-PG",
+      "layer": "Performance",
+      "requirementIds": [
+        "RV-040"
+      ],
+      "result": "failed",
+      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
+      "detail": "missing file: tests/performance/TC-PERF-MVS01-002-PG.sql",
+      "durationMs": 0,
+      "isSimulated": false,
+      "measurementScope": "local-static-contract"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ToiNoMori.Domain/ToiNoMori.Domain.csproj" />
+    <Project Path="src/ToiNoMori.Api/ToiNoMori.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ToiNoMori.Testing/ToiNoMori.Testing.csproj" />
+    <Project Path="tests/ToiNoMori.Domain.Tests/ToiNoMori.Domain.Tests.csproj" />
+    <Project Path="tests/ToiNoMori.Api.Tests/ToiNoMori.Api.Tests.csproj" />
+    <Project Path="tests/ToiNoMori.Mobile.Tests/ToiNoMori.Mobile.Tests.csproj" />
+    <Project Path="tests/ToiNoMori.OidcE2e.Tests/ToiNoMori.OidcE2e.Tests.csproj" />
+    <Project Path="tests/ToiNoMori.PostgreSql.Tests/ToiNoMori.PostgreSql.Tests.csproj" />
+  </Folder>
+</Solution>

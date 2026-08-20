@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "toinomori.domain": {
+        "type": "Project"
+      },
+      "toinomori.testing": {
+        "type": "Project"
+      }
+    }
+  }
+}

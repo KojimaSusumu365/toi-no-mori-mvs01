@@ -1,0 +1,26 @@
+{
+  "stage": "6R-4",
+  "recordedAtUtc": "2026-08-20T00:00:00Z",
+  "suite": "ToiNoMori.PostgreSql.Tests",
+  "nativeTestCount": 10,
+  "stage6r4TestIds": [
+    "TC-ACC-MVS01-066-PG",
+    "TC-ACC-MVS01-067-PG",
+    "TC-ACC-MVS01-068-PG",
+    "TC-ACC-MVS01-074-PG",
+    "TC-ACC-MVS01-075-PG"
+  ],
+  "buildResult": "passed",
+  "executionResult": "not_run",
+  "accepted": false,
+  "attemptedCommand": "./scripts/test-postgresql.sh",
+  "exitCode": 2,
+  "reasonCode": "NON_ROOT_PROCESS_UNAVAILABLE",
+  "detail": "The Work container forbids changing effective UID from root to nobody, and PostgreSQL refuses root execution. The root guard was not bypassed.",
+  "roleBoundaryImplementation": "implemented_and_build_passed",
+  "roleBoundaryConfigTest": "TC-ACC-MVS01-066-API passed in API suite 36/36",
+  "roleBoundaryNativeCoverage": "TC-ACC-MVS01-066-PG checks the valid application role and rejection of superuser, table-owner, and BYPASSRLS candidates",
+  "knownAcceptanceBlocker": "The updated real PostgreSQL suite could not start because this Work environment cannot change effective UID and PostgreSQL refuses root execution.",
+  "isSimulated": false,
+  "measurementScope": "toolchain-and-runner-gate-only"
+}

@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:18.4-bookworm
+    environment:
+      POSTGRES_DB: toi_no_mori
+      POSTGRES_USER: toi_no_mori_admin
+      POSTGRES_PASSWORD: ${MVS01_POSTGRES_ADMIN_PASSWORD:?MVS01_POSTGRES_ADMIN_PASSWORD must be set}
+      MVS01_POSTGRES_APPLICATION_PASSWORD: ${MVS01_POSTGRES_APPLICATION_PASSWORD:?MVS01_POSTGRES_APPLICATION_PASSWORD must be set}
+      MVS01_POSTGRES_MIGRATION_PASSWORD: ${MVS01_POSTGRES_MIGRATION_PASSWORD:?MVS01_POSTGRES_MIGRATION_PASSWORD must be set}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - toi-no-mori-postgres:/var/lib/postgresql/data
+      - ./infra/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U toi_no_mori_admin -d toi_no_mori"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  toi-no-mori-postgres:

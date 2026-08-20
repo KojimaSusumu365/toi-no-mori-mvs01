@@ -1,0 +1,52 @@
+{
+  "stage": "6R-4C",
+  "recordedAtUtc": "2026-08-20T21:22:09Z",
+  "scope": "ci-construction-and-local-fail-closed-validation",
+  "workflow": ".github/workflows/stage6r4c-nonroot-postgresql.yml",
+  "construction": {
+    "workflowCreated": true,
+    "fixedRunnerImage": "ubuntu-24.04",
+    "readOnlyRepositoryPermission": true,
+    "checkoutCredentialsPersisted": false,
+    "externalActionsPinnedToFullCommitSha": true,
+    "pullRequestTargetUsed": false,
+    "sudoUsedByWorkflow": false,
+    "nativeEvidenceArtifactConfigured": true
+  },
+  "contractTest": {
+    "testCount": 6,
+    "passedCount": 6,
+    "failedCount": 0,
+    "result": "passed"
+  },
+  "localRegression": {
+    "releaseBuild": {
+      "warnings": 0,
+      "errors": 0,
+      "result": "passed"
+    },
+    "apiSuite": {
+      "testCount": 36,
+      "passedCount": 36,
+      "failedCount": 0,
+      "result": "passed"
+    },
+    "testIdUniqueness": "passed"
+  },
+  "localRootFailClosedTest": {
+    "runnerUid": 0,
+    "exitCode": 2,
+    "nativeSuiteStarted": false,
+    "rootGuardBypassed": false,
+    "result": "passed"
+  },
+  "githubNativeRun": {
+    "executed": false,
+    "postgresqlTestCount": 10,
+    "passedCount": 0,
+    "accepted": false,
+    "reason": "Workflow files are constructed locally but no GitHub repository run was authorized in this workspace."
+  },
+  "overallAcceptance": "pending_github_native_run",
+  "isSimulated": false
+}

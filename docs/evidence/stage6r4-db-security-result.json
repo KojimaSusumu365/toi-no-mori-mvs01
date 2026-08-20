@@ -1,0 +1,50 @@
+{
+  "stage": "6R-4-db-security",
+  "recordedAtUtc": "2026-08-20T00:00:00Z",
+  "failureFirst": {
+    "suite": "ToiNoMori.Api.Tests",
+    "testCount": 36,
+    "passedCount": 35,
+    "failedCount": 1,
+    "failedTestId": "TC-ACC-MVS01-066-API",
+    "failureReason": "A Production configuration without a separate migration credential was accepted"
+  },
+  "implementation": {
+    "applicationAndMigrationDataSourcesSeparated": true,
+    "distinctUsernamesRequired": true,
+    "verifyFullRequiredForBothInProduction": true,
+    "leastPrivilegeGrantImplemented": true,
+    "startupCatalogValidationImplemented": true,
+    "dangerousRoleCandidatesCovered": [
+      "superuser",
+      "table_owner",
+      "bypassrls"
+    ]
+  },
+  "greenConfigurationGate": {
+    "suite": "ToiNoMori.Api.Tests",
+    "testCount": 36,
+    "passedCount": 36,
+    "failedCount": 0
+  },
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "result": "passed"
+  },
+  "postgresqlGate": {
+    "version": "18.6",
+    "nativeTestCount": 10,
+    "executedTestCount": 0,
+    "executionResult": "not_run",
+    "accepted": false,
+    "attemptedCommand": "bash scripts/test-stage6r4-db-security.sh",
+    "exitCode": 2,
+    "reasonCode": "NON_ROOT_PROCESS_UNAVAILABLE",
+    "detail": "The Work container cannot change effective UID from root, and PostgreSQL refuses root execution. No guard was bypassed."
+  },
+  "overallAcceptance": "pending_real_postgresql_execution",
+  "isSimulated": false,
+  "measurementScope": "local-build-api-config-and-runner-gate"
+}

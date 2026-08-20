@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/ToiNoMori.Domain/ToiNoMori.Domain.csproj" />
+    <ProjectReference Include="../ToiNoMori.Testing/ToiNoMori.Testing.csproj" />
+  </ItemGroup>
+</Project>

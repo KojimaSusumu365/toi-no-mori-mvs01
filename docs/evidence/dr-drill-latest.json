@@ -1,0 +1,13 @@
+{
+  "format": "toi-no-mori-dr-drill-evidence-v1",
+  "executedAtUtc": "2026-08-16T02:08:09Z",
+  "sourceRole": "ishikari-primary-simulated",
+  "recoveryRole": "tokyo-recovery-simulated",
+  "rpoSeconds": 0,
+  "rtoSeconds": 2,
+  "maxRpoSeconds": 3600,
+  "maxRtoSeconds": 14400,
+  "testsPassed": 4,
+  "testsFailed": 0,
+  "scope": "local isolated process drill; not a cloud region failover"
+}

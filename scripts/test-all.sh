@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+"$SCRIPT_DIR/test.sh"
+"$SCRIPT_DIR/test-postgresql.sh"
+"$SCRIPT_DIR/test-disaster-recovery.sh"
