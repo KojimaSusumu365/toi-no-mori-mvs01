@@ -33,6 +33,10 @@ public static class AppHost
         });
 
         builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+        builder.Services.AddSingleton<SecurityAuditMetrics>();
+        builder.Services.AddSingleton<SecurityAuditPartitionHasher>();
+        builder.Services.AddSingleton<SecurityAuditQueue>();
+        builder.Services.AddHostedService<SecurityAuditWorker>();
         builder.Services.AddSingleton<TenantResolver>();
         builder.Services.AddSingleton<RequireTenantFilter>();
         ConfigurePersistence(builder);
@@ -67,7 +71,11 @@ public static class AppHost
             .AddPolicy("Auditor", policy => policy
                 .RequireAuthenticatedUser()
                 .RequireClaim(mfaClaimType, mfaClaimValue)
-                .RequireRole("Auditor"));
+                .RequireRole("Auditor"))
+            .AddPolicy("PlatformAuditor", policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(mfaClaimType, mfaClaimValue)
+                .RequireRole("PlatformAuditor"));
 
         builder.Services.AddRateLimiter(rateLimiter =>
         {
@@ -94,15 +102,8 @@ public static class AppHost
             app.UseHttpsRedirection();
         }
 
-        app.Use(async (context, next) =>
-        {
-            var supplied = context.Request.Headers["X-Correlation-ID"].ToString();
-            context.TraceIdentifier = IsSafeCorrelationId(supplied)
-                ? supplied
-                : Guid.NewGuid().ToString("N");
-            context.Response.Headers["X-Correlation-ID"] = context.TraceIdentifier;
-            await next(context);
-        });
+        app.UseMiddleware<CorrelationContextMiddleware>();
+        app.UseMiddleware<SecurityAuditMiddleware>();
 
         app.Use(async (context, next) =>
         {
@@ -118,6 +119,7 @@ public static class AppHost
             context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
             if (context.Request.Path.StartsWithSegments("/api/admin")
                 || context.Request.Path.StartsWithSegments("/api/ops")
+                || context.Request.Path.StartsWithSegments("/api/platform")
                 || context.Request.Path.StartsWithSegments("/bff")
                 || context.Request.Path == "/app/"
                 || context.Request.Path == "/app/index.html")
@@ -139,10 +141,6 @@ public static class AppHost
 
         return app;
     }
-
-    private static bool IsSafeCorrelationId(string value) =>
-        value.Length is > 0 and <= 64
-        && value.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
 
     private static void ConfigureDataProtection(WebApplicationBuilder builder)
     {
@@ -203,6 +201,11 @@ public static class AppHost
             builder.Services.AddSingleton<InMemoryQuestionStore>();
             builder.Services.AddSingleton<IQuestionStore>(services =>
                 services.GetRequiredService<InMemoryQuestionStore>());
+            builder.Services.AddSingleton<InMemoryPlatformSecurityAuditStore>();
+            builder.Services.AddSingleton<IAuditSink>(services =>
+                services.GetRequiredService<InMemoryPlatformSecurityAuditStore>());
+            builder.Services.AddSingleton<IPlatformSecurityEventReader>(services =>
+                services.GetRequiredService<InMemoryPlatformSecurityAuditStore>());
         }
         else if (string.Equals(provider, "PostgreSql", StringComparison.OrdinalIgnoreCase))
         {
@@ -264,15 +267,76 @@ public static class AppHost
                     "PostgreSQL application and migration connections must use different roles.");
             }
 
+            var rawPlatformAuditWriterConnectionString = builder.Configuration
+                .GetConnectionString("PostgreSqlPlatformAuditWriter");
+            var rawPlatformAuditReaderConnectionString = builder.Configuration
+                .GetConnectionString("PostgreSqlPlatformAuditReader");
+            if (string.IsNullOrWhiteSpace(rawPlatformAuditWriterConnectionString)
+                || string.IsNullOrWhiteSpace(rawPlatformAuditReaderConnectionString))
+            {
+                throw new InvalidOperationException(
+                    "Separate PostgreSqlPlatformAuditWriter and PostgreSqlPlatformAuditReader connections are required.");
+            }
+
+            var platformAuditWriterConnectionString = new NpgsqlConnectionStringBuilder(
+                rawPlatformAuditWriterConnectionString)
+            {
+                ApplicationName = "ToiNoMori.Mvs01.PlatformAuditWriter",
+                IncludeErrorDetail = false,
+                LogParameters = false
+            };
+            var platformAuditReaderConnectionString = new NpgsqlConnectionStringBuilder(
+                rawPlatformAuditReaderConnectionString)
+            {
+                ApplicationName = "ToiNoMori.Mvs01.PlatformAuditReader",
+                IncludeErrorDetail = false,
+                LogParameters = false
+            };
+            if (builder.Environment.IsProduction()
+                && (platformAuditWriterConnectionString.SslMode != SslMode.VerifyFull
+                    || platformAuditReaderConnectionString.SslMode != SslMode.VerifyFull))
+            {
+                throw new InvalidOperationException(
+                    "Production PostgreSQL platform audit connections must use SSL Mode=VerifyFull.");
+            }
+
+            var platformAuditWriterRole = platformAuditWriterConnectionString.Username
+                ?? throw new InvalidOperationException(
+                    "PostgreSQL platform audit writer requires an explicit username.");
+            var platformAuditReaderRole = platformAuditReaderConnectionString.Username
+                ?? throw new InvalidOperationException(
+                    "PostgreSQL platform audit reader requires an explicit username.");
+            var separatedRoles = new[]
+            {
+                applicationConnectionString.Username,
+                migrationConnectionString.Username,
+                platformAuditWriterRole,
+                platformAuditReaderRole
+            };
+            if (separatedRoles.Any(string.IsNullOrWhiteSpace)
+                || separatedRoles.Distinct(StringComparer.OrdinalIgnoreCase).Count() != separatedRoles.Length)
+            {
+                throw new InvalidOperationException(
+                    "PostgreSQL application, migration, platform audit writer, and platform audit reader must use four different explicit roles.");
+            }
+
             builder.Services.AddSingleton(new PostgreSqlPersistenceSettings(
-                applicationConnectionString.Username));
+                applicationConnectionString.Username,
+                platformAuditWriterRole,
+                platformAuditReaderRole));
             builder.Services.AddSingleton(new PostgreSqlApplicationDataSource(
                 NpgsqlDataSource.Create(applicationConnectionString.ConnectionString)));
             builder.Services.AddSingleton(new PostgreSqlMigrationDataSource(
                 NpgsqlDataSource.Create(migrationConnectionString.ConnectionString)));
+            builder.Services.AddSingleton(new PostgreSqlPlatformAuditWriterDataSource(
+                NpgsqlDataSource.Create(platformAuditWriterConnectionString.ConnectionString)));
+            builder.Services.AddSingleton(new PostgreSqlPlatformAuditReaderDataSource(
+                NpgsqlDataSource.Create(platformAuditReaderConnectionString.ConnectionString)));
             builder.Services.AddSingleton<PostgreSqlMigrator>();
             builder.Services.AddSingleton<PostgreSqlRoleBoundaryValidator>();
             builder.Services.AddSingleton<IQuestionStore, PostgreSqlQuestionStore>();
+            builder.Services.AddSingleton<IAuditSink, PostgreSqlPlatformSecurityAuditSink>();
+            builder.Services.AddSingleton<IPlatformSecurityEventReader, PostgreSqlPlatformSecurityEventReader>();
         }
         else
         {

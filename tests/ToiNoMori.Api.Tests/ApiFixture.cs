@@ -21,15 +21,27 @@ public sealed class ApiFixture : IAsyncDisposable
 
     public InMemoryQuestionStore Store => _app.Services.GetRequiredService<InMemoryQuestionStore>();
 
-    public static async Task<ApiFixture> StartAsync(string environmentName = "Testing")
+    public SecurityAuditMetrics AuditMetrics =>
+        _app.Services.GetRequiredService<SecurityAuditMetrics>();
+
+    public static async Task<ApiFixture> StartAsync(
+        string environmentName = "Testing",
+        string[]? configuration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
+        var arguments = new List<string>
+        {
+            "Logging:LogLevel:Default=Warning",
+            "Logging:LogLevel:Microsoft.AspNetCore.DataProtection=Error"
+        };
+        if (configuration is not null)
+        {
+            arguments.AddRange(configuration);
+        }
+
         var options = new WebApplicationOptions
         {
-            Args =
-            [
-                "Logging:LogLevel:Default=Warning",
-                "Logging:LogLevel:Microsoft.AspNetCore.DataProtection=Error"
-            ],
+            Args = [.. arguments],
             EnvironmentName = environmentName,
             ApplicationName = typeof(AppHost).Assembly.FullName,
             ContentRootPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "ToiNoMori.Api")
@@ -38,16 +50,20 @@ public sealed class ApiFixture : IAsyncDisposable
         var app = AppHost.Build(
             options,
             environmentName == "Testing"
-                ? builder => builder.Services
-                    .AddAuthentication(authentication =>
-                    {
-                        authentication.DefaultAuthenticateScheme = "TestHeaders";
-                        authentication.DefaultChallengeScheme = "TestHeaders";
-                        authentication.DefaultForbidScheme = "TestHeaders";
-                    })
-                    .AddScheme<AuthenticationSchemeOptions, TestHeaderAuthenticationHandler>(
-                        "TestHeaders",
-                        _ => { })
+                ? builder =>
+                {
+                    builder.Services
+                        .AddAuthentication(authentication =>
+                        {
+                            authentication.DefaultAuthenticateScheme = "TestHeaders";
+                            authentication.DefaultChallengeScheme = "TestHeaders";
+                            authentication.DefaultForbidScheme = "TestHeaders";
+                        })
+                        .AddScheme<AuthenticationSchemeOptions, TestHeaderAuthenticationHandler>(
+                            "TestHeaders",
+                            _ => { });
+                    configureServices?.Invoke(builder.Services);
+                }
                 : null);
         app.Urls.Add("http://127.0.0.1:0");
         await app.StartAsync();

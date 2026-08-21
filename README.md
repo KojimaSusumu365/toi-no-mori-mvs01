@@ -1,10 +1,10 @@
-# 問いの森 CORE — MVS-01 Stage 6R-5 Draft PR全体回帰
+# 問いの森 CORE — MVS-01 Stage 6R-6 Platform Security監査境界
 
-> Stage 6R-4CのGitHub Actions Run #4で、非root PostgreSQL 10/10を確認済みです。Stage 6R-5ではAuditor専用監査境界をRED→GREEN化し、Domain/API/Mobile/OIDC/PostgreSQL/DRの全76件を一つのfail-closed CI gateへ統合します。
+> Stage 6R-5のGitHub Actions Run #5で、非root全体回帰76/76を確認済みです。Stage 6R-6ではtenant監査とplatform拒否監査を分離し、相関ID・要求ID、429抑制、監査sink障害境界、PlatformAuditor専用経路を追加します。
 
 ASP.NET Core、PostgreSQL、スマートフォン向けWeb UI、OIDC/BFF認証境界、暗号化災害復旧を一つの縦切り実装へ接続した最小システムです。
 
-V字工程を基本とするアジャイル方式として、要求ID、ADR/UML ID、実装、自動試験IDを同じ反復で更新します。Stage 6R-5のローカル非DB範囲はDomain 12件、API 37件、Mobile 6件、OIDC E2E 7件の全62件がGREENです。
+V字工程を基本とするアジャイル方式として、要求ID、ADR/UML ID、実装、自動試験IDを同じ反復で更新します。Stage 6R-6のローカル非DB範囲はDomain 12件、API 40件、Mobile 6件、OIDC E2E 7件の全65件がGREENです。
 
 ## 今回動く範囲
 
@@ -20,6 +20,9 @@ V字工程を基本とするアジャイル方式として、要求ID、ADR/UML 
 10. 問い、revision、監査、冪等結果をtenant付きPostgreSQLトランザクションへ保存し、GitHub非root runnerで実DB10/10を確認する。
 11. migration/application DB接続を分離し、applicationロールを`NOINHERIT`・非owner・非superuser・非`BYPASSRLS`・DDLなしに制限して起動時に診断する。
 12. 石狩本番から東京復旧へ、署名・AES-256-GCM暗号化backupを運搬する手順を検査する。
+13. `X-Correlation-ID`と要求ごとの`X-Request-ID`を分離し、拒否監査へ本文・token・claim・生IPを保存しない。
+14. 429はpartition hash・正規化action・UTC 1分窓で先頭だけを書込み、以後は抑制metricへ集約する。
+15. tenant Auditorから分離したPlatformAuditorだけが、期間必須・上限付きのplatform security eventを閲覧する。
 
 異なるEditorとReviewerによる作成、申請、承認、匿名公開までを、署名付きOIDC試験sessionで自動検証します。自己承認、他Editorの管理閲覧、古い版による上書き、CSRF欠落は安全側に拒否します。
 
@@ -38,10 +41,11 @@ V字工程を基本とするアジャイル方式として、要求ID、ADR/UML 
 Productionでは次を必須とし、不足時は起動を拒否します。
 
 - PostgreSQL接続は`SSL Mode=VerifyFull`
-- application用`ConnectionStrings__PostgreSql`とmigration用`ConnectionStrings__PostgreSqlMigrator`は異なるusernameを使用する
+- application、migration、platform audit writer、platform audit readerの4接続は異なるusernameを使用する
+- platform拒否監査の不可逆partition hash用`Audit__PartitionHashKey`を秘密として注入する
 - `Authentication__Mode=Oidc`
 - HTTPSのOIDC Authority、Client ID、secret注入されたClient Secret
-- `sub`、設定したMFA証跡claim、`Editor|Reviewer|Auditor` roleのIdP mapping
+- `sub`、設定したMFA証跡claim、`Editor|Reviewer|Auditor|PlatformAuditor` roleのIdP mapping
 - `external_organization_id`と`Tenancy__Organizations__<external-id>=<internal-uuid>`の明示許可表
 - 署名済み`auth_time`が15分＋clock skew 1分以内
 - 全API instanceで共有するData Protection key ring
@@ -85,7 +89,9 @@ scripts/
   ci/run-stage6r4c-db-security-ci.sh CI gate実行・証跡生成
   test-stage6r5-ci-contract.sh 全体回帰CI構成・証跡判定の8件
   ci/run-stage6r5-full-regression-ci.sh 全76件のCI gate・証跡生成
-  test-all.sh                 現行native 76件（PostgreSQL/DRを含む）
+  test-stage6r6-ci-contract.sh platform監査CI構成・80件判定の6件
+  ci/run-stage6r6-full-regression-ci.sh 全80件のCI gate・証跡生成
+  test-all.sh                 現行native 80件（PostgreSQL/DRを含む）
   test-disaster-recovery.sh   TC-030〜033
 docs/
   stage6r1-failure-first-spec.md Stage 6R-1の契約・結果・次gate
@@ -97,6 +103,8 @@ docs/
   stage6r4-db-security-boundary.md      DBロール分離・起動診断・実DBgate
   stage6r4c-nonroot-postgresql-ci.md    非root GitHub Actions・証跡・受入条件
   stage6r5-draft-pr-acceptance.md       Draft PR受入・全体回帰仕様
+  stage6r6-platform-security-audit.md   platform拒否監査・429抑制仕様
+  uml-stage6r6-platform-security.md     相関ID・監査queue・DB role分離UML
   uml-stage6r4-tenant-boundary.md       tenant解決・RLS・複合FK・V字UML
   adr-0010-*.md               platform監査分離と429抑制
   uml-stage6r1.md             監査境界とV字対応
@@ -129,6 +137,7 @@ POSTGRES_BIN_DIR=/path/to/postgresql/bin ./scripts/test-all.sh
 ./scripts/check-test-ids.sh
 ./scripts/test-stage6r4c-ci-contract.sh
 ./scripts/test-stage6r5-ci-contract.sh
+./scripts/test-stage6r6-ci-contract.sh
 ./scripts/test-stage6r4-tenant-boundary.sh # Stage 6R-4履歴gate
 MVS01_RUN_POSTGRESQL=1 ./scripts/test-stage6r4-tenant-boundary.sh
 ./scripts/test.sh
@@ -138,7 +147,7 @@ POSTGRES_BIN_DIR=/path/to/postgresql/bin \
   ./scripts/test-disaster-recovery.sh
 ```
 
-GitHub Actionsでは`.github/workflows/stage6r4c-nonroot-postgresql.yml`がUbuntu 24.04の非root UIDを検査し、Domain 12、API 37、Mobile 6、OIDC 7、PostgreSQL 10、DR 4の全76件を連続実行する。runner UID、commit、toolchain、各suite件数、log SHA-256をartifactへ保存し、件数不足や未実行を成功扱いにしない。
+GitHub Actionsでは`.github/workflows/stage6r6-platform-security.yml`がUbuntu 24.04の非root UIDを検査し、Domain 12、API 40、Mobile 6、OIDC 7、PostgreSQL 11、DR 4の全80件を連続実行する。runner UID、commit、toolchain、各suite件数、log SHA-256をartifactへ保存し、件数不足や未実行を成功扱いにしない。
 
 一件でも失敗すると終了コード1を返します。OIDC E2Eは独立HTTPS endpoint間のredirectとCookieをbrowser相当clientで往復します。今回の検証環境では非特権PostgreSQL processを起動できず、Stage 6版のPostgreSQL/DRは未再実行です。物理スマートフォンのbrowser engine描画やscreen reader操作もまだ含みません。
 
@@ -160,12 +169,13 @@ GitHub Actionsでは`.github/workflows/stage6r4c-nonroot-postgresql.yml`がUbunt
 | 取り下げ | `POST /api/admin/questions/{id}/withdraw` | Reviewer、理由、CSRF |
 | tenant監査 | `GET /api/ops/audit?limit=` | Auditor、MFA、内部tenant、1〜200件、`no-store` |
 | 問い別監査 | `GET /api/ops/audit/questions/{id}?limit=` | Auditor、MFA、内部tenant、許可リストDTO |
+| platform拒否監査 | `GET /api/platform/security-events?from=&to=&limit=` | PlatformAuditor、MFA、期間必須、最大31日、1〜200件、partition hash非開示 |
 | 公開検索 | `GET /api/public/questions?query=&tag=` | `PUBLISHED`のみ、rate limit |
 
 ## 次の反復
 
-- Stage 6R-5全76件のartifactを確認し、Draft PR受入判定を閉じる
-- correlation/request ID分離、拒否監査envelope、platform security events、PlatformAuditor APIを次反復で組み込む
+- Stage 6R-6全80件を非root GitHub Actionsで実行し、PostgreSQL 11/11とDR 4/4のartifactを確認する
+- 追記監査とrevisionのDB改ざん防止（TC-073-PG）を次の小反復でRED→GREEN化する
 - 公開APIの複数tenant向けhost/path解決を設計する。現在は移行tenant MVS-01へ固定する
 - 実Entra tenant/MFAを使う受入とiOS/Android実機アクセシビリティ試験
 - さくらLoad Balancerのproxy trust、CRR、GSLB、東京復旧訓練
@@ -173,4 +183,4 @@ GitHub Actionsでは`.github/workflows/stage6r4c-nonroot-postgresql.yml`がUbunt
 - Infrastructure as Code、監視通知、鍵rotation、session失効運用
 - Azure/AWS/GCPへの将来adapter
 
-ローカル62件合格は本番承認ではありません。Stage 6R残存10件、実IdP、実端末、実クラウド、運用担当者による受入とSecurity Reviewは別gateです。
+ローカル65件合格は本番承認ではありません。Stage 6R残存6件、実IdP、実端末、実クラウド、運用担当者による受入とSecurity Reviewは別gateです。

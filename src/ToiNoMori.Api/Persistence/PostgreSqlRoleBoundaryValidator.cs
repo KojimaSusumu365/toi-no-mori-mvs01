@@ -39,6 +39,14 @@ public sealed class PostgreSqlRoleBoundaryValidator(
                   ON table_namespace.oid = table_class.relnamespace
                 WHERE table_namespace.nspname = current_schema()
                   AND table_class.relname = 'schema_migrations'
+            ),
+            platform_audit_table AS (
+                SELECT table_class.oid
+                FROM pg_class AS table_class
+                JOIN pg_namespace AS table_namespace
+                  ON table_namespace.oid = table_class.relnamespace
+                WHERE table_namespace.nspname = current_schema()
+                  AND table_class.relname = 'platform_security_events'
             )
             SELECT
                 NOT role.rolsuper
@@ -90,6 +98,12 @@ public sealed class PostgreSqlRoleBoundaryValidator(
                 AND NOT EXISTS (
                     SELECT 1
                     FROM migration_table
+                    WHERE has_table_privilege(
+                        role.oid, oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+                AND (SELECT count(*) = 1 FROM platform_audit_table)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM platform_audit_table
                     WHERE has_table_privilege(
                         role.oid, oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
             FROM application_role AS role;

@@ -47,8 +47,9 @@
 | Question Editor | `Editor` | 下書き作成・更新・レビュー申請 |
 | Question Reviewer | `Reviewer` | 差戻し・承認・取り下げ |
 | Tenant Auditor | `Auditor` | 同一tenantの許可リスト型監査metadata閲覧 |
+| Platform Security Auditor | `PlatformAuditor` | tenant未確定を含むplatform拒否metadataの期間限定閲覧 |
 
-Enterprise applicationsのUsers and groupsから担当者または管理したsecurity groupへ割り当てる。Microsoft公式仕様では、user sign-in時のapp roleはID tokenの`roles` claimに入る。アプリ設定は`RoleClaimType=roles`とする。
+Enterprise applicationsのUsers and groupsから担当者または管理したsecurity groupへ割り当てる。`Auditor`と`PlatformAuditor`は兼務groupへ割り当てず、定期的にmembershipを棚卸しする。Microsoft公式仕様では、user sign-in時のapp roleはID tokenの`roles` claimに入る。アプリ設定は`RoleClaimType=roles`とする。
 
 ## 5. MFA policy
 
@@ -104,6 +105,7 @@ Authentication__Oidc__ClientSecret
 | ENTRA-AT-09 | client secret rotation中も一方のcredentialで継続できる |
 | ENTRA-AT-10 | iOS Safari、Android Chrome、desktop browserでMFA往復する |
 | ENTRA-AT-11 | 組織claim欠落・未登録を拒否し、登録済み組織だけを対応する内部tenantへ限定する |
+| ENTRA-AT-12 | Auditorはplatform監査を読めず、PlatformAuditorはtenant監査を読めない |
 
 ## 8. 証跡に残さないもの
 

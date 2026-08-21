@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -146,6 +147,9 @@ var tests = new List<SpecTest>
             "Persistence:Provider=PostgreSql",
             "ConnectionStrings:PostgreSql=Host=db.invalid;Database=app;Username=app;SSL Mode=VerifyFull",
             "ConnectionStrings:PostgreSqlMigrator=Host=db.invalid;Database=app;Username=migrator;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditWriter=Host=db.invalid;Database=app;Username=platform_writer;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditReader=Host=db.invalid;Database=app;Username=platform_reader;SSL Mode=VerifyFull",
+            "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
             "Authentication:Mode=Disabled"
         ]);
         var exception = SpecAssert.Throws<InvalidOperationException>(
@@ -164,6 +168,9 @@ var tests = new List<SpecTest>
             "Persistence:Provider=PostgreSql",
             "ConnectionStrings:PostgreSql=Host=db.invalid;Database=app;Username=app;SSL Mode=VerifyFull",
             "ConnectionStrings:PostgreSqlMigrator=Host=db.invalid;Database=app;Username=migrator;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditWriter=Host=db.invalid;Database=app;Username=platform_writer;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditReader=Host=db.invalid;Database=app;Username=platform_reader;SSL Mode=VerifyFull",
+            "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
             "Authentication:Mode=Oidc",
             "Authentication:Oidc:Authority=https://identity.example",
             "Authentication:Oidc:ClientId=toi-no-mori-test",
@@ -771,6 +778,103 @@ var tests = new List<SpecTest>
         }
 
         SpecAssert.True(rejected, "The fixed-window limiter must eventually return 429.");
+    }),
+    new("TC-ACC-MVS01-070-API", "ADR-0009-D5,ADR-0009-D6", "相関IDと要求IDを分離して安全に伝播", async () =>
+    {
+        using var client = fixture.AnonymousClient();
+        using var firstRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/public/questions/{Guid.NewGuid()}");
+        firstRequest.Headers.Add("X-Correlation-ID", "client-flow-123");
+        using var first = await client.SendAsync(firstRequest);
+        using var secondRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/public/questions/{Guid.NewGuid()}");
+        secondRequest.Headers.Add("X-Correlation-ID", "client-flow-123");
+        using var second = await client.SendAsync(secondRequest);
+
+        var firstCorrelation = Header(first, "X-Correlation-ID");
+        var firstRequestId = Header(first, "X-Request-ID");
+        var secondRequestId = Header(second, "X-Request-ID");
+        SpecAssert.Equal("client-flow-123", firstCorrelation, "A safe caller correlation ID must be preserved.");
+        SpecAssert.True(firstRequestId.Length is > 0 and <= 64, "Every response must expose one bounded request ID.");
+        SpecAssert.False(firstRequestId == firstCorrelation, "Request ID and correlation ID must remain different concepts.");
+        SpecAssert.False(firstRequestId == secondRequestId, "Every request must receive a fresh request ID.");
+    }),
+    new("TC-ACC-MVS01-071-API", "ADR-0009-D1,ADR-0010-D2", "拒否監査をPlatformAuditor専用経路へ集約し429を抑制", async () =>
+    {
+        await using var auditFixture = await ApiFixture.StartAsync(
+            configuration:
+            [
+                "PublicRateLimit:PermitLimit=1",
+                "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+            ]);
+        using var anonymous = auditFixture.AnonymousClient();
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            using var response = await anonymous.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
+        }
+
+        using var tenantAuditor = auditFixture.AuthenticatedClient("tenant-auditor-denied", "Auditor");
+        using var tenantResponse = await tenantAuditor.GetAsync(
+            $"/api/platform/security-events?from={Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(-5).ToString("O"))}&to={Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(1).ToString("O"))}&limit=50");
+        SpecAssert.Equal(HttpStatusCode.Forbidden, tenantResponse.StatusCode, "Tenant Auditor must not read platform security events.");
+
+        using var platformAuditor = auditFixture.AuthenticatedClient(
+            "platform-auditor",
+            "PlatformAuditor",
+            externalOrganizationId: null,
+            verifiedIssuer: null);
+        using var tenantAuditDenied = await platformAuditor.GetAsync("/api/ops/audit?limit=50");
+        SpecAssert.Equal(HttpStatusCode.Forbidden, tenantAuditDenied.StatusCode, "PlatformAuditor must not inherit tenant Auditor access.");
+        using var missingPeriod = await platformAuditor.GetAsync("/api/platform/security-events?limit=50");
+        SpecAssert.Equal(HttpStatusCode.BadRequest, missingPeriod.StatusCode, "Platform audit queries must require an explicit period.");
+
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(-5).ToString("O"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(1).ToString("O"));
+        var wire = string.Empty;
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+            using var platformResponse = await platformAuditor.GetAsync(
+                $"/api/platform/security-events?from={from}&to={to}&limit=50");
+            SpecAssert.Equal(HttpStatusCode.OK, platformResponse.StatusCode, "PlatformAuditor must read only the bounded platform audit projection.");
+            wire = await platformResponse.Content.ReadAsStringAsync();
+            if (wire.Contains("access.rate_limited", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            await Task.Delay(20);
+        }
+        SpecAssert.True(wire.Contains("access.rate_limited", StringComparison.Ordinal), "The first 429 in the minute window must be recorded.");
+        SpecAssert.False(wire.Contains("partitionHash", StringComparison.OrdinalIgnoreCase), "The partition hash must not be exposed by the API.");
+
+        var metrics = auditFixture.AuditMetrics.Snapshot();
+        SpecAssert.True(metrics.SecurityAuditSuppressedTotal >= 1, "Repeated 429 events must increment security_audit_suppressed_total.");
+    }),
+    new("TC-ACC-MVS01-080-API", "ADR-0009-D8", "監査sink障害と遅延でも元の拒否応答を維持", async () =>
+    {
+        await using var failureFixture = await ApiFixture.StartAsync(
+            configuration:
+            [
+                "PublicRateLimit:PermitLimit=1",
+                "Audit:WriteTimeoutMilliseconds=50",
+                "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+            ],
+            configureServices: services => services.AddSingleton<IAuditSink, DelayedFailingAuditSink>());
+        using var client = failureFixture.AnonymousClient();
+        using var permitted = await client.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
+
+        var stopwatch = Stopwatch.StartNew();
+        using var rejected = await client.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
+        stopwatch.Stop();
+        SpecAssert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode, "Audit failure must not replace the original 429 response.");
+        SpecAssert.True(stopwatch.Elapsed < TimeSpan.FromMilliseconds(500), "Audit I/O must not delay the rejection response path.");
+
+        var observedFailure = await WaitUntilAsync(
+            () => failureFixture.AuditMetrics.Snapshot().AuditWriteFailuresTotal >= 1,
+            TimeSpan.FromSeconds(2));
+        SpecAssert.True(observedFailure, "Audit failures must increment audit_write_failures_total for fallback monitoring.");
     })
 };
 
@@ -786,6 +890,27 @@ static WebApplicationOptions ProductionOptions(string[] args) => new()
 
 static QuestionContentRequest ValidContent(string suffix) =>
     new($"question {suffix}", $"body {suffix}", ["cloud", "library"]);
+
+static string Header(HttpResponseMessage response, string name) =>
+    response.Headers.TryGetValues(name, out var values)
+        ? values.Single()
+        : throw new TestFailureException($"Response header was missing: {name}");
+
+static async Task<bool> WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
+{
+    var started = Stopwatch.StartNew();
+    while (started.Elapsed < timeout)
+    {
+        if (predicate())
+        {
+            return true;
+        }
+
+        await Task.Delay(20);
+    }
+
+    return predicate();
+}
 
 static async Task<QuestionResponse> CreateDraftAsync(HttpClient client, string suffix)
 {
@@ -929,5 +1054,16 @@ file sealed class TemporaryDataProtectionMaterial : IDisposable
         {
             Directory.Delete(RootPath, recursive: true);
         }
+    }
+}
+
+file sealed class DelayedFailingAuditSink : IAuditSink
+{
+    public async Task<AuditOutcomeRecorded> WriteAsync(
+        AccessDenialAuditEnvelope envelope,
+        CancellationToken cancellationToken)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        throw new InvalidOperationException("test-only audit sink failure");
     }
 }

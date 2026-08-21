@@ -18,6 +18,8 @@
 - `QF-UML-MVS01-6R4` MVS-01 Stage 6R-4 テナント境界 UML仕様書 Version 0.1
 - `QF-ST6R4C-MVS01-001` MVS-01 Stage 6R-4C 非root PostgreSQL CI仕様書 Version 0.1
 - `QF-ST6R5-MVS01-001` MVS-01 Stage 6R-5 Draft PR受入・全体回帰仕様 Version 0.1
+- `QF-ST6R6-MVS01-001` MVS-01 Stage 6R-6 Platform Security監査境界仕様 Version 0.1
+- `QF-UML-MVS01-6R6` MVS-01 Stage 6R-6 Platform Security監査 UML仕様書 Version 0.1
 - `ADR-0003` 石狩本番・東京復旧と暗号化論理バックアップ
 - `ADR-0004` スマートフォンWeb UIと同一オリジンBFF/OIDC
 - `ADR-0005` Managed IdP候補とOIDC実プロトコルE2E
@@ -39,6 +41,7 @@
 | REQ-MVS01-SRH-001 | キーワード・タグ検索、安定順序 | API TC-015 | 最小実装済み。カーソルは次反復 |
 | REQ-MVS01-WD-001 | `PUBLISHED → WITHDRAWN`、公開404 | Domain TC-016、API TC-017 | 実装済み |
 | REQ-MVS01-AUD-001 | 許可リスト型の追記監査、Auditor専用・tenant限定・上限付き取得 | API TC-023/072-API、Mobile TC-055、PostgreSQL TC-025 | Reviewer拒否、他tenant不可視、旧無制限経路廃止まで実装済み |
+| REQ-MVS01-AUD-002 | tenant外拒否監査、要求/相関ID、429抑制、PlatformAuditor期間照会 | API TC-070/071/080、PostgreSQL TC-071 | APIはRED→GREEN。DB role native試験は非root CI待ち |
 | REQ-MVS01-DAT-001 | advisory lock付き埋込みマイグレーション | PostgreSQL TC-024 | 実装済み |
 | REQ-MVS01-DAT-002 | 状態・監査・冪等結果の原子的確定 | PostgreSQL TC-025 | 実装済み |
 | REQ-MVS01-AVL-001 | プロセス再起動後の公開データ保持 | PostgreSQL TC-026 | 実装済み |
@@ -93,8 +96,18 @@
 | 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
 |---|---|---|---|
 | ADR-0009-D7 / REQ-MVS01-AUD-001 | Auditor policy、`/api/ops/audit`、tenant・limit・許可リストDTO | API TC-072-API、Mobile TC-055、PostgreSQL TC-025 | ローカルAPI/Mobile GREEN。実DB回帰はCI gateで確認 |
-| QF-ST6R5-MVS01-001 | 非root full regression wrapper、exact-count evidence | CI構成契約8件、native 76件 | 構成契約8/8 GREEN。GitHub実行待ち |
-| ADR-0003 / REQ-MVS01-DR-002〜005 | 分離application roleで暗号化backup・隔離復元 | DR TC-030〜033 | DR runnerを現行DBロール境界へ更新。GitHub実行待ち |
+| QF-ST6R5-MVS01-001 | 非root full regression wrapper、exact-count evidence | CI構成契約8件、native 76件 | GitHub Actions Run #5で76/76 GREEN、artifact digest確認済み |
+| ADR-0003 / REQ-MVS01-DR-002〜005 | 分離application roleで暗号化backup・隔離復元 | DR TC-030〜033 | Run #5で4/4 GREEN |
+
+## Stage 6R-6 Platform Security監査追跡表
+
+| 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
+|---|---|---|---|
+| ADR-0009-D5/D6 | `X-Correlation-ID`と要求ごとの`X-Request-ID`、安全な再生成 | API TC-070-API | RED→GREEN、API 40/40 |
+| ADR-0009-D1 / ADR-0010-D2 | 拒否envelope、HMAC partition、UTC 1分429抑制、期間必須PlatformAuditor API | API TC-071-API | RED→GREEN |
+| ADR-0009-D8 | bounded queue、sink timeout、fallback metric/log、元応答維持 | API TC-080-API | RED→GREEN |
+| ADR-0010-D1 / RVR-N01 | migration 004、platform表、application/writer/reader権限分離 | PostgreSQL TC-071-PG | build済み、非root CI待ち |
+| QF-ST6R6-MVS01-001 | exact-count 80件、非root native、immutable evidence | CI構成契約6件 | 6/6 GREEN、GitHub実行待ち |
 
 ## テスト層の役割
 
@@ -128,5 +141,6 @@
 | UML-CLS/SM/SEQ-MVS01-6R2 | 承認対象版、tenant不変、理由分離 | Domain TC-063-DOM/079-DOM/081-DOM |
 | UML-CMP/SEQ-MVS01-6R3 | If-Match、版付きStore、冪等再送、応答ETag | API TC-064-API |
 | UML-CMP/SEQ/ER-MVS01-6R4 | 組織claim許可表、tenant伝搬、RLS、複合FK、正規化404 | API TC-065/069、PostgreSQL TC-066/067/068/074/075 |
+| UML-CMP/SEQ/DPL-MVS01-6R6 | request/correlation、非同期監査、429抑制、platform DB role分離 | API TC-070/071/080、PostgreSQL TC-071 |
 
-Pull Requestの完了条件は、要求ID、UML ID、実装、Domain/API/Mobile/OIDC E2E/PostgreSQL/DRテストIDのリンクが同じ変更内で維持されることです。Stage 6R-5のDraft PR gateはDomain 12、API 37、Mobile 6、OIDC E2E 7、PostgreSQL 10、DR 4の全76件をexact-countで要求します。Stage 6R残存10件、実IdP、実browser/スマートフォン、さくら実クラウドの判定は別gateです。
+Pull Requestの完了条件は、要求ID、UML ID、実装、Domain/API/Mobile/OIDC E2E/PostgreSQL/DRテストIDのリンクが同じ変更内で維持されることです。Stage 6R-6 gateはDomain 12、API 40、Mobile 6、OIDC E2E 7、PostgreSQL 11、DR 4の全80件をexact-countで要求します。Stage 6R残存6件、実IdP、実browser/スマートフォン、さくら実クラウドの判定は別gateです。

@@ -25,18 +25,27 @@ fi
 POSTGRES_DB_USER="${POSTGRES_DB_USER:-${POSTGRES_RUN_AS:-$(id -un)}}"
 POSTGRES_APPLICATION_ROLE="${MVS01_POSTGRES_APPLICATION_ROLE:-mvs01_app}"
 POSTGRES_MIGRATION_ROLE="${MVS01_POSTGRES_MIGRATION_ROLE:-mvs01_migrator}"
+POSTGRES_PLATFORM_WRITER_ROLE="${MVS01_POSTGRES_PLATFORM_AUDIT_WRITER_ROLE:-mvs01_platform_audit_writer}"
+POSTGRES_PLATFORM_READER_ROLE="${MVS01_POSTGRES_PLATFORM_AUDIT_READER_ROLE:-mvs01_platform_audit_reader}"
 POSTGRES_BYPASS_ROLE="${MVS01_POSTGRES_BYPASS_ROLE:-mvs01_bypass_test}"
 POSTGRES_PORT="${MVS01_POSTGRES_PORT:-55432}"
 POSTGRES_TEMP="$(mktemp -d /tmp/toi-no-mori-pg.XXXXXX)"
 POSTGRES_LOG="$POSTGRES_TEMP/postgresql.log"
 
-if [[ ! "$POSTGRES_APPLICATION_ROLE" =~ ^[a-z_][a-z0-9_]{0,62}$ \
-    || ! "$POSTGRES_MIGRATION_ROLE" =~ ^[a-z_][a-z0-9_]{0,62}$ \
-    || ! "$POSTGRES_BYPASS_ROLE" =~ ^[a-z_][a-z0-9_]{0,62}$ \
-    || "$POSTGRES_APPLICATION_ROLE" == "$POSTGRES_MIGRATION_ROLE" \
-    || "$POSTGRES_APPLICATION_ROLE" == "$POSTGRES_BYPASS_ROLE" \
-    || "$POSTGRES_MIGRATION_ROLE" == "$POSTGRES_BYPASS_ROLE" ]]; then
-    echo "PostgreSQL application/migration role名が安全な分離条件を満たしません。" >&2
+postgres_roles=(
+    "$POSTGRES_APPLICATION_ROLE"
+    "$POSTGRES_MIGRATION_ROLE"
+    "$POSTGRES_PLATFORM_WRITER_ROLE"
+    "$POSTGRES_PLATFORM_READER_ROLE"
+    "$POSTGRES_BYPASS_ROLE")
+for postgres_role in "${postgres_roles[@]}"; do
+    if [[ ! "$postgres_role" =~ ^[a-z_][a-z0-9_]{0,62}$ ]]; then
+        echo "PostgreSQL role名が安全な形式を満たしません。" >&2
+        exit 2
+    fi
+done
+if [[ "$(printf '%s\n' "${postgres_roles[@]}" | sort -u | wc -l)" -ne "${#postgres_roles[@]}" ]]; then
+    echo "PostgreSQL application/migration/platform audit roleの分離条件を満たしません。" >&2
     exit 2
 fi
 
@@ -93,6 +102,8 @@ run_postgres "$POSTGRES_BIN_DIR/psql" \
     --set=ON_ERROR_STOP=1 \
     --set="application_role=$POSTGRES_APPLICATION_ROLE" \
     --set="migration_role=$POSTGRES_MIGRATION_ROLE" \
+    --set="platform_writer_role=$POSTGRES_PLATFORM_WRITER_ROLE" \
+    --set="platform_reader_role=$POSTGRES_PLATFORM_READER_ROLE" \
     --set="bypass_role=$POSTGRES_BYPASS_ROLE" \
     <<'SQL' >/dev/null
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
@@ -101,11 +112,15 @@ CREATE ROLE :"application_role"
     LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 CREATE ROLE :"migration_role"
     LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+CREATE ROLE :"platform_writer_role"
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+CREATE ROLE :"platform_reader_role"
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
 CREATE ROLE :"bypass_role"
     LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION BYPASSRLS;
 
 GRANT CONNECT ON DATABASE postgres
-    TO :"application_role", :"migration_role", :"bypass_role";
+    TO :"application_role", :"migration_role", :"platform_writer_role", :"platform_reader_role", :"bypass_role";
 GRANT CREATE ON DATABASE postgres TO :"migration_role";
 GRANT USAGE, CREATE ON SCHEMA public TO :"migration_role" WITH GRANT OPTION;
 REVOKE CREATE ON SCHEMA public FROM :"application_role";
@@ -113,6 +128,8 @@ SQL
 
 export MVS01_TEST_POSTGRES_CONNECTION="Host=127.0.0.1;Port=$POSTGRES_PORT;Username=$POSTGRES_APPLICATION_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
 export MVS01_TEST_POSTGRES_MIGRATOR_CONNECTION="Host=127.0.0.1;Port=$POSTGRES_PORT;Username=$POSTGRES_MIGRATION_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+export MVS01_TEST_POSTGRES_PLATFORM_AUDIT_WRITER_CONNECTION="Host=127.0.0.1;Port=$POSTGRES_PORT;Username=$POSTGRES_PLATFORM_WRITER_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+export MVS01_TEST_POSTGRES_PLATFORM_AUDIT_READER_CONNECTION="Host=127.0.0.1;Port=$POSTGRES_PORT;Username=$POSTGRES_PLATFORM_READER_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
 export MVS01_TEST_POSTGRES_ADMIN_CONNECTION="Host=127.0.0.1;Port=$POSTGRES_PORT;Username=$POSTGRES_DB_USER;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
 export MVS01_TEST_POSTGRES_BYPASS_CONNECTION="Host=127.0.0.1;Port=$POSTGRES_PORT;Username=$POSTGRES_BYPASS_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
 export MVS01_TEST_PG_CTL="$POSTGRES_BIN_DIR/pg_ctl"

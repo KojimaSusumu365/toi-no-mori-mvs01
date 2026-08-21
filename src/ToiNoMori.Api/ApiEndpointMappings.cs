@@ -69,6 +69,9 @@ public static class ApiEndpointMappings
             .RequireAuthorization("Auditor")
             .AddEndpointFilter<RequireTenantFilter>();
 
+        app.MapGet("/api/platform/security-events", ReadPlatformSecurityEvents)
+            .RequireAuthorization("PlatformAuditor");
+
         var publicApi = app.MapGroup("/api/public/questions")
             .RequireRateLimiting("public");
 
@@ -122,6 +125,59 @@ public static class ApiEndpointMappings
             .Select(AuditRecordResponse.From)
             .ToArray()));
     }
+
+    private static Task<IResult> ReadPlatformSecurityEvents(
+        string? from,
+        string? to,
+        int? limit,
+        IPlatformSecurityEventReader reader,
+        CancellationToken cancellationToken)
+    {
+        var boundedLimit = limit ?? 50;
+        if (!DateTimeOffset.TryParseExact(
+                from,
+                "O",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var fromInclusive)
+            || !DateTimeOffset.TryParseExact(
+                to,
+                "O",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var toExclusive)
+            || fromInclusive >= toExclusive
+            || toExclusive - fromInclusive > TimeSpan.FromDays(31)
+            || boundedLimit is < 1 or > 200)
+        {
+            return Task.FromResult<IResult>(Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["period"] = ["from/to must be round-trip UTC timestamps spanning at most 31 days."],
+                ["limit"] = ["limit must be between 1 and 200."]
+            }));
+        }
+
+        return ReadPlatformSecurityEventsAsync(
+            reader,
+            fromInclusive.ToUniversalTime(),
+            toExclusive.ToUniversalTime(),
+            boundedLimit,
+            cancellationToken);
+    }
+
+    private static Task<IResult> ReadPlatformSecurityEventsAsync(
+        IPlatformSecurityEventReader reader,
+        DateTimeOffset fromInclusive,
+        DateTimeOffset toExclusive,
+        int limit,
+        CancellationToken cancellationToken) => ExecuteAsync(async () => Results.Ok(
+        (await reader.ReadAsync(
+            fromInclusive,
+            toExclusive,
+            limit,
+            cancellationToken))
+        .Select(PlatformSecurityEventResponse.From)
+        .ToArray()));
 
     private static Task<IResult> FindAdministrativeQuestion(
         Guid id,
@@ -189,7 +245,7 @@ public static class ApiEndpointMappings
                 TenantResolver.Current(httpContext),
                 content!,
                 Subject(httpContext.User),
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
             return Results.Created($"/api/admin/questions/{result.Id}", QuestionResponse.From(result));
@@ -224,7 +280,7 @@ public static class ApiEndpointMappings
                 content!,
                 version,
                 Subject(httpContext.User),
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
             return Results.Ok(QuestionResponse.From(result));
@@ -240,7 +296,7 @@ public static class ApiEndpointMappings
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken))));
 
     private static Task<IResult> ReturnQuestion(
@@ -264,7 +320,7 @@ public static class ApiEndpointMappings
                 id,
                 Subject(httpContext.User),
                 reason!,
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken))));
     }
 
@@ -308,7 +364,7 @@ public static class ApiEndpointMappings
                 Subject(httpContext.User),
                 expectedVersion,
                 idempotencyKey,
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
             return Results.Ok(QuestionResponse.From(result));
@@ -336,7 +392,7 @@ public static class ApiEndpointMappings
                 id,
                 Subject(httpContext.User),
                 reason!,
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken))));
     }
 

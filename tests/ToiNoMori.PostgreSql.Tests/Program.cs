@@ -25,6 +25,14 @@ var bypassConnectionString = Environment.GetEnvironmentVariable(
         "MVS01_TEST_POSTGRES_BYPASS_CONNECTION")
     ?? throw new InvalidOperationException(
         "MVS01_TEST_POSTGRES_BYPASS_CONNECTION is required.");
+var platformAuditWriterConnectionString = Environment.GetEnvironmentVariable(
+        "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_WRITER_CONNECTION")
+    ?? throw new InvalidOperationException(
+        "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_WRITER_CONNECTION is required.");
+var platformAuditReaderConnectionString = Environment.GetEnvironmentVariable(
+        "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_READER_CONNECTION")
+    ?? throw new InvalidOperationException(
+        "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_READER_CONNECTION is required.");
 
 var tests = new List<SpecTest>
 {
@@ -164,6 +172,96 @@ var tests = new List<SpecTest>
         await AssertRoleBoundaryRejectedAsync(
             bypassConnectionString,
             "A BYPASSRLS application credential must be rejected at startup.");
+    }),
+    new("TC-ACC-MVS01-071-PG", "ADR-0010-D1,RVR-N01", "platform監査表とwriter/readerロールをtenant境界から分離", async () =>
+    {
+        await using var fixture = await PostgreSqlApiFixture.StartAsync(
+            connectionString,
+            migrationConnectionString,
+            platformAuditWriterConnectionString,
+            platformAuditReaderConnectionString);
+        var applicationRole = new NpgsqlConnectionStringBuilder(connectionString).Username
+            ?? throw new TestFailureException("The application test role is required.");
+        var writerRole = new NpgsqlConnectionStringBuilder(platformAuditWriterConnectionString).Username
+            ?? throw new TestFailureException("The platform writer test role is required.");
+        var readerRole = new NpgsqlConnectionStringBuilder(platformAuditReaderConnectionString).Username
+            ?? throw new TestFailureException("The platform reader test role is required.");
+
+        await using var migrationDataSource = NpgsqlDataSource.Create(migrationConnectionString);
+        await using var migrationConnection = await migrationDataSource.OpenConnectionAsync();
+        await using (var boundary = new NpgsqlCommand(
+            """
+            SELECT
+                NOT has_table_privilege(@application_role, 'platform_security_events', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
+                AND has_table_privilege(@writer_role, 'platform_security_events', 'INSERT')
+                AND NOT has_table_privilege(@writer_role, 'platform_security_events', 'SELECT,UPDATE,DELETE,TRUNCATE')
+                AND has_table_privilege(@reader_role, 'platform_security_events', 'SELECT')
+                AND NOT has_table_privilege(@reader_role, 'platform_security_events', 'INSERT,UPDATE,DELETE,TRUNCATE')
+                AND NOT EXISTS (
+                    SELECT 1 FROM pg_roles
+                    WHERE rolname IN (@writer_role, @reader_role)
+                      AND (rolsuper OR rolinherit OR rolbypassrls))
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = current_schema()
+                      AND table_name = 'platform_security_events'
+                      AND column_name IN ('tenant_id', 'subject', 'raw_ip', 'token', 'cookie', 'claim', 'body'));
+            """,
+            migrationConnection))
+        {
+            boundary.Parameters.AddWithValue("application_role", applicationRole);
+            boundary.Parameters.AddWithValue("writer_role", writerRole);
+            boundary.Parameters.AddWithValue("reader_role", readerRole);
+            var separated = (bool)(await boundary.ExecuteScalarAsync() ?? false);
+            SpecAssert.True(separated, "Application, platform writer, and PlatformAuditor reader must have non-overlapping least privileges.");
+        }
+
+        var eventId = Guid.NewGuid();
+        await using (var writerDataSource = NpgsqlDataSource.Create(platformAuditWriterConnectionString))
+        await using (var writerConnection = await writerDataSource.OpenConnectionAsync())
+        {
+            await using var valid = new NpgsqlCommand(
+                """
+                INSERT INTO platform_security_events (
+                    id, occurred_at, reason_code, normalized_action, partition_hash,
+                    request_id, correlation_id, occurrence_count, window_started_at)
+                VALUES (
+                    @id, now(), 'tenant.claim_missing', 'POST /api/admin/questions',
+                    repeat('a', 64), 'request-test', 'correlation-test', 1, NULL);
+                """,
+                writerConnection);
+            valid.Parameters.AddWithValue("id", eventId);
+            SpecAssert.Equal(1, await valid.ExecuteNonQueryAsync(), "The dedicated writer must append an allowlisted platform event.");
+
+            await using var invalid = new NpgsqlCommand(
+                """
+                INSERT INTO platform_security_events (
+                    id, occurred_at, reason_code, normalized_action, partition_hash,
+                    request_id, correlation_id, occurrence_count, window_started_at)
+                VALUES (
+                    @id, now(), 'claim.raw.secret', 'POST /protected',
+                    repeat('b', 64), 'request-invalid', 'correlation-invalid', 1, NULL);
+                """,
+                writerConnection);
+            invalid.Parameters.AddWithValue("id", Guid.NewGuid());
+            try
+            {
+                await invalid.ExecuteNonQueryAsync();
+                throw new TestFailureException("The database must reject a non-allowlisted reason code.");
+            }
+            catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.CheckViolation)
+            {
+            }
+        }
+
+        await using var readerDataSource = NpgsqlDataSource.Create(platformAuditReaderConnectionString);
+        await using var readerConnection = await readerDataSource.OpenConnectionAsync();
+        await using var read = new NpgsqlCommand(
+            "SELECT count(*) FROM platform_security_events WHERE id = @id AND reason_code = 'tenant.claim_missing';",
+            readerConnection);
+        read.Parameters.AddWithValue("id", eventId);
+        SpecAssert.Equal(1L, (long)(await read.ExecuteScalarAsync() ?? 0L), "The reader-only PlatformAuditor credential must read the append-only projection.");
     }),
     new("TC-ACC-MVS01-067-PG", "ADR-0007-D3,RVA-C06", "RLSで他tenant行を不可視化", async () =>
     {
@@ -487,7 +585,7 @@ var tests = new List<SpecTest>
                 connection))
             {
                 var count = (long)(await migrations.ExecuteScalarAsync() ?? 0L);
-                SpecAssert.Equal(3L, count, "001, 002, and 003 migrations must each be recorded once.");
+                SpecAssert.Equal(4L, count, "001 through 004 migrations must each be recorded once.");
             }
 
             await using (var defaults = new NpgsqlCommand(

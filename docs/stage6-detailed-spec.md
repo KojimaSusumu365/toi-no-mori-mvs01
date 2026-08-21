@@ -1,6 +1,6 @@
 # QF-MVS01-S6-001 Stage 6 最小業務フロー詳細仕様書
 
-- Version: 0.7
+- Version: 0.8
 - 日付: 2026-08-16
 - 対象: 問いの森 CORE / MVS-01
 - 方式: V字工程を基本とするアジャイル反復
@@ -17,6 +17,7 @@
 | Editor | OIDC、MFA証跡、Editor role | 自分の問いの作成・一覧・詳細・編集・申請 | 他Editorの問いの閲覧・編集、承認 |
 | Reviewer | OIDC、MFA証跡、Reviewer role | 全管理対象の一覧・詳細、差し戻し、承認、取り下げ | 自分が作成した問いの承認、監査閲覧 |
 | Auditor | OIDC、MFA証跡、Auditor role | 同一tenantの許可リスト型監査metadataを上限付きで閲覧 | 問いの編集・審査、platform監査の閲覧 |
+| PlatformAuditor | OIDC、MFA証跡、PlatformAuditor role | 期間必須のplatform拒否metadata閲覧 | tenant監査、問いの編集・審査、無期限・無上限照会 |
 
 EditorとReviewerを兼務する利用者にも自己承認禁止を適用する。画面上の無効化は補助であり、最終判定はDomain/APIで行う。
 
@@ -69,6 +70,14 @@ Reviewerが入力した理由をEditorへ表示し、Editorが修正して再申
 - 管理更新は従来どおりCSRF、role、所有者、状態、版、冪等性を検査する。
 - access token、ID token、client secretをDOM、Web Storage、BFF session JSONへ出力しない。
 
+### REQ-MVS01-AUD-002 platform拒否監査
+
+- tenantを確定できない拒否をtenant監査へ混在させず、`platform_security_events`へ記録する。
+- 生IPは保存せず、rotation可能な秘密付きHMAC partitionへ変換する。
+- 429は同一partition・正規化action・UTC 1分窓で先頭だけを書込み、以後は抑制metricへ集約する。
+- PlatformAuditor APIは`from`、`to`を必須とし、最大31日・最大200件に制限する。
+- tenant AuditorとPlatformAuditorを分離し、相互の監査APIを403で拒否する。
+
 ## 4. 画面仕様
 
 | 画面/領域 | 主な表示 | 主な操作 | 状態通知 |
@@ -99,6 +108,10 @@ Query:
 
 Auditor、MFA、内部tenant解決を必須とする。`limit`は省略時50、1〜200。Reviewerだけの要求は403、旧`/api/admin/audit`は404とする。応答は`AuditRecordResponse[]`で、`Cache-Control: no-store`対象とする。
 
+### GET /api/platform/security-events
+
+PlatformAuditorとMFAを必須とする。`from`/`to`はUTC round-trip形式、最大31日、`limit`は1〜200。応答からpartition hash、tenant、subject、生IP、本文、claim、token、Cookieを除外し、`Cache-Control: no-store`対象とする。
+
 ## 6. セキュリティ設計
 
 - 認証はOIDC Authorization Code + PKCE、BFF Cookie方式を継続する。
@@ -118,6 +131,7 @@ Auditor、MFA、内部tenant解決を必須とする。`limit`は省略時50、1
 | SEC-006 | TC-051、056、058、059 | 詳細の所有者境界、ETag、CSRF、If-Match、冪等キー、PostgreSQL行scope、理由長上限 |
 | UI-003 | TC-052、057 | API受入と異なる実OIDC sessionの両方で公開まで完結 |
 | UI-004 | TC-053 | 差戻し理由を保持し、修正保存で消去 |
+| AUD-002 | TC-070-API、071-API/PG、080-API | ID分離、429抑制、PlatformAuditor/API/DB role分離、sink障害時の元応答維持 |
 
 ## 8. 完了条件と保留gate
 

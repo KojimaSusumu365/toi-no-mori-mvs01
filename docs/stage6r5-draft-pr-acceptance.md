@@ -4,7 +4,7 @@
 - 版: Version 0.1
 - 日付: 2026-08-20
 - 対象PR: `stage6r4c-postgresql-green-fix` → `main`
-- 判定: **ローカルRED→GREEN完了、GitHub native全76件の証跡待ち**
+- 判定: **受入完了。GitHub Actions Run #5でnative全76件GREEN**
 
 ## 1. 目的と範囲
 
@@ -64,3 +64,12 @@ flowchart TB
 - required status check設定、Draft解除、merge
 
 Draft解除とmergeは本書の自動受入に含めず、明示承認後に行う。
+
+## 7. Remote受入証跡
+
+- Run: `32426819759` / Run #5
+- head SHA: `63d56e3f40830d0ea5167b021bd5092f32d74c64`
+- Domain 12、API 37、Mobile 6、OIDC 7、PostgreSQL 10、DR 4、合計76/76
+- artifact: `stage6r5-full-regression-evidence-32426819759-1`
+- artifact SHA-256: `f01e6f1fe1d62e4ca4375c60fed15baf763910f8cbc3a79768c49ebbe3ed8b40`
+- PR #1は受入後もDraft・未mergeを維持した。
