@@ -4,7 +4,7 @@
 
 ASP.NET Core、PostgreSQL、スマートフォン向けWeb UI、OIDC/BFF認証境界、暗号化災害復旧を一つの縦切り実装へ接続した最小システムです。
 
-V字工程を基本とするアジャイル方式として、要求ID、ADR/UML ID、実装、自動試験IDを同じ反復で更新します。Stage 6R-6のローカル非DB範囲はDomain 12件、API 40件、Mobile 6件、OIDC E2E 7件の全65件がGREENです。
+V字工程を基本とするアジャイル方式として、要求ID、ADR/UML ID、実装、自動試験IDを同じ反復で更新します。Stage 6R-6はGitHub Actions Run #1でDomain 12件、API 40件、Mobile 6件、OIDC E2E 7件、PostgreSQL 11件、DR 4件の全80件を非root native実行し、GREENを確認済みです。
 
 ## 今回動く範囲
 
@@ -174,8 +174,7 @@ GitHub Actionsでは`.github/workflows/stage6r6-platform-security.yml`がUbuntu 
 
 ## 次の反復
 
-- Stage 6R-6全80件を非root GitHub Actionsで実行し、PostgreSQL 11/11とDR 4/4のartifactを確認する
-- 追記監査とrevisionのDB改ざん防止（TC-073-PG）を次の小反復でRED→GREEN化する
+- Stage 6R-7として追記監査とrevisionのDB改ざん防止（TC-073-PG）をRED→GREEN化する
 - 公開APIの複数tenant向けhost/path解決を設計する。現在は移行tenant MVS-01へ固定する
 - 実Entra tenant/MFAを使う受入とiOS/Android実機アクセシビリティ試験
 - さくらLoad Balancerのproxy trust、CRR、GSLB、東京復旧訓練
@@ -183,4 +182,4 @@ GitHub Actionsでは`.github/workflows/stage6r6-platform-security.yml`がUbuntu 
 - Infrastructure as Code、監視通知、鍵rotation、session失効運用
 - Azure/AWS/GCPへの将来adapter
 
-ローカル65件合格は本番承認ではありません。Stage 6R残存6件、実IdP、実端末、実クラウド、運用担当者による受入とSecurity Reviewは別gateです。
+Stage 6R-6の80件合格は本番承認ではありません。Stage 6R残存6件、実IdP、実端末、実クラウド、運用担当者による受入とSecurity Reviewは別gateです。

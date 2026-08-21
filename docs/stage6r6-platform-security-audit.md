@@ -1,10 +1,10 @@
 # Stage 6R-6 Platform Security監査境界 失敗先行→GREEN仕様書
 
 - 文書ID: QF-ST6R6-MVS01-001
-- 版: Version 0.1
-- 日付: 2026-08-20
+- 版: Version 0.2
+- 日付: 2026-08-21
 - 入力基準: ADR-0009 D1/D5/D6/D8、ADR-0010 D1/D2
-- 判定: **API RED→GREEN完了、PostgreSQL native 11件と全80件CI証跡待ち**
+- 判定: **受入完了。GitHub非root native 80/80 GREEN**
 
 ## 1. 目的
 
@@ -20,7 +20,7 @@ Stage 6R-5で確定したtenant Auditorはplatform監査を読めない。Platfo
 | 拒否metadataだけをplatform監査へ送る | `AccessDenialAuditEnvelope`、正規化action、HMAC partition | TC-ACC-MVS01-071-API | GREEN |
 | 429をUTC 1分窓で抑制する | bounded queue、process内抑制、DB部分一意索引 | TC-ACC-MVS01-071-API | GREEN |
 | 監査sink障害で元応答を変えない | 非同期worker、timeout、fallback metric/log | TC-ACC-MVS01-080-API | GREEN |
-| platform表とcredentialを分離する | migration 004、writer INSERT-only、reader SELECT-only | TC-ACC-MVS01-071-PG | build済み、非root CI待ち |
+| platform表とcredentialを分離する | migration 004、writer INSERT-only、reader SELECT-only | TC-ACC-MVS01-071-PG | GitHub非root PostgreSQL 11/11 GREEN |
 
 ## 3. HTTP契約
 
@@ -86,6 +86,19 @@ Stage 6R-5で確定したtenant Auditorはplatform監査を読めない。Platfo
 | **合計** | **80** |
 
 非root、native、Build警告0・エラー0、試験ID一意、正確件数、終了コード0をすべて必須とする。ローカルroot環境でPostgreSQL/DRを未実行のまま80/80とは判定しない。
+
+### 7.1 GitHub受入証跡
+
+- Workflow: `Stage 6R-6 platform security regression`
+- Run: `#1` / `32435956694`
+- head SHA: `419014d5cfae3f9ff438610f46b7d7330e3fa80a`
+- runner: Ubuntu 24.04、非root、native
+- 結果: Domain 12/12、API 40/40、Mobile 6/6、OIDC E2E 7/7、PostgreSQL 11/11、DR 4/4、合計80/80
+- Build: 警告0、エラー0
+- Artifact: `stage6r6-platform-security-evidence-32435956694-1` / ID `9430807397`
+- Artifact SHA-256: `b54439602551595837648a6a2c3e9c137e0d12ebe514a78460ec7891b990167d`
+
+詳細は`docs/evidence/stage6r6-github-acceptance.md`へ固定する。
 
 ## 8. 次の小反復
 

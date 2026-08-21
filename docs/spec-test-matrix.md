@@ -41,7 +41,7 @@
 | REQ-MVS01-SRH-001 | キーワード・タグ検索、安定順序 | API TC-015 | 最小実装済み。カーソルは次反復 |
 | REQ-MVS01-WD-001 | `PUBLISHED → WITHDRAWN`、公開404 | Domain TC-016、API TC-017 | 実装済み |
 | REQ-MVS01-AUD-001 | 許可リスト型の追記監査、Auditor専用・tenant限定・上限付き取得 | API TC-023/072-API、Mobile TC-055、PostgreSQL TC-025 | Reviewer拒否、他tenant不可視、旧無制限経路廃止まで実装済み |
-| REQ-MVS01-AUD-002 | tenant外拒否監査、要求/相関ID、429抑制、PlatformAuditor期間照会 | API TC-070/071/080、PostgreSQL TC-071 | APIはRED→GREEN。DB role native試験は非root CI待ち |
+| REQ-MVS01-AUD-002 | tenant外拒否監査、要求/相関ID、429抑制、PlatformAuditor期間照会 | API TC-070/071/080、PostgreSQL TC-071 | Run #1でAPI 40/40、PostgreSQL 11/11を含む全80/80 GREEN |
 | REQ-MVS01-DAT-001 | advisory lock付き埋込みマイグレーション | PostgreSQL TC-024 | 実装済み |
 | REQ-MVS01-DAT-002 | 状態・監査・冪等結果の原子的確定 | PostgreSQL TC-025 | 実装済み |
 | REQ-MVS01-AVL-001 | プロセス再起動後の公開データ保持 | PostgreSQL TC-026 | 実装済み |
@@ -106,8 +106,8 @@
 | ADR-0009-D5/D6 | `X-Correlation-ID`と要求ごとの`X-Request-ID`、安全な再生成 | API TC-070-API | RED→GREEN、API 40/40 |
 | ADR-0009-D1 / ADR-0010-D2 | 拒否envelope、HMAC partition、UTC 1分429抑制、期間必須PlatformAuditor API | API TC-071-API | RED→GREEN |
 | ADR-0009-D8 | bounded queue、sink timeout、fallback metric/log、元応答維持 | API TC-080-API | RED→GREEN |
-| ADR-0010-D1 / RVR-N01 | migration 004、platform表、application/writer/reader権限分離 | PostgreSQL TC-071-PG | build済み、非root CI待ち |
-| QF-ST6R6-MVS01-001 | exact-count 80件、非root native、immutable evidence | CI構成契約6件 | 6/6 GREEN、GitHub実行待ち |
+| ADR-0010-D1 / RVR-N01 | migration 004、platform表、application/writer/reader権限分離 | PostgreSQL TC-071-PG | Run #1で11/11 GREEN |
+| QF-ST6R6-MVS01-001 | exact-count 80件、非root native、immutable evidence | CI構成契約6件、native 80件 | Run #1で80/80 GREEN、artifact digest確認済み |
 
 ## テスト層の役割
 

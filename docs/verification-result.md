@@ -17,15 +17,16 @@
 | Mobile Web仕様テスト | 6/6。TC-055をAuditor専用境界へGREEN化 |
 | OIDC browser protocol E2E | 7/7 合格。試験IdPは組織claimを発行 |
 | 今回ローカル実行した非DB native test | 65/65 合格 |
-| PostgreSQL実DB統合テスト | Stage 6R-5 Run #5で10/10合格。Stage 6R-6はTC-071-PG追加後11件build済み、非root CI待ち |
+| PostgreSQL実DB統合テスト | Stage 6R-6 Run #1で11/11合格 |
 | Stage 6R-4C CI構成契約 | 6/6 合格。action SHA固定・read-only・非root/件数判定を確認 |
 | Stage 6R-4C root失敗閉鎖 | 合格。native suite未開始、exit 2、accepted=false |
 | Stage 6R-5 CI構成契約 | 8/8合格。exact-count 76件・非root・native・artifactを強制 |
 | Stage 6R-5 remote受入 | Run #5で76/76 GREEN、artifact digest確認済み |
 | Stage 6R-6 CI構成契約 | 6/6合格。exact-count 80件・非root・native・artifactを強制 |
+| Stage 6R-6 remote受入 | Run #1で80/80 GREEN、artifact digest確認済み |
 | Stage 6R残存契約 | 6/6 expected RED、harness error 0 |
-| DR暗号化・隔離復元 | Run #5で4/4合格。4 DB role対応後のStage 6R-6再実行待ち |
-| Stage 6R-6全体回帰 | Domain 12、API 40、Mobile 6、OIDC 7、PostgreSQL 11、DR 4＝80件。GitHub実行待ち |
+| DR暗号化・隔離復元 | Stage 6R-6 Run #1で4/4合格 |
+| Stage 6R-6全体回帰 | Domain 12、API 40、Mobile 6、OIDC 7、PostgreSQL 11、DR 4＝80/80 GREEN |
 
 Stage 6R-5では既知Mobile REDを見た目だけで閉じず、Reviewerを403とするAuditor専用`/api/ops/audit`、tenant不可視、1〜200件上限、許可リストDTO、旧`/api/admin/audit`廃止をnative API TC-072で固定した。変更前はMobile 5/6、API新規試験36/37、変更後はMobile 6/6、API 37/37である。
 
@@ -37,9 +38,9 @@ PostgreSQL 18.6のbinaryと10件のtest assemblyは存在する。`./scripts/tes
 
 DBロール反復ではTC-066-APIを失敗先行で追加し、既存35件合格・新規1件失敗を確認した。application/migration接続分離、異なるusername、双方の`VerifyFull`、最小GRANT、applicationロールの`NOINHERIT`・非owner・非superuser・非`BYPASSRLS`・schema `CREATE`なし・migration ledger権限なしの起動時診断を実装し、API 36/36へGREEN化した。TC-066-PGにはsuperuser・owner・`BYPASSRLS`候補の拒否も追加した。
 
-このWorkローカル環境では実DB runnerがinitdb前にexit 2で停止したが、その後GitHub Actions Run #4でPostgreSQL 10件を実測しDB gateを閉じた。Stage 6R-6の4 role版は新規TC-071-PGを含むため、11件として再受入する。
+このWorkローカル環境では実DB runnerがinitdb前にexit 2で停止したが、その後GitHub Actions Run #4でPostgreSQL 10件を実測しDB gateを閉じた。Stage 6R-6の4 role版はRun #1で新規TC-071-PGを含む11/11を再受入した。
 
-Stage 6R-4CはGitHub Actions Run #4でPostgreSQL 10/10、Stage 6R-5はRun #5で全76/76を確定した。Stage 6R-6では新workflowとJSON/Markdown/log証跡生成を追加し、ローカルCI構成契約6/6とroot失敗閉鎖を確認した。
+Stage 6R-4CはGitHub Actions Run #4でPostgreSQL 10/10、Stage 6R-5はRun #5で全76/76を確定した。Stage 6R-6はRun #1で全80/80を確定し、artifact ID `9430807397`、digest `b54439602551595837648a6a2c3e9c137e0d12ebe514a78460ec7891b990167d`、head SHAの一致を確認した。
 
 ## Stage 6 基準時点の履歴
 
@@ -103,8 +104,6 @@ OIDC E2Eは、一時self-signed certificateを個別にpin留めした実Kestrel
 
 - 実Entra tenantのapp registration、app roles、Conditional Access、MFA・組織claim受入
 - iOS Safari、Android Chrome、desktop Chromium/WebKitとscreen readerによるE2E
-- PostgreSQL実DB統合11件、DR4件をStage 6R-6 workflowで再実行
-- 4 DB role分離によるnative 80/80証跡を取得してrequired check候補を確定
 - 追記監査・revision改ざん防止TC-073-PG
 - 公開APIの複数tenant向けhost/path解決。現在は移行tenant MVS-01へ固定
 - さくらLoad Balancerのproxy trust、versioning、CRR、GSLB、東京復旧訓練
