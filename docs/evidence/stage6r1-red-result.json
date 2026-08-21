@@ -1,33 +1,20 @@
 {
-  "stage": "6R-6",
-  "purpose": "remaining failure-first contracts after platform security audit contracts moved to native API/PostgreSQL suites; failed is expected and is not acceptance",
-  "startedAtUtc": "2026-08-20T23:43:07.893635+00:00",
+  "stage": "6R-7",
+  "purpose": "remaining failure-first contracts after append-only PostgreSQL contract moved to the native suite; failed is expected and is not acceptance",
+  "startedAtUtc": "2026-08-21T01:40:10.912205+00:00",
   "environment": {
     "python": "3.12.13",
     "dotnet": "10.0.400",
     "postgresql": "postgres (PostgreSQL) 18.6"
   },
-  "testCount": 6,
-  "failedCount": 6,
+  "testCount": 5,
+  "failedCount": 5,
   "passedCount": 0,
   "harnessErrorCount": 0,
-  "evidenceHash": "sha256:e5ee42941bac351335bab3ffdc0636dccba0d817099008883a3fc363c1ae0b77",
+  "evidenceHash": "sha256:8bbc8136b1dcefb7fe8628edfc8c9a2687f944daee09ea522dfcd22754e5aeba",
   "isSimulated": false,
   "measurementScope": "local-static-contract",
   "results": [
-    {
-      "testId": "TC-ACC-MVS01-073-PG",
-      "layer": "PostgreSQL",
-      "requirementIds": [
-        "ADR-0009-D9"
-      ],
-      "result": "failed",
-      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
-      "detail": "missing 'REVOKE UPDATE, DELETE, TRUNCATE', 'prevent_audit_mutation', 'prevent_revision_mutation', 'BEFORE UPDATE OR DELETE'",
-      "durationMs": 0,
-      "isSimulated": false,
-      "measurementScope": "local-static-contract"
-    },
     {
       "testId": "TC-ACC-MVS01-076-MOB",
       "layer": "Mobile",

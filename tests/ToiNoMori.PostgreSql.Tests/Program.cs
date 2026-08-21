@@ -263,6 +263,119 @@ var tests = new List<SpecTest>
         read.Parameters.AddWithValue("id", eventId);
         SpecAssert.Equal(1L, (long)(await read.ExecuteScalarAsync() ?? 0L), "The reader-only PlatformAuditor credential must read the append-only projection.");
     }),
+    new("TC-ACC-MVS01-073-PG", "ADR-0009-D9", "監査行とrevisionを権限・triggerの二重境界で追記専用化", async () =>
+    {
+        await using var fixture = await PostgreSqlApiFixture.StartAsync(
+            connectionString,
+            migrationConnectionString,
+            platformAuditWriterConnectionString,
+            platformAuditReaderConnectionString);
+        var applicationRole = new NpgsqlConnectionStringBuilder(connectionString).Username
+            ?? throw new TestFailureException("The application test role is required.");
+        var writerRole = new NpgsqlConnectionStringBuilder(platformAuditWriterConnectionString).Username
+            ?? throw new TestFailureException("The platform writer test role is required.");
+        var readerRole = new NpgsqlConnectionStringBuilder(platformAuditReaderConnectionString).Username
+            ?? throw new TestFailureException("The platform reader test role is required.");
+
+        await using var migrationDataSource = NpgsqlDataSource.Create(migrationConnectionString);
+        await using var migrationConnection = await migrationDataSource.OpenConnectionAsync();
+        await using (var boundary = new NpgsqlCommand(
+            """
+            SELECT
+                NOT has_table_privilege(@application_role, 'audit_events', 'UPDATE,DELETE,TRUNCATE')
+                AND NOT has_table_privilege(@application_role, 'question_revisions', 'UPDATE,DELETE,TRUNCATE')
+                AND NOT has_table_privilege(@writer_role, 'platform_security_events', 'UPDATE,DELETE,TRUNCATE')
+                AND NOT has_table_privilege(@reader_role, 'platform_security_events', 'INSERT,UPDATE,DELETE,TRUNCATE')
+                AND (
+                    SELECT count(*) = 3
+                    FROM pg_trigger AS table_trigger
+                    JOIN pg_class AS table_class ON table_class.oid = table_trigger.tgrelid
+                    JOIN pg_namespace AS table_namespace ON table_namespace.oid = table_class.relnamespace
+                    WHERE table_namespace.nspname = current_schema()
+                      AND NOT table_trigger.tgisinternal
+                      AND table_trigger.tgenabled = 'O'
+                      AND (table_class.relname, table_trigger.tgname) IN (
+                          ('audit_events', 'prevent_audit_mutation'),
+                          ('platform_security_events', 'prevent_platform_audit_mutation'),
+                          ('question_revisions', 'prevent_revision_mutation')));
+            """,
+            migrationConnection))
+        {
+            boundary.Parameters.AddWithValue("application_role", applicationRole);
+            boundary.Parameters.AddWithValue("writer_role", writerRole);
+            boundary.Parameters.AddWithValue("reader_role", readerRole);
+            var protectedByPrivilegeAndTrigger =
+                (bool)(await boundary.ExecuteScalarAsync() ?? false);
+            SpecAssert.True(
+                protectedByPrivilegeAndTrigger,
+                "All append-only tables must deny mutation privileges and install enabled mutation-prevention triggers.");
+        }
+
+        using var editor = fixture.AuthenticatedClient("append-only-editor", "Editor");
+        using var createdResponse = await editor.PostAsJsonAsync(
+            "/api/admin/questions",
+            ValidContent("append-only"));
+        var created = await ReadQuestionAsync(createdResponse);
+        var (auditId, revisionId) = await FindAppendOnlyRowsAsync(
+            migrationConnectionString,
+            TenantIds.Mvs01,
+            created.Id);
+
+        var platformEventId = Guid.NewGuid();
+        await using (var writerDataSource = NpgsqlDataSource.Create(platformAuditWriterConnectionString))
+        await using (var writerConnection = await writerDataSource.OpenConnectionAsync())
+        await using (var append = new NpgsqlCommand(
+            """
+            INSERT INTO platform_security_events (
+                id, occurred_at, reason_code, normalized_action, partition_hash,
+                request_id, correlation_id, occurrence_count, window_started_at)
+            VALUES (
+                @id, now(), 'access.forbidden', 'POST /api/admin/questions',
+                repeat('c', 64), 'request-append-only', 'correlation-append-only', 1, NULL);
+            """,
+            writerConnection))
+        {
+            append.Parameters.AddWithValue("id", platformEventId);
+            SpecAssert.Equal(1, await append.ExecuteNonQueryAsync(), "The platform writer must still append before immutability checks.");
+        }
+
+        await AssertMutationRejectedAsync(
+            migrationConnectionString,
+            TenantIds.Mvs01,
+            "UPDATE audit_events SET result = 'tampered' WHERE id = @id;",
+            auditId,
+            "UPDATE on tenant audit must be rejected by the database trigger.");
+        await AssertMutationRejectedAsync(
+            migrationConnectionString,
+            TenantIds.Mvs01,
+            "DELETE FROM audit_events WHERE id = @id;",
+            auditId,
+            "DELETE on tenant audit must be rejected by the database trigger.");
+        await AssertMutationRejectedAsync(
+            migrationConnectionString,
+            TenantIds.Mvs01,
+            "UPDATE question_revisions SET title = 'tampered' WHERE id = @id;",
+            revisionId,
+            "UPDATE on a revision must be rejected by the database trigger.");
+        await AssertMutationRejectedAsync(
+            migrationConnectionString,
+            TenantIds.Mvs01,
+            "DELETE FROM question_revisions WHERE id = @id;",
+            revisionId,
+            "DELETE on a revision must be rejected by the database trigger.");
+        await AssertMutationRejectedAsync(
+            migrationConnectionString,
+            null,
+            "UPDATE platform_security_events SET occurrence_count = 2 WHERE id = @id;",
+            platformEventId,
+            "UPDATE on platform audit must be rejected by the database trigger.");
+        await AssertMutationRejectedAsync(
+            migrationConnectionString,
+            null,
+            "DELETE FROM platform_security_events WHERE id = @id;",
+            platformEventId,
+            "DELETE on platform audit must be rejected by the database trigger.");
+    }),
     new("TC-ACC-MVS01-067-PG", "ADR-0007-D3,RVA-C06", "RLSで他tenant行を不可視化", async () =>
     {
         await using var fixture = await PostgreSqlApiFixture.StartAsync(
@@ -823,6 +936,65 @@ static async Task SetTenantAsync(
         transaction);
     command.Parameters.AddWithValue("tenant_id", tenantId.ToString("D"));
     await command.ExecuteScalarAsync();
+}
+
+static async Task<(Guid AuditId, Guid RevisionId)> FindAppendOnlyRowsAsync(
+    string migrationConnectionString,
+    Guid tenantId,
+    Guid questionId)
+{
+    await using var dataSource = NpgsqlDataSource.Create(migrationConnectionString);
+    await using var connection = await dataSource.OpenConnectionAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
+    await SetTenantAsync(connection, transaction, tenantId);
+    await using var command = new NpgsqlCommand(
+        """
+        SELECT
+            (SELECT id FROM audit_events WHERE target_id = @question_id ORDER BY sequence_id LIMIT 1),
+            (SELECT id FROM question_revisions WHERE question_id = @question_id ORDER BY version LIMIT 1);
+        """,
+        connection,
+        transaction);
+    command.Parameters.AddWithValue("question_id", questionId);
+    await using var reader = await command.ExecuteReaderAsync();
+    if (!await reader.ReadAsync() || reader.IsDBNull(0) || reader.IsDBNull(1))
+    {
+        throw new TestFailureException("The append-only test precondition rows were not created.");
+    }
+
+    var result = (reader.GetGuid(0), reader.GetGuid(1));
+    await reader.CloseAsync();
+    await transaction.CommitAsync();
+    return result;
+}
+
+static async Task AssertMutationRejectedAsync(
+    string migrationConnectionString,
+    Guid? tenantId,
+    string sql,
+    Guid id,
+    string message)
+{
+    await using var dataSource = NpgsqlDataSource.Create(migrationConnectionString);
+    await using var connection = await dataSource.OpenConnectionAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
+    if (tenantId is Guid resolvedTenantId)
+    {
+        await SetTenantAsync(connection, transaction, resolvedTenantId);
+    }
+
+    await using var command = new NpgsqlCommand(sql, connection, transaction);
+    command.Parameters.AddWithValue("id", id);
+    try
+    {
+        var affected = await command.ExecuteNonQueryAsync();
+        await transaction.RollbackAsync();
+        throw new TestFailureException($"{message} Affected rows: {affected}.");
+    }
+    catch (PostgresException exception) when (exception.SqlState == "55000")
+    {
+        await transaction.RollbackAsync();
+    }
 }
 
 static async Task EnsureTenantAsync(

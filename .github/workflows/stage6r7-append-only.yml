@@ -1,24 +1,28 @@
-name: Stage 6R-6 platform security regression
+name: Stage 6R-7 append-only database regression
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: stage6r6-${{ github.workflow }}-${{ github.ref }}
+  group: stage6r7-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  platform-security-regression:
-    name: Native platform security regression 80/80 gate
+  append-only-regression:
+    name: Native append-only database regression 81/81 gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       CI: "true"
       MVS01_TOOL_DOWNLOAD_DIR: ${{ github.workspace }}/.tool-downloads
-      MVS01_CI_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/stage6r6
+      MVS01_CI_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/stage6r7
     steps:
       - name: Checkout without retained credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,18 +34,19 @@ jobs:
           ./scripts/test-stage6r4c-ci-contract.sh
           ./scripts/test-stage6r5-ci-contract.sh
           ./scripts/test-stage6r6-ci-contract.sh
+          ./scripts/test-stage6r7-ci-contract.sh
 
       - name: Restore checksum-verified tool downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .tool-downloads
-          key: stage6r6-tool-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/install-local-toolchain.sh') }}
+          key: stage6r7-tool-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/install-local-toolchain.sh') }}
 
       - name: Restore locked NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .nuget-packages
-          key: stage6r6-nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/packages.lock.json') }}
+          key: stage6r7-nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/packages.lock.json') }}
 
       - name: Install pinned local toolchain
         run: ./scripts/install-local-toolchain.sh
@@ -51,11 +56,11 @@ jobs:
           test "$(id -u)" -ne 0
           ./scripts/verify-toolchain.sh
 
-      - name: Run mandatory platform security gate
+      - name: Run mandatory append-only database gate
         id: full_gate
         run: |
           set +e
-          ./scripts/ci/run-stage6r6-full-regression-ci.sh
+          ./scripts/ci/run-stage6r7-full-regression-ci.sh
           gate_exit_code=$?
           set -e
           echo "exit_code=$gate_exit_code" >> "$GITHUB_OUTPUT"
@@ -63,22 +68,22 @@ jobs:
       - name: Add evidence to job summary
         if: always()
         run: |
-          if [[ -f artifacts/stage6r6/stage6r6-full-regression-summary.md ]]; then
-            cat artifacts/stage6r6/stage6r6-full-regression-summary.md >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f artifacts/stage6r7/stage6r7-full-regression-summary.md ]]; then
+            cat artifacts/stage6r7/stage6r7-full-regression-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Stage 6R-6 evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
+            echo "Stage 6R-7 evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload immutable CI evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: stage6r6-platform-security-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: artifacts/stage6r6
+          name: stage6r7-append-only-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/stage6r7
           if-no-files-found: error
           retention-days: 30
 
-      - name: Enforce native platform security acceptance
+      - name: Enforce native append-only acceptance
         if: always()
         env:
           FULL_GATE_EXIT_CODE: ${{ steps.full_gate.outputs.exit_code }}

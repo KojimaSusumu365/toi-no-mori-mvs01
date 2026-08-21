@@ -1,0 +1,62 @@
+# Stage 6R-7 DB追記専用・改ざん防止境界 RED→GREEN仕様書
+
+- 文書ID: QF-ST6R7-MVS01-001
+- 版: Version 0.1
+- 日付: 2026-08-21
+- 入力基準: ADR-0009 D9
+- 対象試験: `TC-ACC-MVS01-073-PG`
+- 現在判定: **失敗先行。native PostgreSQL RED確認待ち**
+
+## 1. 目的
+
+`audit_events`、`platform_security_events`、`question_revisions`を追記専用データとして扱い、通常実行credentialの最小権限とDB triggerの二重境界で既存行の更新・削除を拒否する。監査履歴や公開根拠となるrevisionを上書きせず、訂正は新しい監査行または新しいrevisionとして追加する。
+
+## 2. V字の仕様・試験対
+
+| 左側仕様 | 失敗先行試験 | GREEN実装 | 受入条件 |
+|---|---|---|---|
+| tenant監査は追記専用 | applicationによるUPDATE/DELETE/TRUNCATE権限とowner操作を検査 | `prevent_audit_mutation` | 権限なし、UPDATE/DELETEはSQLSTATE 55000 |
+| platform監査は追記専用 | writer/reader権限とowner操作を検査 | `prevent_platform_audit_mutation` | writerはINSERTのみ、readerはSELECTのみ |
+| revisionは不変 | application権限とowner操作を検査 | `prevent_revision_mutation` | UPDATE/DELETE拒否、訂正は新revision |
+| 全体回帰を正確件数で閉じる | Stage 6R-7 CI契約 | 非root native wrapper | PostgreSQL 12/12、全81/81 |
+
+## 3. 権限境界
+
+| credential | audit_events | platform_security_events | question_revisions |
+|---|---|---|---|
+| application | SELECT、INSERT | 権限なし | SELECT、INSERT |
+| platform audit writer | 権限なし | INSERT | 権限なし |
+| platform audit reader | 権限なし | SELECT | 権限なし |
+| migration | migration適用・所有者操作 | migration適用・所有者操作 | migration適用・所有者操作 |
+
+application、writer、readerから`UPDATE`、`DELETE`、`TRUNCATE`を明示的に剥奪する。migration credentialは通常APIから分離し、秘密管理・実行承認・監査対象とする。
+
+## 4. trigger境界
+
+- `audit_events`: `prevent_audit_mutation`
+- `platform_security_events`: `prevent_platform_audit_mutation`
+- `question_revisions`: `prevent_revision_mutation`
+- すべて`BEFORE UPDATE OR DELETE FOR EACH ROW`で有効化する。
+- 拒否はSQLSTATE `55000`を返す。
+- 例外messageへ行データ、subject、本文、token、接続情報を含めない。
+- INSERTとSELECTは既存role契約どおり継続する。
+
+triggerはmigration ownerによる通常のUPDATE/DELETE誤操作も拒否する。一方、table ownerまたはsuperuserはtrigger無効化やDDLを実行できるため、完全なWORM媒体を意味しない。保持期限、法的削除、partition detach、break-glass操作は通常アプリから分離し、将来ADRで別途定義する。
+
+## 5. 失敗先行条件
+
+実装前の`TC-ACC-MVS01-073-PG`は、3 tableのtriggerが存在しないためREDでなければならない。ローカルroot環境ではPostgreSQLを起動せず、GitHub非root runnerで実DB REDを取得する。Build成功や静的契約成功をnative GREENの代替にしない。
+
+## 6. GREEN受入gate
+
+| Suite | 必須件数 |
+|---|---:|
+| Domain | 12 |
+| API | 40 |
+| Mobile | 6 |
+| OIDC E2E | 7 |
+| PostgreSQL | 12 |
+| DR | 4 |
+| **合計** | **81** |
+
+非root、native、Build警告0・エラー0、試験ID一意、正確件数、終了コード0、immutable artifactをすべて必須とする。
