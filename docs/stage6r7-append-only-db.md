@@ -5,7 +5,7 @@
 - 日付: 2026-08-21
 - 入力基準: ADR-0009 D9
 - 対象試験: `TC-ACC-MVS01-073-PG`
-- 現在判定: **失敗先行RED確認済み。GREEN実装中**
+- 現在判定: **ACCEPTED（Run #3、81/81 GREEN）**
 
 ## 1. 目的
 
@@ -71,3 +71,14 @@ triggerはmigration ownerによる通常のUPDATE/DELETE誤操作も拒否する
 | **合計** | **81** |
 
 非root、native、Build警告0・エラー0、試験ID一意、正確件数、終了コード0、immutable artifactをすべて必須とする。
+
+## 7. GREEN受入結果
+
+- Run: `#3` / `32438157919`
+- head SHA: `83eb08dcc93fe430a28ec13a05211c6122d0c8ce`
+- 結果: Domain 12/12、API 40/40、Mobile 6/6、OIDC E2E 7/7、PostgreSQL 12/12、DR 4/4、合計81/81
+- Build: warning 0 / error 0
+- Artifact: `stage6r7-append-only-evidence-32438157919-1` / ID `9431515869`
+- Artifact SHA-256: `041f38a9ebfc9f42557b74a5735df8b4b25857a65fbd2e9af8d50db8766440c2`
+
+Run #2では新規TC-073-PGがGREENとなり、既存TC-075-PGのmigration台帳期待値が001〜004の4件に固定されていたことを回帰試験が検出した。期待値を001〜005の5件へ更新後、Run #3でPostgreSQL 12/12と全81/81を確定した。

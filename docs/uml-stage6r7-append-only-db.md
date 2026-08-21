@@ -54,3 +54,5 @@ sequenceDiagram
 | UPDATE/DELETE拒否 | TC-ACC-MVS01-073-PG owner credential実操作 |
 | INSERT継続 | TC-ACC-MVS01-073-PG API/writer事前条件 |
 | 全体回帰 | Stage 6R-7非root native 81/81 gate |
+
+GitHub Actions Run #3（`32438157919`）で上記V字対応をPostgreSQL 12/12、全81/81として受け入れた。
