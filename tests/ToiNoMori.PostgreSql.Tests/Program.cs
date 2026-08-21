@@ -698,7 +698,7 @@ var tests = new List<SpecTest>
                 connection))
             {
                 var count = (long)(await migrations.ExecuteScalarAsync() ?? 0L);
-                SpecAssert.Equal(4L, count, "001 through 004 migrations must each be recorded once.");
+                SpecAssert.Equal(5L, count, "001 through 005 migrations must each be recorded once.");
             }
 
             await using (var defaults = new NpgsqlCommand(
