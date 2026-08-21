@@ -47,6 +47,21 @@ public sealed class PostgreSqlRoleBoundaryValidator(
                   ON table_namespace.oid = table_class.relnamespace
                 WHERE table_namespace.nspname = current_schema()
                   AND table_class.relname = 'platform_security_events'
+            ),
+            append_only_triggers AS (
+                SELECT table_class.relname, table_trigger.tgname
+                FROM pg_trigger AS table_trigger
+                JOIN pg_class AS table_class
+                  ON table_class.oid = table_trigger.tgrelid
+                JOIN pg_namespace AS table_namespace
+                  ON table_namespace.oid = table_class.relnamespace
+                WHERE table_namespace.nspname = current_schema()
+                  AND NOT table_trigger.tgisinternal
+                  AND table_trigger.tgenabled = 'O'
+                  AND (table_class.relname, table_trigger.tgname) IN (
+                      ('audit_events', 'prevent_audit_mutation'),
+                      ('platform_security_events', 'prevent_platform_audit_mutation'),
+                      ('question_revisions', 'prevent_revision_mutation'))
             )
             SELECT
                 NOT role.rolsuper
@@ -106,6 +121,7 @@ public sealed class PostgreSqlRoleBoundaryValidator(
                     FROM platform_audit_table
                     WHERE has_table_privilege(
                         role.oid, oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+                AND (SELECT count(*) = 3 FROM append_only_triggers)
             FROM application_role AS role;
             """,
             connection);

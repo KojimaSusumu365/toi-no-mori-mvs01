@@ -120,7 +120,7 @@ public sealed class PostgreSqlMigrator(
                 {quotedSchema}.question_revisions,
                 {quotedSchema}.idempotency_records,
                 {quotedSchema}.audit_events
-            FROM {quotedRole};
+            FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
             GRANT SELECT, INSERT, UPDATE
                 ON TABLE {quotedSchema}.questions TO {quotedRole};
             GRANT SELECT, INSERT
@@ -131,6 +131,13 @@ public sealed class PostgreSqlMigrator(
                 ON TABLE {quotedSchema}.audit_events TO {quotedRole};
 
             REVOKE ALL PRIVILEGES ON TABLE {quotedSchema}.platform_security_events
+                FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
+            REVOKE UPDATE, DELETE, TRUNCATE ON TABLE
+                {quotedSchema}.audit_events,
+                {quotedSchema}.question_revisions
+                FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
+            REVOKE UPDATE, DELETE, TRUNCATE ON TABLE
+                {quotedSchema}.platform_security_events
                 FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
             GRANT INSERT ON TABLE {quotedSchema}.platform_security_events
                 TO {quotedPlatformWriter};

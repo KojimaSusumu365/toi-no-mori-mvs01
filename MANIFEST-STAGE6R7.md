@@ -7,4 +7,6 @@
 - Test ID uniqueness: GREEN
 - CI contract: Stage 6R-7 6/6、non-root、native exact-count 81/81、immutable evidence
 - Remaining failure-first contracts: 5/5 expected RED、harness error 0
-- Current status: native PostgreSQL expected REDをGitHubで取得する前の失敗先行状態
+- Failure-first remote: Run #1 (`32437227404`)、PostgreSQL 11/12、TC-073だけが期待RED
+- RED artifact: ID `9431226145`、SHA-256 `bbdd80b02d456eb66b17dd79a880f1659b4f29e3dcb5f3065506d3fea99b9d4a`
+- GREEN implementation: migration 005、明示REVOKE、3 mutation-prevention triggers

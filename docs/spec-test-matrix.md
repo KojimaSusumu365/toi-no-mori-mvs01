@@ -115,7 +115,7 @@
 
 | 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
 |---|---|---|---|
-| ADR-0009-D9 | `audit_events`、`platform_security_events`、`question_revisions`の権限・trigger二重境界 | PostgreSQL TC-073-PG | 失敗先行native test追加。GitHub実DB RED確認待ち |
+| ADR-0009-D9 | `audit_events`、`platform_security_events`、`question_revisions`の権限・trigger二重境界 | PostgreSQL TC-073-PG | Run #1で既存11件GREEN・TC-073だけ期待RED。migration 005実装中 |
 | QF-ST6R7-MVS01-001 | exact-count 81件、非root native、immutable evidence | CI構成契約6件 | 6/6 GREEN、GitHub実行待ち |
 
 ## テスト層の役割

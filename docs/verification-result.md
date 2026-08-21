@@ -32,6 +32,10 @@ Stage 6R-5では既知Mobile REDを見た目だけで閉じず、Reviewerを403�
 
 Stage 6R-6では既存API 37件GREENの上にTC-070/071/080を失敗先行で追加し、37/40 REDを実測した。相関ID・要求ID分離、HMAC partition、bounded非同期queue、UTC 1分429抑制、PlatformAuditor期間必須API、sink timeout/fallback metricを実装後、API 40/40へGREEN化した。
 
+## Stage 6R-7 失敗先行判定
+
+GitHub Actions Run #1（ID `32437227404`、head `9492377c250ced29af9da72eb39d78acb8b4b572`）で、Stage 6R-7の非root実DB REDを確認した。Domain 12/12、API 40/40、Mobile 6/6、OIDC 7/7、既存PostgreSQL 11件はGREENで、新規`TC-ACC-MVS01-073-PG`だけが3 tableのtrigger欠落により失敗した。artifact IDは`9431226145`、digestは`bbdd80b02d456eb66b17dd79a880f1659b4f29e3dcb5f3065506d3fea99b9d4a`である。これは受入合格ではなく、実装前欠落を固定した失敗先行証跡である。
+
 APIの失敗先行では、実装前に既存33件が合格し、TC-065はclaim欠落でも201、TC-069は他所有者が403となって2件が赤だった。実装後は35/35。追加ループで404本文差も除去し、他所有者・他tenant・不存在を同じProblem Detailsへ固定した。
 
 PostgreSQL 18.6のbinaryと10件のtest assemblyは存在する。`./scripts/test-postgresql.sh`を実行したが、このWork環境はrootから`nobody`への実効UID変更を禁止し、PostgreSQLはroot起動を拒否するため、initdb前にexit 2で安全停止した。root guardを外さず、実行結果をGREENへ数えていない。

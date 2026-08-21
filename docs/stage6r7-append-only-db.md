@@ -5,7 +5,7 @@
 - 日付: 2026-08-21
 - 入力基準: ADR-0009 D9
 - 対象試験: `TC-ACC-MVS01-073-PG`
-- 現在判定: **失敗先行。native PostgreSQL RED確認待ち**
+- 現在判定: **失敗先行RED確認済み。GREEN実装中**
 
 ## 1. 目的
 
@@ -46,6 +46,17 @@ triggerはmigration ownerによる通常のUPDATE/DELETE誤操作も拒否する
 ## 5. 失敗先行条件
 
 実装前の`TC-ACC-MVS01-073-PG`は、3 tableのtriggerが存在しないためREDでなければならない。ローカルroot環境ではPostgreSQLを起動せず、GitHub非root runnerで実DB REDを取得する。Build成功や静的契約成功をnative GREENの代替にしない。
+
+### 5.1 GitHub失敗先行証跡
+
+- Run: `#1` / `32437227404`
+- head SHA: `9492377c250ced29af9da72eb39d78acb8b4b572`
+- 結果: Domain 12/12、API 40/40、Mobile 6/6、OIDC 7/7、PostgreSQL 11/12
+- RED: `TC-ACC-MVS01-073-PG`だけがtrigger欠落で失敗
+- Artifact: `stage6r7-append-only-evidence-32437227404-1` / ID `9431226145`
+- Artifact SHA-256: `bbdd80b02d456eb66b17dd79a880f1659b4f29e3dcb5f3065506d3fea99b9d4a`
+
+既存11件がGREENのまま新規1件だけがREDであり、試験harnessやtoolchainの失敗ではない。
 
 ## 6. GREEN受入gate
 
