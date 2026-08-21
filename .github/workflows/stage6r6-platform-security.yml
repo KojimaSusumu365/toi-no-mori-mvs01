@@ -1,46 +1,51 @@
-name: Stage 6R-5 full regression
+name: Stage 6R-6 platform security regression
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: stage6r5-${{ github.workflow }}-${{ github.ref }}
+  group: stage6r6-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  full-regression:
-    name: Native full regression 76/76 gate
+  platform-security-regression:
+    name: Native platform security regression 80/80 gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       CI: "true"
       MVS01_TOOL_DOWNLOAD_DIR: ${{ github.workspace }}/.tool-downloads
-      MVS01_CI_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/stage6r5
+      MVS01_CI_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/stage6r6
     steps:
       - name: Checkout without retained credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Verify CI contract
+      - name: Verify CI contracts
         run: |
           ./scripts/test-stage6r4c-ci-contract.sh
           ./scripts/test-stage6r5-ci-contract.sh
+          ./scripts/test-stage6r6-ci-contract.sh
 
       - name: Restore checksum-verified tool downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .tool-downloads
-          key: stage6r4c-tool-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/install-local-toolchain.sh') }}
+          key: stage6r6-tool-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/install-local-toolchain.sh') }}
 
       - name: Restore locked NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .nuget-packages
-          key: stage6r4c-nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/packages.lock.json') }}
+          key: stage6r6-nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/packages.lock.json') }}
 
       - name: Install pinned local toolchain
         run: ./scripts/install-local-toolchain.sh
@@ -50,11 +55,11 @@ jobs:
           test "$(id -u)" -ne 0
           ./scripts/verify-toolchain.sh
 
-      - name: Run mandatory full regression gate
+      - name: Run mandatory platform security gate
         id: full_gate
         run: |
           set +e
-          ./scripts/ci/run-stage6r5-full-regression-ci.sh
+          ./scripts/ci/run-stage6r6-full-regression-ci.sh
           gate_exit_code=$?
           set -e
           echo "exit_code=$gate_exit_code" >> "$GITHUB_OUTPUT"
@@ -62,22 +67,22 @@ jobs:
       - name: Add evidence to job summary
         if: always()
         run: |
-          if [[ -f artifacts/stage6r5/stage6r5-full-regression-summary.md ]]; then
-            cat artifacts/stage6r5/stage6r5-full-regression-summary.md >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f artifacts/stage6r6/stage6r6-full-regression-summary.md ]]; then
+            cat artifacts/stage6r6/stage6r6-full-regression-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Stage 6R-5 evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
+            echo "Stage 6R-6 evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload immutable CI evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: stage6r5-full-regression-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: artifacts/stage6r5
+          name: stage6r6-platform-security-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/stage6r6
           if-no-files-found: error
           retention-days: 30
 
-      - name: Enforce native full regression acceptance
+      - name: Enforce native platform security acceptance
         if: always()
         env:
           FULL_GATE_EXIT_CODE: ${{ steps.full_gate.outputs.exit_code }}
