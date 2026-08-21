@@ -21,6 +21,9 @@ if [[ -z "${POSTGRES_RUN_AS+x}" ]]; then
     fi
 fi
 POSTGRES_DB_USER="${POSTGRES_DB_USER:-${POSTGRES_RUN_AS:-$(id -un)}}"
+POSTGRES_APPLICATION_ROLE="${MVS01_DR_POSTGRES_APPLICATION_ROLE:-mvs01_dr_app}"
+POSTGRES_PLATFORM_WRITER_ROLE="${MVS01_DR_POSTGRES_PLATFORM_WRITER_ROLE:-mvs01_dr_platform_writer}"
+POSTGRES_PLATFORM_READER_ROLE="${MVS01_DR_POSTGRES_PLATFORM_READER_ROLE:-mvs01_dr_platform_reader}"
 PRIMARY_PORT="${MVS01_DR_PRIMARY_PORT:-55432}"
 RECOVERY_PORT="${MVS01_DR_RECOVERY_PORT:-55433}"
 API_PORT="${MVS01_DR_API_PORT:-5083}"
@@ -28,6 +31,22 @@ MAX_RPO_SECONDS="${MVS01_DR_MAX_RPO_SECONDS:-3600}"
 MAX_RTO_SECONDS="${MVS01_DR_MAX_RTO_SECONDS:-14400}"
 DR_TEMP="$(mktemp -d /tmp/toi-no-mori-dr-drill.XXXXXX)"
 API_PID=""
+
+service_roles=(
+    "$POSTGRES_DB_USER"
+    "$POSTGRES_APPLICATION_ROLE"
+    "$POSTGRES_PLATFORM_WRITER_ROLE"
+    "$POSTGRES_PLATFORM_READER_ROLE")
+for service_role in "${service_roles[@]}"; do
+    if [[ ! "$service_role" =~ ^[a-z_][a-z0-9_]{0,62}$ ]]; then
+        echo "DR PostgreSQL role名が安全な形式を満たしません。" >&2
+        exit 2
+    fi
+done
+if [[ "$(printf '%s\n' "${service_roles[@]}" | sort -u | wc -l)" -ne "${#service_roles[@]}" ]]; then
+    echo "DR PostgreSQL migration/application/platform audit roleの分離条件を満たしません。" >&2
+    exit 2
+fi
 
 if [[ -n "$POSTGRES_RUN_AS" ]] \
     && ! runuser -u "$POSTGRES_RUN_AS" -- true >/dev/null 2>&1; then
@@ -102,6 +121,32 @@ start_cluster() {
     fi
 }
 
+create_service_roles() {
+    local port="$1"
+    run_postgres "$POSTGRES_BIN_DIR/psql" \
+        --host=127.0.0.1 \
+        --port="$port" \
+        --username="$POSTGRES_DB_USER" \
+        --dbname=postgres \
+        --no-psqlrc \
+        --set=ON_ERROR_STOP=1 \
+        --set="application_role=$POSTGRES_APPLICATION_ROLE" \
+        --set="platform_writer_role=$POSTGRES_PLATFORM_WRITER_ROLE" \
+        --set="platform_reader_role=$POSTGRES_PLATFORM_READER_ROLE" \
+        <<'SQL' >/dev/null
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+CREATE ROLE :"application_role"
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+CREATE ROLE :"platform_writer_role"
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+CREATE ROLE :"platform_reader_role"
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+GRANT CONNECT ON DATABASE postgres
+    TO :"application_role", :"platform_writer_role", :"platform_reader_role";
+REVOKE CREATE ON SCHEMA public FROM :"application_role";
+SQL
+}
+
 wait_for_url() {
     local url="$1"
     for _ in $(seq 1 120); do
@@ -117,13 +162,20 @@ start_api() {
     local port="$1"
     local database_port="$2"
     local log_file="$3"
-    local connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_DB_USER;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+    local application_connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_APPLICATION_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+    local migration_connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_DB_USER;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+    local platform_writer_connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_PLATFORM_WRITER_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
+    local platform_reader_connection_string="Host=127.0.0.1;Port=$database_port;Username=$POSTGRES_PLATFORM_READER_ROLE;Database=postgres;Pooling=false;Timeout=2;Command Timeout=2;SSL Mode=Disable"
 
     env \
         ASPNETCORE_ENVIRONMENT=Testing \
         ASPNETCORE_URLS="http://127.0.0.1:$port" \
         Persistence__Provider=PostgreSql \
-        ConnectionStrings__PostgreSql="$connection_string" \
+        ConnectionStrings__PostgreSql="$application_connection_string" \
+        ConnectionStrings__PostgreSqlMigrator="$migration_connection_string" \
+        ConnectionStrings__PostgreSqlPlatformAuditWriter="$platform_writer_connection_string" \
+        ConnectionStrings__PostgreSqlPlatformAuditReader="$platform_reader_connection_string" \
+        Audit__PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY= \
         dotnet "$PROJECT_ROOT/src/ToiNoMori.Api/bin/Release/net10.0/ToiNoMori.Api.dll" \
         >"$log_file" 2>&1 &
     API_PID="$!"
@@ -177,15 +229,20 @@ openssl req -x509 \
 chmod 600 "$DR_TEMP/signer.key" "$DR_TEMP/recovery.key"
 
 start_cluster primary "$PRIMARY_PORT"
+create_service_roles "$PRIMARY_PORT"
 start_api "$API_PORT" "$PRIMARY_PORT" "$DR_TEMP/primary-api.log"
 stop_api
 
 "${psql_primary[@]}" >/dev/null <<'SQL'
+BEGIN;
+SET CONSTRAINTS ALL DEFERRED;
 INSERT INTO questions (
-    id, title, body, tags, status, version, owner_subject,
-    created_at, updated_at, published_at, review_reason)
+    id, tenant_id, title, body, tags, status, version, owner_subject,
+    created_at, updated_at, published_at, review_reason, withdrawal_reason,
+    approved_version, approved_by, published_revision_id)
 VALUES (
     '00000000-0000-0000-0000-000000000030',
+    '7b48e239-07ef-4b34-a1fb-7f4fc7ff1673',
     'DR sentinel publication',
     'This record proves isolated disaster recovery.',
     ARRAY['dr', 'recovery'],
@@ -195,18 +252,46 @@ VALUES (
     clock_timestamp(),
     clock_timestamp(),
     clock_timestamp(),
-    NULL);
+    NULL,
+    NULL,
+    3,
+    'dr-reviewer',
+    '00000000-0000-0000-0000-000000000030');
+
+INSERT INTO question_revisions (
+    tenant_id, id, question_id, version, title, body, tags, status,
+    owner_subject, created_at, recorded_at, published_at, review_reason,
+    withdrawal_reason, approved_version, approved_by)
+VALUES (
+    '7b48e239-07ef-4b34-a1fb-7f4fc7ff1673',
+    '00000000-0000-0000-0000-000000000030',
+    '00000000-0000-0000-0000-000000000030',
+    3,
+    'DR sentinel publication',
+    'This record proves isolated disaster recovery.',
+    ARRAY['dr', 'recovery'],
+    'PUBLISHED',
+    'dr-owner',
+    clock_timestamp(),
+    clock_timestamp(),
+    clock_timestamp(),
+    NULL,
+    NULL,
+    3,
+    'dr-reviewer');
 
 INSERT INTO audit_events (
-    id, actor_subject, target_id, action, result, correlation_id, occurred_at)
+    id, tenant_id, actor_subject, target_id, action, result, correlation_id, occurred_at)
 VALUES (
     '00000000-0000-0000-0000-000000000031',
+    '7b48e239-07ef-4b34-a1fb-7f4fc7ff1673',
     'dr-reviewer',
     '00000000-0000-0000-0000-000000000030',
     'question.approve',
     'success',
     'dr-drill-seed',
     clock_timestamp());
+COMMIT;
 SQL
 
 mkdir -p "$DR_TEMP/backups"
@@ -273,6 +358,7 @@ snapshot_started_at="$(jq -r '.snapshotStartedAtUtc' "$DR_TEMP/validation/manife
 disaster_epoch="$(date -u +%s)"
 stop_cluster "$DR_TEMP/primary"
 start_cluster recovery "$RECOVERY_PORT"
+create_service_roles "$RECOVERY_PORT"
 
 mkdir -p "$DR_TEMP/recovered-payload"
 recovery_report="$(env \

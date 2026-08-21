@@ -39,3 +39,15 @@ Stage 6R-1では両契約を赤で固定した。PostgreSQL実プロセス、HTT
 ## Stage 6R-4C CI追補
 
 PostgreSQL native試験の件数とIDは変更しない。CI構成検査6件は受入試験85件や補助TC-066-APIへ加算せず、test harnessの構成gateとして別管理する。DB受入は、非root runner、`executionMode=native`、`isSimulated=false`、API 36/36、PostgreSQL 10/10、終了コード0の全条件を満たすGitHub Actions証跡でだけ閉じる。
+
+## Stage 6R-5 Draft PR受入追補
+
+`TC-ACC-MVS01-072-API`をsource contractからnative API試験へ移し、Reviewer拒否、Auditor取得、tenant不可視、1〜200件上限、旧無制限経路廃止を検査する。API suiteは37件となる。
+
+Draft PR受入gateはDomain 12、API 37、Mobile 6、OIDC 7、PostgreSQL 10、DR 4の合計76件をexact-countで要求する。CI構成検査8件は受入件数へ加算しない。DRは隔離local processのnative試験であり、石狩・東京の実リージョン切替を合格と表現しない。
+
+## Stage 6R-6 Platform Security監査追補
+
+`TC-ACC-MVS01-070-API`、`071-API`、`071-PG`、`080-API`をsource contractからnative試験へ移す。相関IDと要求IDの分離、PlatformAuditor期間必須API、429書込み抑制、sink障害時の元応答維持、application/writer/reader DB role分離を検査する。
+
+API suiteは40件、PostgreSQL suiteは11件となる。Stage 6R-6 gateはDomain 12、API 40、Mobile 6、OIDC 7、PostgreSQL 11、DR 4の合計80件をexact-countで要求する。CI構成検査6件は受入件数へ加算しない。残存failure-first contractは6件である。

@@ -1,6 +1,6 @@
 # ADR-0006 スマートフォン業務ワークスペースと管理閲覧境界
 
-- Status: Accepted for MVS-01 Stage 6
+- Status: Accepted; Auditor boundary amended in Stage 6R-5
 - Date: 2026-08-16
 
 ## Context
@@ -10,12 +10,13 @@ Stage 5では公開検索と下書き作成だけが画面操作可能であり�
 ## Decision
 
 - 既存の同一オリジンHTML/CSS/JavaScriptとBFF Cookieを継続する。
-- Editor、Reviewer、監査をroleで表示する単一ワークスペース内のタブとする。
+- Editor、Reviewer、Auditorをroleで表示する単一ワークスペース内のタブとする。
 - 管理一覧・詳細APIを追加し、Editorの所有者制約をStore/SQL段階で適用する。
 - 更新はCSRF、`If-Match`、状態規則、role、所有者をサーバーで再検査する。
 - 承認はブラウザで一意な`Idempotency-Key`を作り、Storeで一回だけ確定する。
 - DOMは要素生成と`textContent`だけで更新し、外部resource、inline code、Web Storageを使用しない。
-- Reviewerには監査本文ではなく許可リスト型の操作metadataだけを表示する。
+- Reviewer roleだけでは監査画面・監査APIを利用できない。tenant Auditorへだけ、1〜200件に制限した許可リスト型の操作metadataを表示する。
+- 監査APIは`/api/ops/audit`へ分離し、旧`/api/admin/audit`を廃止する。
 
 ## Consequences
 

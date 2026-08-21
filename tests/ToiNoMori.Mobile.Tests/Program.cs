@@ -115,7 +115,15 @@ var tests = new List<SpecTest>
         SpecAssert.True(html.Contains("id=\"editor-question-list\"", StringComparison.Ordinal), "The Editor must have a managed-question list.");
         SpecAssert.True(html.Contains("id=\"review-queue-list\"", StringComparison.Ordinal), "The Reviewer must have a review queue.");
         SpecAssert.True(html.Contains("id=\"published-question-list\"", StringComparison.Ordinal), "The Reviewer must see published questions.");
-        SpecAssert.True(javascript.Contains("Auditor", StringComparison.Ordinal), "Only an Auditor may be offered the audit view.");
+        SpecAssert.True(
+            javascript.Contains("auditTab.hidden = !hasRole(\"Auditor\")", StringComparison.Ordinal),
+            "Only an Auditor may be offered the audit view.");
+        SpecAssert.True(
+            javascript.Contains("if (!hasRole(\"Auditor\"))", StringComparison.Ordinal),
+            "The audit loader must enforce the Auditor role before issuing a request.");
+        SpecAssert.True(
+            javascript.Contains("/api/ops/audit?limit=50", StringComparison.Ordinal),
+            "The audit workspace must use the bounded Auditor API.");
         SpecAssert.False(
             javascript.Contains("hasRole(\"Reviewer\") && showView(\"audit-view\")", StringComparison.Ordinal),
             "Reviewer membership alone must not expose the audit view.");

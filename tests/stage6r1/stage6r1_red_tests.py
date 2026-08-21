@@ -168,33 +168,6 @@ def tc071_pg() -> tuple[bool, str]:
     )
 
 
-def tc072() -> tuple[bool, str]:
-    source = read("src/ToiNoMori.Api/ApiEndpointMappings.cs")
-    required = [
-        "/api/ops/audit/questions/{id}",
-        "/api/ops/audit?",
-        'RequireAuthorization("Auditor")',
-        "limit > 200",
-    ]
-    missing = [value for value in required if value not in source]
-    if "/api/admin/audit" in source:
-        missing.append("removal of /api/admin/audit")
-    return (not missing, "missing " + ", ".join(missing) if missing else "bounded ops audit API present")
-
-
-def tc073() -> tuple[bool, str]:
-    return require_across(
-        [
-            "src/ToiNoMori.Api/Persistence/Migrations/002_stage6r_expand.sql",
-            "src/ToiNoMori.Api/Persistence/Migrations/003_stage6r_contract.sql",
-        ],
-        "REVOKE UPDATE, DELETE, TRUNCATE",
-        "prevent_audit_mutation",
-        "prevent_revision_mutation",
-        "BEFORE UPDATE OR DELETE",
-    )
-
-
 def tc074() -> tuple[bool, str]:
     return require_across(
         [
@@ -294,15 +267,9 @@ def tc_perf() -> tuple[bool, str]:
 
 Contract = tuple[str, str, list[str], Callable[[], tuple[bool, str]]]
 CONTRACTS: list[Contract] = [
-    ("TC-ACC-MVS01-070-API", "API", ["ADR-0009-D5", "ADR-0009-D6"], tc070),
-    ("TC-ACC-MVS01-071-API", "API", ["ADR-0009-D1", "ADR-0010-D2"], tc071_api),
-    ("TC-ACC-MVS01-071-PG", "PostgreSQL", ["ADR-0010-D1", "RVR-N01"], tc071_pg),
-    ("TC-ACC-MVS01-072-API", "API", ["ADR-0009-D7"], tc072),
-    ("TC-ACC-MVS01-073-PG", "PostgreSQL", ["ADR-0009-D9"], tc073),
     ("TC-ACC-MVS01-076-MOB", "Mobile", ["ADR-0008-D1", "ADR-0009-D7"], tc076),
     ("TC-ACC-MVS01-077-OIDC", "OIDC", ["ADR-0007-D2", "ADR-0008-D1"], tc077),
     ("TC-ACC-MVS01-078-DR", "DR", ["ADR-0007-D5", "ADR-0008-D3"], tc078),
-    ("TC-ACC-MVS01-080-API", "API", ["ADR-0009-D8"], tc080),
     ("TC-ACC-MVS01-081-API", "API", ["ADR-0008-D4"], tc081_api),
     ("TC-PERF-MVS01-002-PG", "Performance", ["RV-040"], tc_perf),
 ]
@@ -310,7 +277,7 @@ CONTRACTS: list[Contract] = [
 
 def run() -> list[Result]:
     results: list[Result] = []
-    print("# ToiNoMori Stage 6R-4 remaining failure-first contracts")
+    print("# ToiNoMori Stage 6R-7 remaining failure-first contracts")
     print(f"1..{len(CONTRACTS)}")
     for number, (test_id, layer, requirements, check) in enumerate(CONTRACTS, start=1):
         started = perf_counter()
@@ -363,8 +330,8 @@ def main() -> int:
     harness_errors = sum(item.failureCode == "TEST_HARNESS_ERROR" for item in results)
     source_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     evidence = {
-        "stage": "6R-4",
-        "purpose": "remaining failure-first contracts after tenant API green and PostgreSQL tenant tests prepared; failed is expected and is not acceptance",
+        "stage": "6R-7",
+        "purpose": "remaining failure-first contracts after append-only PostgreSQL contract moved to the native suite; failed is expected and is not acceptance",
         "startedAtUtc": started_at,
         "environment": {
             "python": platform.python_version(),

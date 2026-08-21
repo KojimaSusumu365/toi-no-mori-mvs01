@@ -21,8 +21,37 @@ public sealed class PostgreSqlApiFixture : IAsyncDisposable
 
     public static async Task<PostgreSqlApiFixture> StartAsync(
         string applicationConnectionString,
-        string migrationConnectionString)
+        string migrationConnectionString,
+        string? platformAuditWriterConnectionString = null,
+        string? platformAuditReaderConnectionString = null)
     {
+        platformAuditWriterConnectionString ??= Environment.GetEnvironmentVariable(
+            "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_WRITER_CONNECTION")
+            ?? throw new InvalidOperationException(
+                "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_WRITER_CONNECTION is required.");
+        platformAuditReaderConnectionString ??= Environment.GetEnvironmentVariable(
+            "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_READER_CONNECTION")
+            ?? throw new InvalidOperationException(
+                "MVS01_TEST_POSTGRES_PLATFORM_AUDIT_READER_CONNECTION is required.");
+
+        var applicationSearchPath = new Npgsql.NpgsqlConnectionStringBuilder(
+            applicationConnectionString).SearchPath;
+        if (!string.IsNullOrWhiteSpace(applicationSearchPath))
+        {
+            platformAuditWriterConnectionString = new Npgsql.NpgsqlConnectionStringBuilder(
+                platformAuditWriterConnectionString)
+            {
+                SearchPath = applicationSearchPath,
+                Pooling = false
+            }.ConnectionString;
+            platformAuditReaderConnectionString = new Npgsql.NpgsqlConnectionStringBuilder(
+                platformAuditReaderConnectionString)
+            {
+                SearchPath = applicationSearchPath,
+                Pooling = false
+            }.ConnectionString;
+        }
+
         var apiContentRoot = Path.GetFullPath(
             Path.Combine(AppContext.BaseDirectory, "../../../../../src/ToiNoMori.Api"));
         var options = new WebApplicationOptions
@@ -32,6 +61,9 @@ public sealed class PostgreSqlApiFixture : IAsyncDisposable
                 "Persistence:Provider=PostgreSql",
                 $"ConnectionStrings:PostgreSql={applicationConnectionString}",
                 $"ConnectionStrings:PostgreSqlMigrator={migrationConnectionString}",
+                $"ConnectionStrings:PostgreSqlPlatformAuditWriter={platformAuditWriterConnectionString}",
+                $"ConnectionStrings:PostgreSqlPlatformAuditReader={platformAuditReaderConnectionString}",
+                "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
                 "Logging:LogLevel:Default=Warning",
                 "Logging:LogLevel:Microsoft.AspNetCore.DataProtection=Error"
             ],

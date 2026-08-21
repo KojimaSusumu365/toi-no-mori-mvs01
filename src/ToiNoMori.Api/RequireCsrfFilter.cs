@@ -19,6 +19,9 @@ public sealed class RequireCsrfFilter : IEndpointFilter
             || string.IsNullOrWhiteSpace(supplied)
             || !FixedTimeEquals(expected, supplied))
         {
+            SecurityAuditContext.MarkReason(
+                context.HttpContext,
+                SecurityAuditReasons.CsrfMissingOrInvalid);
             return Results.Problem(
                 statusCode: StatusCodes.Status403Forbidden,
                 title: "CSRF validation failed",

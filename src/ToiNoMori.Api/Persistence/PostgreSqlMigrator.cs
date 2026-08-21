@@ -52,6 +52,12 @@ public sealed class PostgreSqlMigrator(
             await ExecuteAsync(
                 connection,
                 transaction,
+                "SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED;",
+                null,
+                cancellationToken);
+            await ExecuteAsync(
+                connection,
+                transaction,
                 "INSERT INTO schema_migrations (version, applied_at) VALUES (@version, @applied_at);",
                 command =>
                 {
@@ -67,6 +73,8 @@ public sealed class PostgreSqlMigrator(
             transaction,
             schema,
             settings.ApplicationRole,
+            settings.PlatformAuditWriterRole,
+            settings.PlatformAuditReaderRole,
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -87,15 +95,22 @@ public sealed class PostgreSqlMigrator(
         NpgsqlTransaction transaction,
         string schema,
         string applicationRole,
+        string platformAuditWriterRole,
+        string platformAuditReaderRole,
         CancellationToken cancellationToken)
     {
         var quotedSchema = QuoteIdentifier(schema);
         var quotedRole = QuoteIdentifier(applicationRole);
+        var quotedPlatformWriter = QuoteIdentifier(platformAuditWriterRole);
+        var quotedPlatformReader = QuoteIdentifier(platformAuditReaderRole);
         var sql = $"""
             REVOKE CREATE ON SCHEMA {quotedSchema} FROM {quotedRole};
             GRANT USAGE ON SCHEMA {quotedSchema} TO {quotedRole};
+            REVOKE CREATE ON SCHEMA {quotedSchema} FROM {quotedPlatformWriter}, {quotedPlatformReader};
+            GRANT USAGE ON SCHEMA {quotedSchema} TO {quotedPlatformWriter}, {quotedPlatformReader};
 
-            REVOKE ALL PRIVILEGES ON TABLE {quotedSchema}.schema_migrations FROM {quotedRole};
+            REVOKE ALL PRIVILEGES ON TABLE {quotedSchema}.schema_migrations
+                FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
 
             REVOKE ALL PRIVILEGES ON TABLE {quotedSchema}.tenants FROM {quotedRole};
             GRANT SELECT ON TABLE {quotedSchema}.tenants TO {quotedRole};
@@ -105,7 +120,7 @@ public sealed class PostgreSqlMigrator(
                 {quotedSchema}.question_revisions,
                 {quotedSchema}.idempotency_records,
                 {quotedSchema}.audit_events
-            FROM {quotedRole};
+            FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
             GRANT SELECT, INSERT, UPDATE
                 ON TABLE {quotedSchema}.questions TO {quotedRole};
             GRANT SELECT, INSERT
@@ -114,6 +129,20 @@ public sealed class PostgreSqlMigrator(
                 ON TABLE {quotedSchema}.idempotency_records TO {quotedRole};
             GRANT SELECT, INSERT
                 ON TABLE {quotedSchema}.audit_events TO {quotedRole};
+
+            REVOKE ALL PRIVILEGES ON TABLE {quotedSchema}.platform_security_events
+                FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
+            REVOKE UPDATE, DELETE, TRUNCATE ON TABLE
+                {quotedSchema}.audit_events,
+                {quotedSchema}.question_revisions
+                FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
+            REVOKE UPDATE, DELETE, TRUNCATE ON TABLE
+                {quotedSchema}.platform_security_events
+                FROM {quotedRole}, {quotedPlatformWriter}, {quotedPlatformReader};
+            GRANT INSERT ON TABLE {quotedSchema}.platform_security_events
+                TO {quotedPlatformWriter};
+            GRANT SELECT ON TABLE {quotedSchema}.platform_security_events
+                TO {quotedPlatformReader};
 
             GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {quotedSchema} TO {quotedRole};
             """;

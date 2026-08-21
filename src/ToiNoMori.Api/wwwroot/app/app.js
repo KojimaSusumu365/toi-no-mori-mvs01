@@ -200,7 +200,7 @@ function configureWorkspaceRoles() {
   for (const role of state.session.roles) {
     const badge = document.createElement("span");
     badge.className = "role-badge";
-    badge.textContent = role === "Editor" ? "編集担当" : role === "Reviewer" ? "審査担当" : role;
+    badge.textContent = role === "Editor" ? "編集担当" : role === "Reviewer" ? "審査担当" : role === "Auditor" ? "監査担当" : role;
     elements.sessionRoles.append(badge);
   }
 
@@ -209,8 +209,17 @@ function configureWorkspaceRoles() {
   const auditTab = document.querySelector("#audit-view-button");
   editorTab.hidden = !hasRole("Editor");
   reviewerTab.hidden = !hasRole("Reviewer");
-  auditTab.hidden = !hasRole("Reviewer");
-  activateView(hasRole("Editor") ? "editor-view" : "reviewer-view");
+  auditTab.hidden = !hasRole("Auditor");
+  const initialView = hasRole("Editor")
+    ? "editor-view"
+    : hasRole("Reviewer")
+      ? "reviewer-view"
+      : hasRole("Auditor")
+        ? "audit-view"
+        : null;
+  if (initialView) {
+    activateView(initialView);
+  }
 }
 
 async function loadSession() {
@@ -477,7 +486,7 @@ function renderReviewerQuestions() {
 }
 
 async function loadManagedQuestions() {
-  if (!state.session) {
+  if (!state.session || (!hasRole("Editor") && !hasRole("Reviewer"))) {
     return;
   }
   setStatus(elements.editorStatus, "一覧を読み込んでいます。");
@@ -501,12 +510,12 @@ async function loadManagedQuestions() {
 }
 
 async function loadAudit() {
-  if (!hasRole("Reviewer")) {
+  if (!hasRole("Auditor")) {
     return;
   }
   setStatus(elements.auditStatus, "監査履歴を読み込んでいます。");
   try {
-    const records = await fetchJson("/api/admin/audit");
+    const records = await fetchJson("/api/ops/audit?limit=50");
     elements.auditList.replaceChildren();
     for (const record of (Array.isArray(records) ? records : []).slice(-50).reverse()) {
       const item = document.createElement("li");

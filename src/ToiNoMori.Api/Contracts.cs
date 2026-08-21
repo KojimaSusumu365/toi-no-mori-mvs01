@@ -45,3 +45,20 @@ public sealed record PublicQuestionResponse(
             ? new(value.Id, value.Title, value.Body, value.Tags, publishedAt)
             : null;
 }
+
+public sealed record AuditRecordResponse(
+    string Actor,
+    Guid TargetId,
+    string Action,
+    string Result,
+    string CorrelationId,
+    DateTimeOffset OccurredAt)
+{
+    public static AuditRecordResponse From(AuditRecord value) => new(
+        value.ActorSubject,
+        value.TargetId,
+        value.Action,
+        value.Result,
+        value.CorrelationId,
+        value.OccurredAt);
+}

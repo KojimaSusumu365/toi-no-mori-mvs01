@@ -82,3 +82,15 @@ T2では各contractを次のnative behavioral testへ置換する。
 - T4 外部受入: 未着手。
 
 赤は欠陥を確認した証拠であり、製品の合格数へ含めない。既存基準線63件もこの環境では再実行していないため、今回の成果物で「85件合格」とは表現しない。
+
+## Stage 6R-5移管記録
+
+`TC-ACC-MVS01-072-API`はAuditor専用tenant監査APIのnative挙動試験へ移管したため、本registryから除外した。残存contractは10件であり、`--assert-red`で10/10 expected RED、harness error 0を確認する。
+
+## Stage 6R-6移管記録
+
+`TC-ACC-MVS01-070-API`、`071-API`、`071-PG`、`080-API`はPlatform Security監査境界のnative挙動試験へ移管した。APIの実装前は既存37件GREEN・新規3件RED、実装後は40/40 GREENである。PostgreSQL TC-071-PGはassembly build済みで、非root CIの実測待ちである。registryの残存contractは6件となり、`--assert-red`で6/6 expected RED、harness error 0を確認する。
+
+## Stage 6R-7移管記録
+
+`TC-ACC-MVS01-073-PG`は監査行とrevisionの追記専用性を権限とtriggerで検査するnative PostgreSQL試験へ移管した。実装前のtest assemblyはBuild警告0・エラー0で、実DBではtrigger欠落によりREDとなる契約である。registryの残存contractは5件となり、`--assert-red`で5/5 expected RED、harness error 0を確認した。native RED/GREENは非root GitHub Actionsで取得する。

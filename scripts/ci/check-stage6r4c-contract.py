@@ -28,14 +28,14 @@ def load_evidence_module():
     return module
 
 
-def synthetic_log(api_passed: int = 36, pg_passed: int = 10) -> str:
-    api_failed = 36 - api_passed
+def synthetic_log(api_passed: int = 37, pg_passed: int = 10) -> str:
+    api_failed = 37 - api_passed
     pg_failed = 10 - pg_passed
     return "\n".join(
         [
             "# ToiNoMori.Api specification tests",
-            "1..36",
-            f"# result: {api_passed} passed; {api_failed} failed; 36 total",
+            "1..37",
+            f"# result: {api_passed} passed; {api_failed} failed; 37 total",
             "# ToiNoMori PostgreSQL integration tests",
             "1..10",
             f"# result: {pg_passed} passed; {pg_failed} failed; 10 total",
