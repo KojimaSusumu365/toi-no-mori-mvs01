@@ -1,0 +1,26 @@
+name: PLM Fresh Source Pool PR Runner
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/plm_fresh_sourcepool_build.py'
+      - '.github/workflows/plm-fresh-sourcepool-pr.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build three-domain blind source pool
+        run: python tools/plm_fresh_sourcepool_build.py
+      - name: Upload source pool build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-fresh-sourcepool-build
+          path: work/out/
+          retention-days: 7
