@@ -60,7 +60,7 @@ with pub_path.open(encoding='utf-8') as f:
         a=next((lower[k] for k in lower if k in ('answer','response','completion','a')), '')
         if not isinstance(q,str):q=str(q)
         if not isinstance(a,str):a=str(a)
-        src=next((lower[k] for k in lower if k in ('url','source_url','source','copyright')), '')
+        src=lower.get('url') or lower.get('source_url') or lower.get('source_uri') or ''
         uri=str(src) if src else f'{pub_url}#row={idx}'
         add('PUBLIC',f'PUB-JAGOV-{idx:06d}',(q+'。\n'+a).strip(),uri)
 
