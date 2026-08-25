@@ -355,7 +355,7 @@ if [[ -f "$backup_path" \
     && -f "$metadata_path" \
     && -f "$validation_report" \
     && "$(jq -r '.format' "$DR_TEMP/validation/manifest.json")" == "toi-no-mori-dr-backup-v1" ]] \
-    && ! rg -a -q 'DR sentinel publication|This record proves isolated disaster recovery' "$backup_path"; then
+    && ! grep -a -E -q 'DR sentinel publication|This record proves isolated disaster recovery' "$backup_path"; then
     printf 'ok 1 - TC-ACC-MVS01-030 [REQ-MVS01-DR-002] 署名済みAES-256-GCM暗号化バックアップ\n'
     passed=$((passed + 1))
 else
