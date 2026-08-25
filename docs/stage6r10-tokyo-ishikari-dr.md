@@ -1,11 +1,11 @@
 # Stage 6R-10 東京–石狩DR切替・復旧証跡 RED→GREEN仕様書
 
 - 文書ID: QF-ST6R10-MVS01-001
-- 版: Version 0.1
+- 版: Version 0.2
 - 日付: 2026-08-25
 - 入力基準: ADR-0003、ADR-0007 D5、ADR-0008 D3
 - 対象試験: `TC-ACC-MVS01-078-DR`
-- 現在判定: **FAILURE-FIRST / EXPECTED RED**
+- 現在判定: **ACCEPTED / 85 OF 85 GREEN**
 
 ## 1. 目的
 
@@ -61,7 +61,7 @@
 - `artifactHash=sha256:<64 hex>`
 - `status=accepted`
 
-## 6. 失敗先行条件
+## 6. 失敗先行条件（実施済み）
 
 TC-030〜033はGREENのまま、TC-078だけをREDとする。期待する不足は次の二点である。
 
@@ -69,6 +69,8 @@ TC-030〜033はGREENのまま、TC-078だけをREDとする。期待する不足
 2. 二者承認と切替時系列を検証してSHA-256封印する実装がない。
 
 既存4件の故障や環境エラーをTC-078のREDと読み替えない。
+
+GitHub Actions Run #1で既存84件GREEN、TC-078だけREDを確認した。これにより実装不足へ失敗原因を限定してからGREEN実装へ進んだ。
 
 ## 7. 受入gate
 
@@ -84,7 +86,21 @@ TC-030〜033はGREENのまま、TC-078だけをREDとする。期待する不足
 
 Build警告0・エラー0、試験ID一意、残存failure-first contract 1/1 expected RED、非root native exact-count 85/85、immutable CI artifactを必須とする。
 
-## 8. 物理リージョン受入との境界
+## 8. 受入結果
+
+GitHub Actions Run #4（head `818a1755065dff0897620e705b9712c341d80110`）で、非root native全85件とCI構成契約をGREENとした。
+
+- Domain 12/12、API 41/41、Mobile 7/7、OIDC E2E 8/8、PostgreSQL 12/12、DR 5/5
+- TC-030で暗号化artifact内のsentinel平文不在を実走査
+- TC-078でsource停止、migration 005、tenant複合FK、platform監査、異subject二者承認、時系列、SHA-256 sealを確認
+- RPO 0秒、RTO 2秒（暫定上限は各3,600秒、14,400秒）
+- DR内部artifact hash: `sha256:5b15306b162ab41e98450b22a6d92e56d8abf73b147817cf30bae2c8f409a3cf`
+- GitHub Artifact ID: `9546985315`
+- GitHub Artifact digest: `sha256:29e348d95888ce1440069ab5c22fcbf0d63dff63f9d637835f53121c590d5477`
+
+受入までの診断履歴と不採用runを含む根拠は`docs/evidence/stage6r10-github-acceptance.md`へ固定する。
+
+## 9. 物理リージョン受入との境界
 
 Stage 6R-10 GREENは、手順・データ・schema・証跡のnative再現性を示す。次は別gateである。
 

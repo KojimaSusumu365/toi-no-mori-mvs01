@@ -26,7 +26,7 @@
 - `QF-UML-MVS01-6R8` MVS-01 Stage 6R-8 スマートフォン承認ETag・role別DTO UML仕様書 Version 0.1
 - `QF-ST6R9-MVS01-001` MVS-01 Stage 6R-9 実OIDC tenant mapping・自己承認境界仕様 Version 0.1
 - `QF-UML-MVS01-6R9` MVS-01 Stage 6R-9 実OIDC tenant mapping・自己承認境界 UML仕様書 Version 0.1
-- `QF-ST6R10-MVS01-001` MVS-01 Stage 6R-10 東京–石狩DR切替・復旧証跡仕様 Version 0.1
+- `QF-ST6R10-MVS01-001` MVS-01 Stage 6R-10 東京–石狩DR切替・復旧証跡仕様 Version 0.2
 - `QF-UML-MVS01-6R10` MVS-01 Stage 6R-10 東京–石狩DR切替・復旧証跡 UML仕様書 Version 0.1
 - `ADR-0003` 石狩本番・東京復旧と暗号化論理バックアップ
 - `ADR-0004` スマートフォンWeb UIと同一オリジンBFF/OIDC
@@ -144,9 +144,9 @@
 
 | 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
 |---|---|---|---|
-| ADR-0003 / ADR-0007-D5 | 旧primary停止、最新migration・tenant複合FK・platform監査の隔離復元 | DR TC-078 | failure-first RED |
-| ADR-0003 / ADR-0008-D3 | 異subject二者承認、切替時系列、同時write禁止 | DR TC-078 | failure-first RED |
-| QF-ST6R10-MVS01-001 | canonical JSON、SHA-256 `artifactHash`、exact-count 85件 | CI構成契約6件、native 85件 | failure-first RED |
+| ADR-0003 / ADR-0007-D5 | 旧primary停止、最新migration・tenant複合FK・platform監査の隔離復元 | DR TC-078 | Run #1期待RED、Run #4 GREEN |
+| ADR-0003 / ADR-0008-D3 | 異subject二者承認、切替時系列、同時write禁止 | DR TC-078 | 同一subject・時系列逆転を拒否しGREEN |
+| QF-ST6R10-MVS01-001 | canonical JSON、SHA-256 `artifactHash`、exact-count 85件 | CI構成契約6件、native 85件 | Run #4で85/85 GREEN、artifact二重hash確認済み |
 
 ## テスト層の役割
 

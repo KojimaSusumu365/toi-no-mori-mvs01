@@ -57,3 +57,5 @@ API suiteは40件、PostgreSQL suiteは11件となる。Stage 6R-6 gateはDomain
 `TC-ACC-MVS01-078-DR`をsource contractからnative DR試験へ移す。旧primary停止、migration 005・複合外部キー・platform監査の復元、異subject二者承認、切替時系列、canonical JSONのSHA-256封印を一試験で検査する。
 
 DR suiteは5件となる。Stage 6R-10 gateはDomain 12、API 41、Mobile 7、OIDC 8、PostgreSQL 12、DR 5の合計85件をexact-countで要求する。native local dual-cluster実行を物理的なさくら石狩・東京リージョン切替と表現しない。残存failure-first contractは性能1件である。
+
+受入結果: GitHub Actions Run #1でTC-078だけの期待REDを確認し、Run #4で非root native 85/85をGREENとした。TC-030の暗号文走査、TC-078の最新schema・source隔離・二者承認・時系列・SHA-256 seal、immutable Artifact digestを受入証跡に含める。物理リージョン切替は引き続き別gateとする。
