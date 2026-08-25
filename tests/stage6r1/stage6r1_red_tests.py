@@ -192,20 +192,6 @@ def tc075() -> tuple[bool, str]:
     return (not missing, "missing " + ", ".join(missing) if missing else "expand/contract migration markers present")
 
 
-def tc077() -> tuple[bool, str]:
-    return require_across(
-        [
-            "tests/ToiNoMori.OidcE2e.Tests/TestOidcProvider.cs",
-            "tests/ToiNoMori.OidcE2e.Tests/Program.cs",
-        ],
-        "external_organization_id",
-        "tenant mapping",
-        "TC-ACC-MVS01-077-OIDC",
-        'If-Match',
-        "self approval",
-    )
-
-
 def tc078() -> tuple[bool, str]:
     return require(
         "scripts/test-disaster-recovery.sh",
@@ -246,7 +232,6 @@ def tc_perf() -> tuple[bool, str]:
 
 Contract = tuple[str, str, list[str], Callable[[], tuple[bool, str]]]
 CONTRACTS: list[Contract] = [
-    ("TC-ACC-MVS01-077-OIDC", "OIDC", ["ADR-0007-D2", "ADR-0008-D1"], tc077),
     ("TC-ACC-MVS01-078-DR", "DR", ["ADR-0007-D5", "ADR-0008-D3"], tc078),
     ("TC-PERF-MVS01-002-PG", "Performance", ["RV-040"], tc_perf),
 ]
@@ -254,7 +239,7 @@ CONTRACTS: list[Contract] = [
 
 def run() -> list[Result]:
     results: list[Result] = []
-    print("# ToiNoMori Stage 6R-8 remaining failure-first contracts")
+    print("# ToiNoMori Stage 6R-9 remaining failure-first contracts")
     print(f"1..{len(CONTRACTS)}")
     for number, (test_id, layer, requirements, check) in enumerate(CONTRACTS, start=1):
         started = perf_counter()
@@ -307,8 +292,8 @@ def main() -> int:
     harness_errors = sum(item.failureCode == "TEST_HARNESS_ERROR" for item in results)
     source_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     evidence = {
-        "stage": "6R-8",
-        "purpose": "remaining failure-first contracts after mobile ETag and role DTO contracts moved to native suites; failed is expected and is not acceptance",
+        "stage": "6R-9",
+        "purpose": "remaining failure-first contracts after real OIDC tenant mapping and self-approval boundary moved to the native suite; failed is expected and is not acceptance",
         "startedAtUtc": started_at,
         "environment": {
             "python": platform.python_version(),

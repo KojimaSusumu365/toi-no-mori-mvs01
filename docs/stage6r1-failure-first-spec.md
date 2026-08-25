@@ -98,3 +98,7 @@ T2では各contractを次のnative behavioral testへ置換する。
 ## Stage 6R-8移管記録
 
 `TC-ACC-MVS01-076-MOB`と`TC-ACC-MVS01-081-API`を、それぞれMobile/API native suiteへ移管した。実装前はMobile 6/7、API 40/41で新規試験だけがREDとなり、Build警告0・エラー0、試験ID一意性GREENを確認した。registryの残存contractは3件であり、`--assert-red`で3/3 expected RED、harness error 0を確認した。
+
+## Stage 6R-9移管記録
+
+`TC-ACC-MVS01-077-OIDC`を実HTTPS OIDC native suiteへ移管した。dual-role同一`sub`のstrong ETag自己承認403を維持しつつ、未登録組織がBFF Cookie発行前に拒否されることを追加した。実装前は既存OIDC 7件GREEN、新規TC-077だけREDである。registryの残存contractは2件となり、`--assert-red`で2/2 expected RED、harness error 0を確認する。

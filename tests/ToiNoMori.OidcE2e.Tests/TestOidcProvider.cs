@@ -19,6 +19,8 @@ internal enum TestIdentityProfile
 {
     EditorWithMfa,
     ReviewerWithMfa,
+    EditorReviewerWithMfa,
+    UnmappedOrganizationEditorWithMfa,
     EditorWithoutMfa,
     InvalidSignature,
     StaleAuthentication
@@ -216,13 +218,35 @@ internal sealed class TestOidcProvider : IAsyncDisposable
         var authenticationTime = profile == TestIdentityProfile.StaleAuthentication
             ? now.AddMinutes(-30)
             : now;
-        var reviewer = profile == TestIdentityProfile.ReviewerWithMfa;
+        var identity = profile switch
+        {
+            TestIdentityProfile.ReviewerWithMfa => (
+                Subject: "reviewer-e2e",
+                Name: "E2E Reviewer",
+                Roles: new[] { "Reviewer" },
+                ExternalOrganizationId: "org-mvs01"),
+            TestIdentityProfile.EditorReviewerWithMfa => (
+                Subject: "dual-role-owner-e2e",
+                Name: "E2E Dual Role Owner",
+                Roles: new[] { "Editor", "Reviewer" },
+                ExternalOrganizationId: "org-mvs01"),
+            TestIdentityProfile.UnmappedOrganizationEditorWithMfa => (
+                Subject: "unmapped-editor-e2e",
+                Name: "E2E Unmapped Editor",
+                Roles: new[] { "Editor" },
+                ExternalOrganizationId: "org-unmapped"),
+            _ => (
+                Subject: "editor-e2e",
+                Name: "E2E Editor",
+                Roles: new[] { "Editor" },
+                ExternalOrganizationId: "org-mvs01")
+        };
         var claims = new Dictionary<string, object>
         {
-            ["sub"] = reviewer ? "reviewer-e2e" : "editor-e2e",
-            ["name"] = reviewer ? "E2E Reviewer" : "E2E Editor",
-            ["roles"] = reviewer ? new[] { "Reviewer" } : new[] { "Editor" },
-            ["external_organization_id"] = "org-mvs01",
+            ["sub"] = identity.Subject,
+            ["name"] = identity.Name,
+            ["roles"] = identity.Roles,
+            ["external_organization_id"] = identity.ExternalOrganizationId,
             ["amr"] = profile == TestIdentityProfile.EditorWithoutMfa
                 ? new[] { "pwd" }
                 : new[] { "pwd", "mfa" },
