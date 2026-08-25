@@ -21,3 +21,7 @@
 - `TC-ACC-MVS01-076-MOB`: 現行画面は一覧中のversionから`If-Match`を組み立て、審査詳細応答のETagを保持していない。
 
 既存API 40件とMobile 6件はGREENであり、toolchain、test runner、既存機能の失敗ではない。GREEN実装前の基準点として保存する。
+
+## CI Run #1の観測改善
+
+Run #1はAPI TC-081の期待REDを検出した時点で既存runnerが停止し、Mobile以降を未実行とした。失敗を成功扱いにはしていないが、複数REDの証跡として不完全なため、`test.sh`と`test-all.sh`を「全suiteを継続実行し、最後に非0を返す」方式へ修正する。Run #2でAPI/Mobile両REDと、その他suiteのGREENを同時に確認する。
