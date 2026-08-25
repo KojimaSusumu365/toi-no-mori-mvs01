@@ -139,6 +139,26 @@ var tests = new List<SpecTest>
         SpecAssert.True(javascript.Contains("crypto.randomUUID()", StringComparison.Ordinal), "Approval keys must use browser cryptographic randomness.");
         SpecAssert.True(javascript.Contains("question.ownerSubject === state.session.subject", StringComparison.Ordinal), "The UI must identify self-approval before submission.");
         return Task.CompletedTask;
+    }),
+    new("TC-ACC-MVS01-076-MOB", "ADR-0008-D1,ADR-0009-D7", "詳細ETagで承認し409後は再読込・再審査を要求", () =>
+    {
+        SpecAssert.True(
+            javascript.Contains("approvalEtag", StringComparison.Ordinal),
+            "The review UI must retain the ETag obtained with the reviewed detail.");
+        SpecAssert.True(
+            javascript.Contains("response.status === 409", StringComparison.Ordinal),
+            "The browser client must distinguish an approval conflict from generic failures.");
+        SpecAssert.True(
+            javascript.Contains("自動再送しません", StringComparison.Ordinal),
+            "A 409 response must explicitly prohibit automatic approval retry.");
+        SpecAssert.True(
+            javascript.Contains("再読込", StringComparison.Ordinal)
+            && javascript.Contains("再審査", StringComparison.Ordinal),
+            "A conflict must require a fresh read and a new human review.");
+        SpecAssert.True(
+            javascript.Contains("!question.approvalEtag", StringComparison.Ordinal),
+            "Approval must be disabled while the reviewed ETag is unavailable.");
+        return Task.CompletedTask;
     })
 };
 

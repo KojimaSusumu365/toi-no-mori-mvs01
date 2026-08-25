@@ -94,3 +94,7 @@ T2では各contractを次のnative behavioral testへ置換する。
 ## Stage 6R-7移管記録
 
 `TC-ACC-MVS01-073-PG`は監査行とrevisionの追記専用性を権限とtriggerで検査するnative PostgreSQL試験へ移管した。実装前のtest assemblyはBuild警告0・エラー0で、実DBではtrigger欠落によりREDとなる契約である。registryの残存contractは5件となり、`--assert-red`で5/5 expected RED、harness error 0を確認した。native RED/GREENは非root GitHub Actionsで取得する。
+
+## Stage 6R-8移管記録
+
+`TC-ACC-MVS01-076-MOB`と`TC-ACC-MVS01-081-API`を、それぞれMobile/API native suiteへ移管した。実装前はMobile 6/7、API 40/41で新規試験だけがREDとなり、Build警告0・エラー0、試験ID一意性GREENを確認した。registryの残存contractは3件であり、`--assert-red`で3/3 expected RED、harness error 0を確認した。

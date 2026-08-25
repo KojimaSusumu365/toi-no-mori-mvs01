@@ -710,6 +710,54 @@ var tests = new List<SpecTest>
         var corrected = await ReadQuestionAsync(correctedResponse);
         SpecAssert.True(corrected.ReviewReason is null, "Saving a correction must clear the handled review reason.");
     }),
+    new("TC-ACC-MVS01-081-API", "ADR-0008-D4", "role別DTOで理由の可視性を分離", async () =>
+    {
+        using var editor = fixture.AuthenticatedClient("dto-editor", "Editor");
+        var created = await CreateDraftAsync(editor, "role dto");
+        using var submitted = await editor.PostAsync($"/api/admin/questions/{created.Id}/submit", null);
+        SpecAssert.Equal(HttpStatusCode.OK, submitted.StatusCode, "The role-DTO precondition must submit.");
+
+        using var reviewer = fixture.AuthenticatedClient("dto-reviewer", "Reviewer");
+        using var approved = await ApproveAsync(
+            reviewer,
+            created.Id,
+            $"dto-{created.Id}",
+            expectedVersion: created.Version + 1);
+        SpecAssert.Equal(HttpStatusCode.OK, approved.StatusCode, "The role-DTO precondition must publish.");
+
+        using (var anonymous = fixture.AnonymousClient())
+        using (var publicResponse = await anonymous.GetAsync($"/api/public/questions/{created.Id}"))
+        {
+            var publicJson = await publicResponse.Content.ReadFromJsonAsync<JsonElement>();
+            SpecAssert.Equal(HttpStatusCode.OK, publicResponse.StatusCode, "Published content must remain public.");
+            SpecAssert.False(publicJson.TryGetProperty("reviewReason", out _), "Public DTO must omit the review reason.");
+            SpecAssert.False(publicJson.TryGetProperty("withdrawalReason", out _), "Public DTO must omit the withdrawal reason.");
+            SpecAssert.False(publicJson.TryGetProperty("ownerSubject", out _), "Public DTO must omit the owner subject.");
+        }
+
+        const string withdrawalReason = "公開根拠の有効期限終了";
+        using var withdrawn = await reviewer.PostAsJsonAsync(
+            $"/api/admin/questions/{created.Id}/withdraw",
+            new ReviewReasonRequest(withdrawalReason));
+        SpecAssert.Equal(HttpStatusCode.OK, withdrawn.StatusCode, "Reviewer must withdraw the published question.");
+
+        using (var editorDetail = await editor.GetAsync($"/api/admin/questions/{created.Id}"))
+        {
+            var editorJson = await editorDetail.Content.ReadFromJsonAsync<JsonElement>();
+            SpecAssert.Equal(HttpStatusCode.OK, editorDetail.StatusCode, "The owner Editor may read the withdrawn question.");
+            SpecAssert.True(editorJson.TryGetProperty("reviewReason", out _), "Editor DTO must carry its allowlisted review-reason field.");
+            SpecAssert.False(editorJson.TryGetProperty("withdrawalReason", out _), "Editor DTO must not disclose the withdrawal reason.");
+            SpecAssert.False(editorJson.TryGetProperty("ownerSubject", out _), "Editor DTO must not expose the redundant owner subject.");
+        }
+
+        using (var reviewerDetail = await reviewer.GetAsync($"/api/admin/questions/{created.Id}"))
+        {
+            var reviewerJson = await reviewerDetail.Content.ReadFromJsonAsync<JsonElement>();
+            SpecAssert.Equal(HttpStatusCode.OK, reviewerDetail.StatusCode, "Reviewer may read the withdrawn question.");
+            SpecAssert.Equal("dto-editor", reviewerJson.GetProperty("ownerSubject").GetString(), "Reviewer DTO must identify the owner for self-approval checks.");
+            SpecAssert.Equal(withdrawalReason, reviewerJson.GetProperty("withdrawalReason").GetString(), "Reviewer DTO must expose the withdrawal reason.");
+        }
+    }),
     new("TC-ACC-MVS01-054", "REQ-MVS01-UI-002", "未定義の管理一覧状態を400で拒否", async () =>
     {
         using var reviewer = fixture.AuthenticatedClient("filter-reviewer", "Reviewer");

@@ -22,6 +22,8 @@
 - `QF-UML-MVS01-6R6` MVS-01 Stage 6R-6 Platform Security監査 UML仕様書 Version 0.1
 - `QF-ST6R7-MVS01-001` MVS-01 Stage 6R-7 DB追記専用・改ざん防止境界仕様 Version 0.1
 - `QF-UML-MVS01-6R7` MVS-01 Stage 6R-7 DB追記専用・改ざん防止 UML仕様書 Version 0.1
+- `QF-ST6R8-MVS01-001` MVS-01 Stage 6R-8 スマートフォン承認ETag・role別DTO仕様 Version 0.1
+- `QF-UML-MVS01-6R8` MVS-01 Stage 6R-8 スマートフォン承認ETag・role別DTO UML仕様書 Version 0.1
 - `ADR-0003` 石狩本番・東京復旧と暗号化論理バックアップ
 - `ADR-0004` スマートフォンWeb UIと同一オリジンBFF/OIDC
 - `ADR-0005` Managed IdP候補とOIDC実プロトコルE2E
@@ -118,6 +120,14 @@
 | ADR-0009-D9 | `audit_events`、`platform_security_events`、`question_revisions`の権限・trigger二重境界 | PostgreSQL TC-073-PG | Run #1で期待RED、Run #3でPostgreSQL 12/12 GREEN |
 | QF-ST6R7-MVS01-001 | exact-count 81件、非root native、immutable evidence | CI構成契約6件、native 81件 | Run #3で81/81 GREEN、artifact digest確認済み |
 
+## Stage 6R-8 スマートフォン承認ETag・role別DTO追跡表
+
+| 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
+|---|---|---|---|
+| ADR-0008-D1 / ADR-0009-D7 | 詳細ETag保持、ETagなし承認不可、409後の自動再送禁止 | Mobile TC-076-MOB | 既存6件GREEN、新規TC-076だけ期待RED |
+| ADR-0008-D4 | Editor/Reviewer/Public許可リストDTO、理由可視性分離 | API TC-081-API | 既存40件GREEN、新規TC-081だけ期待RED |
+| QF-ST6R8-MVS01-001 | exact-count 83件、非root native、immutable evidence | CI構成契約6件、native 83件 | CI契約6/6、実装前RED |
+
 ## テスト層の役割
 
 | 左側成果物 | 同じ変更で更新する実装 | 右側テスト |
@@ -152,5 +162,6 @@
 | UML-CMP/SEQ/ER-MVS01-6R4 | 組織claim許可表、tenant伝搬、RLS、複合FK、正規化404 | API TC-065/069、PostgreSQL TC-066/067/068/074/075 |
 | UML-CMP/SEQ/DPL-MVS01-6R6 | request/correlation、非同期監査、429抑制、platform DB role分離 | API TC-070/071/080、PostgreSQL TC-071 |
 | UML-CMP/SEQ/TST-MVS01-6R7 | 追記専用GRANT、3 mutation trigger、owner操作拒否 | PostgreSQL TC-073 |
+| UML-SEQ/CMP/TST-MVS01-6R8 | 詳細ETag、409再審査、role別DTO | Mobile TC-076、API TC-081 |
 
-Pull Requestの完了条件は、要求ID、UML ID、実装、Domain/API/Mobile/OIDC E2E/PostgreSQL/DRテストIDのリンクが同じ変更内で維持されることです。Stage 6R-7 gateはDomain 12、API 40、Mobile 6、OIDC E2E 7、PostgreSQL 12、DR 4の全81件をexact-countで要求します。Stage 6R残存5件、実IdP、実browser/スマートフォン、さくら実クラウドの判定は別gateです。
+Pull Requestの完了条件は、要求ID、UML ID、実装、Domain/API/Mobile/OIDC E2E/PostgreSQL/DRテストIDのリンクが同じ変更内で維持されることです。Stage 6R-8 gateはDomain 12、API 41、Mobile 7、OIDC E2E 7、PostgreSQL 12、DR 4の全83件をexact-countで要求します。Stage 6R残存3件、実IdP、実browser/スマートフォン、さくら実クラウドの判定は別gateです。

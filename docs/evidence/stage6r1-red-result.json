@@ -1,34 +1,20 @@
 {
-  "stage": "6R-7",
-  "purpose": "remaining failure-first contracts after append-only PostgreSQL contract moved to the native suite; failed is expected and is not acceptance",
-  "startedAtUtc": "2026-08-21T01:40:10.912205+00:00",
+  "stage": "6R-8",
+  "purpose": "remaining failure-first contracts after mobile ETag and role DTO contracts moved to native suites; failed is expected and is not acceptance",
+  "startedAtUtc": "2026-08-25T00:53:50.105927+00:00",
   "environment": {
     "python": "3.12.13",
     "dotnet": "10.0.400",
     "postgresql": "postgres (PostgreSQL) 18.6"
   },
-  "testCount": 5,
-  "failedCount": 5,
+  "testCount": 3,
+  "failedCount": 3,
   "passedCount": 0,
   "harnessErrorCount": 0,
-  "evidenceHash": "sha256:8bbc8136b1dcefb7fe8628edfc8c9a2687f944daee09ea522dfcd22754e5aeba",
+  "evidenceHash": "sha256:e7c1b3f1af69747a40b9ade432c3ee9423ea46f77b620a70e4df90db50d7facd",
   "isSimulated": false,
   "measurementScope": "local-static-contract",
   "results": [
-    {
-      "testId": "TC-ACC-MVS01-076-MOB",
-      "layer": "Mobile",
-      "requirementIds": [
-        "ADR-0008-D1",
-        "ADR-0009-D7"
-      ],
-      "result": "failed",
-      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
-      "detail": "src/ToiNoMori.Api/wwwroot/app/app.js: missing 'approvalEtag', 'response.status === 409'",
-      "durationMs": 0,
-      "isSimulated": false,
-      "measurementScope": "local-static-contract"
-    },
     {
       "testId": "TC-ACC-MVS01-077-OIDC",
       "layer": "OIDC",
@@ -53,19 +39,6 @@
       "result": "failed",
       "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
       "detail": "scripts/test-disaster-recovery.sh: missing 'TC-ACC-MVS01-078-DR', 'isSimulated', 'measurementScope', 'artifactHash', 'fk_published_revision_same_question', 'platform_security_events'",
-      "durationMs": 0,
-      "isSimulated": false,
-      "measurementScope": "local-static-contract"
-    },
-    {
-      "testId": "TC-ACC-MVS01-081-API",
-      "layer": "API",
-      "requirementIds": [
-        "ADR-0008-D4"
-      ],
-      "result": "failed",
-      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
-      "detail": "src/ToiNoMori.Api/Contracts.cs: missing 'WithdrawalReason', 'EditorQuestionResponse', 'ReviewerQuestionResponse'",
       "durationMs": 0,
       "isSimulated": false,
       "measurementScope": "local-static-contract"

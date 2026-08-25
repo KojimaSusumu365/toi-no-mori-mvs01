@@ -192,17 +192,6 @@ def tc075() -> tuple[bool, str]:
     return (not missing, "missing " + ", ".join(missing) if missing else "expand/contract migration markers present")
 
 
-def tc076() -> tuple[bool, str]:
-    return require(
-        "src/ToiNoMori.Api/wwwroot/app/app.js",
-        'hasRole("Auditor")',
-        "approvalEtag",
-        'If-Match',
-        "response.status === 409",
-        "再読込",
-    )
-
-
 def tc077() -> tuple[bool, str]:
     return require_across(
         [
@@ -243,16 +232,6 @@ def tc080() -> tuple[bool, str]:
     )
 
 
-def tc081_api() -> tuple[bool, str]:
-    return require(
-        "src/ToiNoMori.Api/Contracts.cs",
-        "WithdrawalReason",
-        "EditorQuestionResponse",
-        "ReviewerQuestionResponse",
-        "PublicQuestionResponse",
-    )
-
-
 def tc_perf() -> tuple[bool, str]:
     return require(
         "tests/performance/TC-PERF-MVS01-002-PG.sql",
@@ -267,17 +246,15 @@ def tc_perf() -> tuple[bool, str]:
 
 Contract = tuple[str, str, list[str], Callable[[], tuple[bool, str]]]
 CONTRACTS: list[Contract] = [
-    ("TC-ACC-MVS01-076-MOB", "Mobile", ["ADR-0008-D1", "ADR-0009-D7"], tc076),
     ("TC-ACC-MVS01-077-OIDC", "OIDC", ["ADR-0007-D2", "ADR-0008-D1"], tc077),
     ("TC-ACC-MVS01-078-DR", "DR", ["ADR-0007-D5", "ADR-0008-D3"], tc078),
-    ("TC-ACC-MVS01-081-API", "API", ["ADR-0008-D4"], tc081_api),
     ("TC-PERF-MVS01-002-PG", "Performance", ["RV-040"], tc_perf),
 ]
 
 
 def run() -> list[Result]:
     results: list[Result] = []
-    print("# ToiNoMori Stage 6R-7 remaining failure-first contracts")
+    print("# ToiNoMori Stage 6R-8 remaining failure-first contracts")
     print(f"1..{len(CONTRACTS)}")
     for number, (test_id, layer, requirements, check) in enumerate(CONTRACTS, start=1):
         started = perf_counter()
@@ -330,8 +307,8 @@ def main() -> int:
     harness_errors = sum(item.failureCode == "TEST_HARNESS_ERROR" for item in results)
     source_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     evidence = {
-        "stage": "6R-7",
-        "purpose": "remaining failure-first contracts after append-only PostgreSQL contract moved to the native suite; failed is expected and is not acceptance",
+        "stage": "6R-8",
+        "purpose": "remaining failure-first contracts after mobile ETag and role DTO contracts moved to native suites; failed is expected and is not acceptance",
         "startedAtUtc": started_at,
         "environment": {
             "python": platform.python_version(),
