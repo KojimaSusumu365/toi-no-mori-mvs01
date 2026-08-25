@@ -507,6 +507,26 @@ if [[ -x "$SCRIPT_DIR/dr/seal-failover-evidence.py" ]] \
         --input "$failover_candidate" \
         --artifact "$failover_artifact" \
         --evidence "$failover_evidence"; then
+    same_subject_candidate="$DR_TEMP/dr-failover-same-subject.json"
+    out_of_order_candidate="$DR_TEMP/dr-failover-out-of-order.json"
+    jq '.approvals[1].subjectId = .approvals[0].subjectId' \
+        "$failover_candidate" >"$same_subject_candidate"
+    jq '.timeline.sourceWriteIsolatedAtUtc = "2099-01-01T00:00:00Z"' \
+        "$failover_candidate" >"$out_of_order_candidate"
+    same_subject_rejected=false
+    out_of_order_rejected=false
+    if ! "$SCRIPT_DIR/dr/seal-failover-evidence.py" \
+        --input "$same_subject_candidate" \
+        --artifact "$DR_TEMP/rejected-same-subject-artifact.json" \
+        --evidence "$DR_TEMP/rejected-same-subject-evidence.json" >/dev/null 2>&1; then
+        same_subject_rejected=true
+    fi
+    if ! "$SCRIPT_DIR/dr/seal-failover-evidence.py" \
+        --input "$out_of_order_candidate" \
+        --artifact "$DR_TEMP/rejected-out-of-order-artifact.json" \
+        --evidence "$DR_TEMP/rejected-out-of-order-evidence.json" >/dev/null 2>&1; then
+        out_of_order_rejected=true
+    fi
     expected_artifact_hash="$(jq -r '.artifactHash // empty' "$failover_evidence")"
     actual_artifact_hash="sha256:$(sha256sum "$failover_artifact" | awk '{print $1}')"
     if [[ "$source_write_isolated" == "true" \
@@ -516,6 +536,8 @@ if [[ -x "$SCRIPT_DIR/dr/seal-failover-evidence.py" ]] \
         && "$(jq -r '.schemaContract.platformSecurityEvents // false' "$recovery_report")" == "true" \
         && "$(jq -r '.isSimulated // true' "$failover_evidence")" == "false" \
         && "$(jq -r '.measurementScope // empty' "$failover_evidence")" == "native-local-dual-cluster-role-drill" \
+        && "$same_subject_rejected" == "true" \
+        && "$out_of_order_rejected" == "true" \
         && "$expected_artifact_hash" == "$actual_artifact_hash" ]]; then
         stage6r10_green=true
     fi
@@ -535,30 +557,46 @@ printf '# result: %s passed; %s failed; 5 total\n' "$passed" "$failed"
 
 if [[ -n "${MVS01_DR_EVIDENCE_DIR:-}" ]]; then
     mkdir -p -- "$MVS01_DR_EVIDENCE_DIR"
-    jq -n \
-        --arg format "toi-no-mori-dr-drill-evidence-v1" \
-        --arg executedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-        --arg sourceRole "ishikari-primary-simulated" \
-        --arg recoveryRole "tokyo-recovery-simulated" \
-        --argjson rpoSeconds "$rpo_seconds" \
-        --argjson rtoSeconds "$rto_seconds" \
-        --argjson maxRpoSeconds "$MAX_RPO_SECONDS" \
-        --argjson maxRtoSeconds "$MAX_RTO_SECONDS" \
-        --argjson passed "$passed" \
-        --argjson failed "$failed" \
-        '{
-            format: $format,
-            executedAtUtc: $executedAtUtc,
-            sourceRole: $sourceRole,
-            recoveryRole: $recoveryRole,
-            rpoSeconds: $rpoSeconds,
-            rtoSeconds: $rtoSeconds,
-            maxRpoSeconds: $maxRpoSeconds,
-            maxRtoSeconds: $maxRtoSeconds,
-            testsPassed: $passed,
-            testsFailed: $failed,
-            scope: "local isolated process drill; not a cloud region failover"
-        }' >"$MVS01_DR_EVIDENCE_DIR/dr-drill-latest.json"
+    if [[ -f "$failover_artifact" && -f "$failover_evidence" ]]; then
+        install -m 600 "$failover_artifact" "$MVS01_DR_EVIDENCE_DIR/dr-failover-artifact.json"
+        install -m 600 "$failover_evidence" "$MVS01_DR_EVIDENCE_DIR/dr-failover-evidence.json"
+        jq \
+            --arg executedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson rpoSeconds "$rpo_seconds" \
+            --argjson rtoSeconds "$rto_seconds" \
+            --argjson maxRpoSeconds "$MAX_RPO_SECONDS" \
+            --argjson maxRtoSeconds "$MAX_RTO_SECONDS" \
+            --argjson passed "$passed" \
+            --argjson failed "$failed" \
+            '. + {
+                executedAtUtc: $executedAtUtc,
+                rpoSeconds: $rpoSeconds,
+                rtoSeconds: $rtoSeconds,
+                maxRpoSeconds: $maxRpoSeconds,
+                maxRtoSeconds: $maxRtoSeconds,
+                testsPassed: $passed,
+                testsFailed: $failed
+            }' "$failover_evidence" >"$MVS01_DR_EVIDENCE_DIR/dr-drill-latest.json"
+    else
+        jq -n \
+            --arg format "toi-no-mori-dr-failover-evidence-v1" \
+            --arg status "rejected" \
+            --arg measurementScope "native-local-dual-cluster-role-drill" \
+            --arg executedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson passed "$passed" \
+            --argjson failed "$failed" \
+            '{
+                format: $format,
+                status: $status,
+                isSimulated: false,
+                measurementScope: $measurementScope,
+                physicalRegionFailover: false,
+                executedAtUtc: $executedAtUtc,
+                testsPassed: $passed,
+                testsFailed: $failed
+            }' >"$MVS01_DR_EVIDENCE_DIR/dr-drill-latest.json"
+    fi
+    chmod 600 "$MVS01_DR_EVIDENCE_DIR/dr-drill-latest.json"
 fi
 
 stop_api

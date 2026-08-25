@@ -117,6 +117,10 @@ fi
 question_count="null"
 audit_count="null"
 migration_count="null"
+platform_security_event_count="null"
+latest_migration_version=""
+fk_published_revision_same_question=false
+platform_security_events=false
 if [[ -n "${MVS01_TARGET_PGHOST:-}" ]]; then
     for name in \
         MVS01_TARGET_PGHOST \
@@ -164,17 +168,29 @@ if [[ -n "${MVS01_TARGET_PGHOST:-}" ]]; then
     question_count="$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command='SELECT count(*) FROM questions;')"
     audit_count="$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command='SELECT count(*) FROM audit_events;')"
     migration_count="$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command='SELECT count(*) FROM schema_migrations;')"
+    platform_security_event_count="$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command='SELECT count(*) FROM platform_security_events;')"
+    latest_migration_version="$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command='SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1;')"
+    if [[ "$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command="SELECT count(*) FROM pg_constraint WHERE conname = 'fk_published_revision_same_question' AND convalidated;")" == "1" ]]; then
+        fk_published_revision_same_question=true
+    fi
+    if [[ "$("$POSTGRES_BIN_DIR/psql" "${psql_arguments[@]}" --command="SELECT to_regclass('public.platform_security_events') IS NOT NULL;")" == "t" ]]; then
+        platform_security_events=true
+    fi
 fi
 
 report_path="$MVS01_DR_RESTORE_DIR/restore-report.json"
 jq -n \
-    --arg format "toi-no-mori-dr-restore-report-v1" \
+    --arg format "toi-no-mori-dr-restore-report-v2" \
     --arg backupId "$(jq -r '.backupId' "$manifest")" \
     --arg restoredAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     --arg dumpSha256 "$actual_sha256" \
     --argjson questionCount "$question_count" \
     --argjson auditCount "$audit_count" \
     --argjson migrationCount "$migration_count" \
+    --argjson platformSecurityEventCount "$platform_security_event_count" \
+    --arg latestMigrationVersion "$latest_migration_version" \
+    --argjson fkPublishedRevisionSameQuestion "$fk_published_revision_same_question" \
+    --argjson platformSecurityEvents "$platform_security_events" \
     '{
         format: $format,
         backupId: $backupId,
@@ -182,7 +198,14 @@ jq -n \
         dumpSha256: $dumpSha256,
         questionCount: $questionCount,
         auditCount: $auditCount,
-        migrationCount: $migrationCount
+        migrationCount: $migrationCount,
+        platformSecurityEventCount: $platformSecurityEventCount,
+        schemaContract: {
+            migrationCount: $migrationCount,
+            latestMigrationVersion: $latestMigrationVersion,
+            fkPublishedRevisionSameQuestion: $fkPublishedRevisionSameQuestion,
+            platformSecurityEvents: $platformSecurityEvents
+        }
     }' >"$report_path"
 chmod 600 "$report_path"
 

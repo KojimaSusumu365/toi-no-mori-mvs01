@@ -23,3 +23,20 @@ TC-030〜033を維持したまま、TC-078だけが次の不足でREDとなる�
 - canonical artifactと`artifactHash` sealがない。
 
 ローカル環境はrootから`nobody`への切替を許可しないため、native PostgreSQLを迂回せずexit 2とした。環境停止をTC-078のREDとは数えず、非root GitHub Actionsで既存DR 4件GREEN・TC-078だけREDを確認して追記する。
+
+## GitHub Actions Run #1
+
+- Run ID: `32801014338`
+- Job ID: `97661671512`
+- head SHA: `14a0a05c5b388da34a39c8c15e25221efec5d56c`
+- Domain: 12/12 GREEN
+- API: 41/41 GREEN
+- Mobile: 7/7 GREEN
+- OIDC: 8/8 GREEN
+- PostgreSQL: 12/12 GREEN
+- DR: 4/5。TC-078だけ期待RED
+- native合計: 84/85
+- Artifact ID: `9546527037`
+- Artifact SHA-256: `748a819ade10ec23dc989df89c5d09521468019e5bab0c63499ee21f7e7bdd8c`
+
+構成、ツールチェーン、既存84件は合格しているため、REDをStage 6R-10の実装不足へ限定できた。
