@@ -534,7 +534,7 @@ if [[ -x "$SCRIPT_DIR/dr/seal-failover-evidence.py" ]] \
         && "$(jq -r '.schemaContract.latestMigrationVersion // empty' "$recovery_report")" == *"005_stage6r7_append_only.sql" \
         && "$(jq -r '.schemaContract.fkPublishedRevisionSameQuestion // false' "$recovery_report")" == "true" \
         && "$(jq -r '.schemaContract.platformSecurityEvents // false' "$recovery_report")" == "true" \
-        && "$(jq -r '.isSimulated // true' "$failover_evidence")" == "false" \
+        && "$(jq -r 'has("isSimulated") and (.isSimulated == false)' "$failover_evidence")" == "true" \
         && "$(jq -r '.measurementScope // empty' "$failover_evidence")" == "native-local-dual-cluster-role-drill" \
         && "$same_subject_rejected" == "true" \
         && "$out_of_order_rejected" == "true" \
