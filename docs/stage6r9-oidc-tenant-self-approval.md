@@ -1,11 +1,11 @@
 # Stage 6R-9 実OIDC tenant mapping・自己承認境界 RED→GREEN仕様書
 
 - 文書ID: QF-ST6R9-MVS01-001
-- 版: Version 0.1
+- 版: Version 0.2
 - 日付: 2026-08-25
 - 入力基準: ADR-0007 D2、ADR-0008 D1
 - 対象試験: `TC-ACC-MVS01-077-OIDC`
-- 現在判定: **ローカル失敗先行RED確認済み**
+- 現在判定: **ACCEPTED**
 
 ## 1. 目的
 
@@ -62,3 +62,13 @@ Build警告0・エラー0、試験ID一意、残存failure-first contract 2/2 ex
 - 新規TC-077は、未登録組織でもOIDC loginが成功してCookie発行へ進むためRED。
 - dual-role同一`sub`のstrong ETag自己承認は既存Domain境界により403となる。
 - REDはtenant mappingをCookie発行前へ移す不足だけを示し、既存OIDC protocolや自己承認機能の故障ではない。
+
+## 7. RED→GREEN受入結果
+
+GitHub Actions Run #1（ID `32798362811`、head `e5b288b97f8252d73817d17a925757110a3f78d1`）で、Domain 12/12、API 41/41、Mobile 7/7、PostgreSQL 12/12、DR 4/4はGREEN、OIDCは既存7件GREEN・新規TC-077だけREDと確認した。未登録組織の署名済みtokenがBFF Cookie発行へ進む欠落を、他の回帰から分離した。
+
+token検証時に`TenantResolver.ResolveExternal`を実行し、未登録組織をremote authentication failureとした。IdPが送った`internal_tenant_id`、`verified_issuer`、外部組織claimはCookie生成前に除去し、サーバーが許可表から生成した内部tenant UUIDだけを保存する。endpoint側は内部tenant claimを優先し、試験認証では従来のissuer＋外部組織変換を維持する。
+
+GitHub Actions Run #2（ID `32798692282`、head `f2f32cfc00a60967c0ad5bae86c8bb1f3228c0bd`）でDomain 12/12、API 41/41、Mobile 7/7、OIDC 8/8、PostgreSQL 12/12、DR 4/4、合計84/84 GREENを確認した。artifact IDは`9545807227`、SHA-256は`c38d09fa6c926e2d3ef7d844e8cbaf17f94ea0241b9a24276121688eea00b681`である。
+
+以上によりStage 6R-9を受入済みとする。実Entra tenantのapp registration・Conditional Access・MFA claim実測は別gateである。

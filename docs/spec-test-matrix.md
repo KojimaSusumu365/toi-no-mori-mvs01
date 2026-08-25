@@ -134,9 +134,9 @@
 
 | 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
 |---|---|---|---|
-| ADR-0007-D2 | token検証時のissuer付き組織許可表、内部tenant claim固定、未登録Cookie拒否 | OIDC TC-077 | 既存7件GREEN、新規TC-077だけ期待RED |
-| ADR-0008-D1 | dual-role同一`sub`のstrong ETag自己承認拒否、異`sub`承認 | OIDC TC-077 | 自己承認403はGREEN、未登録組織のlogin拒否がRED |
-| QF-ST6R9-MVS01-001 | exact-count 84件、非root native、immutable evidence | CI構成契約6件、native 84件 | CI構成・実装前RED確認中 |
+| ADR-0007-D2 | token検証時のissuer付き組織許可表、内部tenant claim固定、未登録Cookie拒否 | OIDC TC-077 | Run #1で期待RED、Run #2でOIDC 8/8 GREEN |
+| ADR-0008-D1 | dual-role同一`sub`のstrong ETag自己承認拒否、異`sub`承認 | OIDC TC-077 | strong ETag自己承認403、異subject承認200をGREEN |
+| QF-ST6R9-MVS01-001 | exact-count 84件、非root native、immutable evidence | CI構成契約6件、native 84件 | Run #2で84/84 GREEN、artifact digest確認済み |
 
 ## テスト層の役割
 

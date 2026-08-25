@@ -28,3 +28,19 @@
 - 同一tenantへmappingされた異なるReviewer `sub`は承認できる。
 
 したがってREDはCookie発行前tenant mappingの不足に限定され、OIDC protocol、ETag、Domain自己承認境界の故障ではない。
+
+## CI Run #1 確認結果
+
+- Run ID: `32798362811`
+- head SHA: `e5b288b97f8252d73817d17a925757110a3f78d1`
+- 結果: expected failure
+- Domain: 12/12 GREEN
+- API: 41/41 GREEN
+- Mobile: 7/7 GREEN
+- OIDC: 7/8、TC-077だけRED
+- PostgreSQL: 12/12 GREEN
+- DR: 4/4 GREEN
+- Artifact ID: `9545671697`
+- Artifact SHA-256: `41d4a625d7433442953244d03d77b9a6de2b6528487d3ea758d43dd3987e93ad`
+
+Run #1は全suiteを継続観測した後に非0を返し、Stage 6R-9の実装対象だけがREDであることを固定した。
