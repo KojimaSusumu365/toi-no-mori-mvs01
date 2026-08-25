@@ -74,7 +74,7 @@
 |---|---|---|---|
 | ADR-0008-D1/D2 | 版付き`Approve`、`ApprovedVersion`、`ApprovedBy` | Domain TC-063-DOM | native挙動試験でGREEN。API接続はStage 6R-3で実装 |
 | DOMAIN-INVARIANTS | `TenantId`、Snapshot、command原子性 | Domain TC-079-DOM | seed固定500×20操作でGREEN。RLS実装はStage 6R-4、実DB未実行 |
-| ADR-0008-D4 | `ReviewReason`と`WithdrawalReason`の分離 | Domain TC-081-DOM | DomainはGREEN。role別API DTOは未実装 |
+| ADR-0008-D4 | `ReviewReason`と`WithdrawalReason`の分離 | Domain TC-081-DOM | DomainはGREEN。role別API DTOはStage 6R-8でGREEN |
 
 ## Stage 6R-3 承認API追跡表
 
@@ -124,9 +124,9 @@
 
 | 設計根拠 | 実装境界 | 対になる自動テスト | 状態 |
 |---|---|---|---|
-| ADR-0008-D1 / ADR-0009-D7 | 詳細ETag保持、ETagなし承認不可、409後の自動再送禁止 | Mobile TC-076-MOB | 既存6件GREEN、新規TC-076だけ期待RED |
-| ADR-0008-D4 | Editor/Reviewer/Public許可リストDTO、理由可視性分離 | API TC-081-API | 既存40件GREEN、新規TC-081だけ期待RED |
-| QF-ST6R8-MVS01-001 | exact-count 83件、非root native、immutable evidence | CI構成契約6件、native 83件 | CI契約6/6、実装前RED |
+| ADR-0008-D1 / ADR-0009-D7 | 詳細ETag保持、ETagなし承認不可、409後の自動再送禁止 | Mobile TC-076-MOB | Run #2で期待RED、Run #3でMobile 7/7 GREEN |
+| ADR-0008-D4 | Editor/Reviewer/Public許可リストDTO、理由可視性分離 | API TC-081-API | Run #2で期待RED、Run #3でAPI 41/41 GREEN |
+| QF-ST6R8-MVS01-001 | exact-count 83件、非root native、immutable evidence | CI構成契約6件、native 83件 | Run #3で83/83 GREEN、artifact digest確認済み |
 
 ## テスト層の役割
 

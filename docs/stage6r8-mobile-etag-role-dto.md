@@ -1,11 +1,11 @@
 # Stage 6R-8 スマートフォン承認ETag・role別DTO RED→GREEN仕様書
 
 - 文書ID: QF-ST6R8-MVS01-001
-- 版: Version 0.1
+- 版: Version 0.2
 - 日付: 2026-08-25
 - 入力基準: 承認済みADR-0008 D1/D4、ADR-0009 D7
 - 対象試験: `TC-ACC-MVS01-076-MOB`、`TC-ACC-MVS01-081-API`
-- 現在判定: **ローカル失敗先行RED確認済み**
+- 現在判定: **ACCEPTED**
 
 ## 1. 目的
 
@@ -71,3 +71,13 @@ Build警告0・エラー0、試験ID一意、残存失敗先行契約3/3 expecte
 - root fail-closed: native suite未開始、exit 2、accepted=false
 
 このREDは実装前欠落を示す証拠であり、Stage 6R-8の受入合格ではない。
+
+## 7. RED→GREEN受入結果
+
+GitHub Actions Run #2（ID `32796153468`、head `7e8c26d4f27b63e1b23866a46e1bafc34432d80f`）で、API 40/41、Mobile 6/7の2件だけを期待REDとして観測した。Domain 12/12、OIDC 7/7、PostgreSQL 12/12、DR 4/4はGREENであり、実装前欠落を既存障害と分離できた。
+
+`EditorQuestionResponse`、`ReviewerQuestionResponse`、既存`PublicQuestionResponse`を許可リスト型として分離した。スマートフォンUIはレビュー待ちの管理詳細GETからstrong ETagを`approvalEtag`へ保持し、承認時だけその値を`If-Match`へ送る。409では保持ETagを破棄して承認を無効化し、自動再送・自動再取得をせず再読込と再審査を案内する。
+
+GitHub Actions Run #3（ID `32796488019`、head `c504e3dbfe086d5d47cc5bbd69e05d03b7d5287e`）で、Domain 12/12、API 41/41、Mobile 7/7、OIDC 7/7、PostgreSQL 12/12、DR 4/4、合計83/83 GREENを確認した。artifact IDは`9545065213`、SHA-256は`9e380a7344237b67dbdd568e5dd90804e4baa8bafa7a512d83e0cddbf533a142`である。
+
+以上によりStage 6R-8を受入済みとする。実端末browser、実Entra tenant、物理リージョン災害復旧はこの判定に含めない。

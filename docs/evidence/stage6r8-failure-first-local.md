@@ -25,3 +25,19 @@
 ## CI Run #1の観測改善
 
 Run #1はAPI TC-081の期待REDを検出した時点で既存runnerが停止し、Mobile以降を未実行とした。失敗を成功扱いにはしていないが、複数REDの証跡として不完全なため、`test.sh`と`test-all.sh`を「全suiteを継続実行し、最後に非0を返す」方式へ修正する。Run #2でAPI/Mobile両REDと、その他suiteのGREENを同時に確認する。
+
+## CI Run #2 確認結果
+
+- Run ID: `32796153468`
+- head SHA: `7e8c26d4f27b63e1b23866a46e1bafc34432d80f`
+- 結果: expected failure
+- Domain: 12/12 GREEN
+- API: 40/41、TC-081だけRED
+- Mobile: 6/7、TC-076だけRED
+- OIDC: 7/7 GREEN
+- PostgreSQL: 12/12 GREEN
+- DR: 4/4 GREEN
+- Artifact ID: `9544951674`
+- Artifact SHA-256: `fdcee680c2d2639a5350787c3f08ebd600876e83c60c9f6b7df9b9417e4eaf0f`
+
+Run #2は全suiteを継続観測した後に非0を返し、実装対象2件だけがREDであることを固定した。
