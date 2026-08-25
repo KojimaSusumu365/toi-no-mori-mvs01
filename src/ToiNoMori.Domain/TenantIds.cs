@@ -1,8 +1,8 @@
 namespace ToiNoMori.Domain;
 
 /// <summary>
-/// Stage 6R のマルチテナント移行前データに割り当てる固定テナント。
-/// API層で外部組織と内部テナントの対応付けを実装するまでの互換境界として使用する。
+/// Stage 6R の移行データとMVS-01組織許可表に割り当てる内部テナント。
+/// 外部IdPの組織識別子をこの値として直接信用してはならない。
 /// </summary>
 public static class TenantIds
 {

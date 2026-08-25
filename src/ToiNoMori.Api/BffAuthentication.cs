@@ -169,19 +169,39 @@ public static class BffAuthentication
                         return Task.CompletedTask;
                     }
 
+                    Guid internalTenantId;
+                    try
+                    {
+                        var tenantResolver = context.HttpContext.RequestServices
+                            .GetRequiredService<TenantResolver>();
+                        internalTenantId = tenantResolver.ResolveExternal(
+                            context.SecurityToken.Issuer,
+                            context.Principal
+                                .FindAll(TenantResolver.ExternalOrganizationClaimType)
+                                .Select(claim => claim.Value));
+                    }
+                    catch (TenantResolutionException)
+                    {
+                        context.Fail("OIDC tenant mapping failed.");
+                        return Task.CompletedTask;
+                    }
+
+                    foreach (var claim in identity.Claims.Where(claim =>
+                        claim.Type == TenantResolver.ExternalOrganizationClaimType
+                        || claim.Type == TenantResolver.VerifiedIssuerClaimType
+                        || claim.Type == TenantResolver.InternalTenantClaimType).ToArray())
+                    {
+                        identity.RemoveClaim(claim);
+                    }
+                    identity.AddClaim(new Claim(
+                        TenantResolver.InternalTenantClaimType,
+                        internalTenantId.ToString("D")));
+
                     if (!identity.HasClaim(claim => claim.Type == "csrf"))
                     {
                         identity.AddClaim(new Claim(
                             "csrf",
                             WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32))));
-                    }
-
-                    if (!identity.HasClaim(claim =>
-                        claim.Type == TenantResolver.VerifiedIssuerClaimType))
-                    {
-                        identity.AddClaim(new Claim(
-                            TenantResolver.VerifiedIssuerClaimType,
-                            context.SecurityToken.Issuer));
                     }
 
                     return Task.CompletedTask;

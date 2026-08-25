@@ -253,6 +253,11 @@ internal sealed class TestOidcProvider : IAsyncDisposable
             ["nonce"] = nonce,
             ["auth_time"] = authenticationTime.ToUnixTimeSeconds()
         };
+        if (profile == TestIdentityProfile.EditorReviewerWithMfa)
+        {
+            claims["internal_tenant_id"] = "11111111-1111-1111-1111-111111111111";
+            claims["verified_issuer"] = "https://untrusted-claim.example";
+        }
         var signingRsa = profile == TestIdentityProfile.InvalidSignature
             ? _rogueRsa
             : _signingRsa;
