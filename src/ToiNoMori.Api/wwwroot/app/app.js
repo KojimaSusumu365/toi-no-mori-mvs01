@@ -59,7 +59,7 @@ function updateNetworkStatus() {
   elements.networkStatus.classList.toggle("offline", !online);
 }
 
-async function fetchJson(path, options = {}) {
+async function fetchJsonResponse(path, options = {}) {
   const response = await fetch(path, {
     ...options,
     credentials: "same-origin",
@@ -68,6 +68,12 @@ async function fetchJson(path, options = {}) {
       ...(options.headers || {})
     }
   });
+
+  if (response.status === 409) {
+    const error = new Error("Conflict");
+    error.status = response.status;
+    throw error;
+  }
 
   if (!response.ok) {
     let problem;
@@ -82,10 +88,15 @@ async function fetchJson(path, options = {}) {
   }
 
   if (response.status === 204) {
-    return null;
+    return { data: null, response };
   }
 
-  return response.json();
+  return { data: await response.json(), response };
+}
+
+async function fetchJson(path, options = {}) {
+  const result = await fetchJsonResponse(path, options);
+  return result.data;
 }
 
 function csrfHeaders(extra = {}) {
@@ -375,7 +386,9 @@ function renderEmptyList(list, message) {
 }
 
 function renderEditorQuestions() {
-  const questions = state.managedQuestions.filter(question => question.ownerSubject === state.session.subject);
+  const questions = hasRole("Reviewer")
+    ? state.managedQuestions.filter(question => question.ownerSubject === state.session.subject)
+    : state.managedQuestions;
   if (questions.length === 0) {
     renderEmptyList(elements.editorQuestionList, "まだ問いはありません。上のフォームから最初の問いを作成できます。");
     return;
@@ -402,8 +415,12 @@ async function reviewQuestion(question, action, reason = "") {
   const headers = csrfHeaders();
   let body;
   if (action === "approve") {
+    if (!question.approvalEtag) {
+      setStatus(elements.reviewerStatus, "審査対象のETagがありません。一覧を再読込して再審査してください。", true);
+      return;
+    }
     headers["Idempotency-Key"] = crypto.randomUUID();
-    headers["If-Match"] = `"${question.version}"`;
+    headers["If-Match"] = question.approvalEtag;
   } else {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify({ reason });
@@ -419,6 +436,15 @@ async function reviewQuestion(question, action, reason = "") {
     await searchQuestions();
     setStatus(elements.reviewerStatus, action === "approve" ? "承認し、公開しました。" : "処理を完了しました。");
   } catch (error) {
+    if (action === "approve" && error.status === 409) {
+      question.approvalEtag = "";
+      renderReviewerQuestions();
+      setStatus(
+        elements.reviewerStatus,
+        "内容が更新されました。自動再送しません。一覧を再読込して変更内容を再審査してください。",
+        true);
+      return;
+    }
     setStatus(elements.reviewerStatus, operationError(error, "処理できませんでした。理由と状態を確認してください。"), true);
   }
 }
@@ -463,9 +489,16 @@ function renderReviewerQuestions() {
       addQuestionSummary(item, question, true);
       reasonControl(item, question, "return", "差し戻し理由", "差し戻す");
       const selfApproval = question.ownerSubject === state.session.subject;
-      addActionButton(item, "承認して公開", "button button-primary", () => reviewQuestion(question, "approve"), selfApproval);
+      addActionButton(
+        item,
+        "承認して公開",
+        "button button-primary",
+        () => reviewQuestion(question, "approve"),
+        selfApproval || !question.approvalEtag);
       if (selfApproval) {
         addTextElement(item, "p", "muted", "自分が作成した問いは承認できません。");
+      } else if (!question.approvalEtag) {
+        addTextElement(item, "p", "muted", "審査対象を確認できません。一覧を再読込してください。");
       }
       elements.reviewQueueList.append(item);
     }
@@ -493,7 +526,22 @@ async function loadManagedQuestions() {
   setStatus(elements.reviewerStatus, "一覧を読み込んでいます。");
   try {
     const questions = await fetchJson("/api/admin/questions?limit=100");
-    state.managedQuestions = Array.isArray(questions) ? questions : [];
+    const managedQuestions = Array.isArray(questions) ? questions : [];
+    if (hasRole("Reviewer")) {
+      const reviewedQuestions = await Promise.all(managedQuestions.map(async question => {
+        if (question.status !== "IN_REVIEW") {
+          return question;
+        }
+        const detail = await fetchJsonResponse(`/api/admin/questions/${question.id}`);
+        return {
+          ...detail.data,
+          approvalEtag: detail.response.headers.get("ETag") || ""
+        };
+      }));
+      state.managedQuestions = reviewedQuestions;
+    } else {
+      state.managedQuestions = managedQuestions;
+    }
     if (hasRole("Editor")) {
       renderEditorQuestions();
     }

@@ -197,7 +197,7 @@ public static class ApiEndpointMappings
         }
 
         httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-        return Results.Ok(QuestionResponse.From(result));
+        return AdministrativeQuestionResult(httpContext, result);
     });
 
     private static Task<IResult> SearchAdministrativeQuestions(
@@ -224,7 +224,9 @@ public static class ApiEndpointMappings
                 parsedStatus,
                 limit ?? 50,
                 cancellationToken);
-            return Results.Ok(results.Select(QuestionResponse.From).ToArray());
+            return httpContext.User.IsInRole("Reviewer")
+                ? Results.Ok(results.Select(ReviewerQuestionResponse.From).ToArray())
+                : Results.Ok(results.Select(EditorQuestionResponse.From).ToArray());
         });
     }
 
@@ -248,7 +250,9 @@ public static class ApiEndpointMappings
                 CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-            return Results.Created($"/api/admin/questions/{result.Id}", QuestionResponse.From(result));
+            return Results.Created(
+                $"/api/admin/questions/{result.Id}",
+                AdministrativeQuestionResponse(httpContext, result));
         });
     }
 
@@ -283,7 +287,7 @@ public static class ApiEndpointMappings
                 CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-            return Results.Ok(QuestionResponse.From(result));
+            return AdministrativeQuestionResult(httpContext, result);
         });
     }
 
@@ -291,13 +295,17 @@ public static class ApiEndpointMappings
         Guid id,
         HttpContext httpContext,
         IQuestionStore store,
-        CancellationToken cancellationToken) => ExecuteAsync(async () => Results.Ok(QuestionResponse.From(
-            await store.SubmitAsync(
+        CancellationToken cancellationToken) => ExecuteAsync(async () =>
+        {
+            var result = await store.SubmitAsync(
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
                 CorrelationContext.CorrelationId(httpContext),
-                cancellationToken))));
+                cancellationToken);
+            httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
+            return AdministrativeQuestionResult(httpContext, result);
+        });
 
     private static Task<IResult> ReturnQuestion(
         Guid id,
@@ -314,14 +322,18 @@ public static class ApiEndpointMappings
             }));
         }
 
-        return ExecuteAsync(async () => Results.Ok(QuestionResponse.From(
-            await store.ReturnForChangesAsync(
+        return ExecuteAsync(async () =>
+        {
+            var result = await store.ReturnForChangesAsync(
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
                 reason!,
                 CorrelationContext.CorrelationId(httpContext),
-                cancellationToken))));
+                cancellationToken);
+            httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
+            return AdministrativeQuestionResult(httpContext, result);
+        });
     }
 
     private static Task<IResult> ApproveQuestion(
@@ -367,7 +379,7 @@ public static class ApiEndpointMappings
                 CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-            return Results.Ok(QuestionResponse.From(result));
+            return AdministrativeQuestionResult(httpContext, result);
         });
     }
 
@@ -386,15 +398,27 @@ public static class ApiEndpointMappings
             }));
         }
 
-        return ExecuteAsync(async () => Results.Ok(QuestionResponse.From(
-            await store.WithdrawAsync(
+        return ExecuteAsync(async () =>
+        {
+            var result = await store.WithdrawAsync(
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
                 reason!,
                 CorrelationContext.CorrelationId(httpContext),
-                cancellationToken))));
+                cancellationToken);
+            httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
+            return AdministrativeQuestionResult(httpContext, result);
+        });
     }
+
+    private static IResult AdministrativeQuestionResult(HttpContext httpContext, QuestionSnapshot value) =>
+        Results.Ok(AdministrativeQuestionResponse(httpContext, value));
+
+    private static object AdministrativeQuestionResponse(HttpContext httpContext, QuestionSnapshot value) =>
+        httpContext.User.IsInRole("Reviewer")
+            ? ReviewerQuestionResponse.From(value)
+            : EditorQuestionResponse.From(value);
 
     private static async Task<IResult> ExecuteAsync(Func<Task<IResult>> action)
     {

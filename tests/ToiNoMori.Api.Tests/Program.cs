@@ -624,14 +624,14 @@ var tests = new List<SpecTest>
         using var owner = fixture.AuthenticatedClient("list-owner", "Editor");
         using var other = fixture.AuthenticatedClient("list-other", "Editor");
         var mine = await CreateDraftAsync(owner, "my managed list");
-        _ = await CreateDraftAsync(other, "other managed list");
+        var theirs = await CreateDraftAsync(other, "other managed list");
 
         using var response = await owner.GetAsync("/api/admin/questions?limit=100");
         var questions = await ReadQuestionsAsync(response);
         SpecAssert.Equal(HttpStatusCode.OK, response.StatusCode, "An Editor may list their managed questions.");
         SpecAssert.True(questions.Any(question => question.Id == mine.Id), "The Editor list must contain their own draft.");
-        SpecAssert.True(
-            questions.All(question => question.OwnerSubject == "list-owner"),
+        SpecAssert.False(
+            questions.Any(question => question.Id == theirs.Id),
             "The Editor list must not disclose another owner's question.");
     }),
     new("TC-ACC-MVS01-050", "REQ-MVS01-UI-002", "Reviewer一覧でレビュー待ちを取得", async () =>
@@ -1046,6 +1046,20 @@ static async Task<QuestionResponse> PublishAsync(
     SpecAssert.Equal(HttpStatusCode.OK, approved.StatusCode, "Test precondition approve must succeed.");
     return await ReadQuestionAsync(approved);
 }
+
+file sealed record QuestionResponse(
+    Guid Id,
+    string Title,
+    string Body,
+    IReadOnlyList<string> Tags,
+    QuestionStatus Status,
+    int Version,
+    string? OwnerSubject,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? PublishedAt,
+    string? ReviewReason,
+    string? WithdrawalReason);
 
 file sealed class TemporaryDataProtectionMaterial : IDisposable
 {

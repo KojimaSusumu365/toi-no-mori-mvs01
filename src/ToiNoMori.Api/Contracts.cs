@@ -6,7 +6,32 @@ public sealed record QuestionContentRequest(string? Title, string? Body, IReadOn
 
 public sealed record ReviewReasonRequest(string? Reason);
 
-public sealed record QuestionResponse(
+public sealed record EditorQuestionResponse(
+    Guid Id,
+    string Title,
+    string Body,
+    IReadOnlyList<string> Tags,
+    QuestionStatus Status,
+    int Version,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? PublishedAt,
+    string? ReviewReason)
+{
+    public static EditorQuestionResponse From(QuestionSnapshot value) => new(
+        value.Id,
+        value.Title,
+        value.Body,
+        value.Tags,
+        value.Status,
+        value.Version,
+        value.CreatedAt,
+        value.UpdatedAt,
+        value.PublishedAt,
+        value.ReviewReason);
+}
+
+public sealed record ReviewerQuestionResponse(
     Guid Id,
     string Title,
     string Body,
@@ -17,9 +42,10 @@ public sealed record QuestionResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? PublishedAt,
-    string? ReviewReason)
+    string? ReviewReason,
+    string? WithdrawalReason)
 {
-    public static QuestionResponse From(QuestionSnapshot value) => new(
+    public static ReviewerQuestionResponse From(QuestionSnapshot value) => new(
         value.Id,
         value.Title,
         value.Body,
@@ -30,7 +56,8 @@ public sealed record QuestionResponse(
         value.CreatedAt,
         value.UpdatedAt,
         value.PublishedAt,
-        value.ReviewReason);
+        value.ReviewReason,
+        value.WithdrawalReason);
 }
 
 public sealed record PublicQuestionResponse(

@@ -828,13 +828,13 @@ var tests = new List<SpecTest>
         using var mineResponse = await owner.PostAsJsonAsync("/api/admin/questions", ValidContent("pg owner"));
         var mine = await ReadQuestionAsync(mineResponse);
         using var otherResponse = await other.PostAsJsonAsync("/api/admin/questions", ValidContent("pg other"));
-        _ = await ReadQuestionAsync(otherResponse);
+        var theirs = await ReadQuestionAsync(otherResponse);
 
         using var ownerListResponse = await owner.GetAsync("/api/admin/questions?limit=100");
         var ownerList = await ReadQuestionsAsync(ownerListResponse);
         SpecAssert.True(ownerList.Any(question => question.Id == mine.Id), "The PostgreSQL owner list must contain the owner's draft.");
-        SpecAssert.True(
-            ownerList.All(question => question.OwnerSubject == "pg-list-owner"),
+        SpecAssert.False(
+            ownerList.Any(question => question.Id == theirs.Id),
             "The PostgreSQL owner query must not disclose another Editor's row.");
 
         using var submitted = await owner.PostAsync($"/api/admin/questions/{mine.Id}/submit", null);
@@ -1183,3 +1183,17 @@ static async Task StopPostgreSqlAsync()
             $"pg_ctl stop failed ({process.ExitCode}): {await standardOutput} {await standardError}");
     }
 }
+
+file sealed record QuestionResponse(
+    Guid Id,
+    string Title,
+    string Body,
+    IReadOnlyList<string> Tags,
+    QuestionStatus Status,
+    int Version,
+    string? OwnerSubject,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? PublishedAt,
+    string? ReviewReason,
+    string? WithdrawalReason);
