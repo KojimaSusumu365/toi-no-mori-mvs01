@@ -51,3 +51,9 @@ Draft PR受入gateはDomain 12、API 37、Mobile 6、OIDC 7、PostgreSQL 10、DR
 `TC-ACC-MVS01-070-API`、`071-API`、`071-PG`、`080-API`をsource contractからnative試験へ移す。相関IDと要求IDの分離、PlatformAuditor期間必須API、429書込み抑制、sink障害時の元応答維持、application/writer/reader DB role分離を検査する。
 
 API suiteは40件、PostgreSQL suiteは11件となる。Stage 6R-6 gateはDomain 12、API 40、Mobile 6、OIDC 7、PostgreSQL 11、DR 4の合計80件をexact-countで要求する。CI構成検査6件は受入件数へ加算しない。残存failure-first contractは6件である。
+
+## Stage 6R-10 東京–石狩DR証跡追補
+
+`TC-ACC-MVS01-078-DR`をsource contractからnative DR試験へ移す。旧primary停止、migration 005・複合外部キー・platform監査の復元、異subject二者承認、切替時系列、canonical JSONのSHA-256封印を一試験で検査する。
+
+DR suiteは5件となる。Stage 6R-10 gateはDomain 12、API 41、Mobile 7、OIDC 8、PostgreSQL 12、DR 5の合計85件をexact-countで要求する。native local dual-cluster実行を物理的なさくら石狩・東京リージョン切替と表現しない。残存failure-first contractは性能1件である。

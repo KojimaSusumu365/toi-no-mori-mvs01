@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# TEST-ID: TC-ACC-MVS01-030
+# TEST-ID: TC-ACC-MVS01-031
+# TEST-ID: TC-ACC-MVS01-032
+# TEST-ID: TC-ACC-MVS01-033
+# TEST-ID: TC-ACC-MVS01-078-DR
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/dotnet-env.sh"
@@ -29,8 +35,16 @@ RECOVERY_PORT="${MVS01_DR_RECOVERY_PORT:-55433}"
 API_PORT="${MVS01_DR_API_PORT:-5083}"
 MAX_RPO_SECONDS="${MVS01_DR_MAX_RPO_SECONDS:-3600}"
 MAX_RTO_SECONDS="${MVS01_DR_MAX_RTO_SECONDS:-14400}"
+INCIDENT_ID="${MVS01_DR_INCIDENT_ID:-DR-ST6R10-NATIVE-001}"
+INCIDENT_COMMANDER_SUBJECT="${MVS01_DR_INCIDENT_COMMANDER_SUBJECT:-dr-incident-commander}"
+RECOVERY_LEAD_SUBJECT="${MVS01_DR_RECOVERY_LEAD_SUBJECT:-dr-recovery-lead}"
 DR_TEMP="$(mktemp -d /tmp/toi-no-mori-dr-drill.XXXXXX)"
 API_PID=""
+
+if [[ "$INCIDENT_COMMANDER_SUBJECT" == "$RECOVERY_LEAD_SUBJECT" ]]; then
+    echo "DR切替には異なる二者の承認主体が必要です。" >&2
+    exit 2
+fi
 
 service_roles=(
     "$POSTGRES_DB_USER"
@@ -291,6 +305,20 @@ VALUES (
     'success',
     'dr-drill-seed',
     clock_timestamp());
+
+INSERT INTO platform_security_events (
+    id, occurred_at, reason_code, normalized_action, partition_hash,
+    request_id, correlation_id, occurrence_count, window_started_at)
+VALUES (
+    '00000000-0000-0000-0000-000000000032',
+    clock_timestamp(),
+    'access.forbidden',
+    'dr.recovery.sentinel',
+    repeat('a', 64),
+    'dr-request-0001',
+    'dr-correlation-0001',
+    1,
+    NULL);
 COMMIT;
 SQL
 
@@ -319,7 +347,7 @@ validation_report="$(env \
     "$SCRIPT_DIR/dr/restore-encrypted-backup.sh")"
 
 printf '# ToiNoMori disaster-recovery specification tests\n'
-printf '1..4\n'
+printf '1..5\n'
 passed=0
 failed=0
 
@@ -355,12 +383,19 @@ else
 fi
 
 snapshot_started_at="$(jq -r '.snapshotStartedAtUtc' "$DR_TEMP/validation/manifest.json")"
+disaster_declared_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 disaster_epoch="$(date -u +%s)"
 stop_cluster "$DR_TEMP/primary"
+source_write_isolated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+source_write_isolated=false
+if ! run_postgres "$POSTGRES_BIN_DIR/pg_ctl" -D "$DR_TEMP/primary" status >/dev/null 2>&1; then
+    source_write_isolated=true
+fi
 start_cluster recovery "$RECOVERY_PORT"
 create_service_roles "$RECOVERY_PORT"
 
 mkdir -p "$DR_TEMP/recovered-payload"
+recovery_restore_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 recovery_report="$(env \
     POSTGRES_BIN_DIR="$POSTGRES_BIN_DIR" \
     MVS01_DR_BACKUP_FILE="$backup_path" \
@@ -373,13 +408,16 @@ recovery_report="$(env \
     MVS01_TARGET_PGUSER="$POSTGRES_DB_USER" \
     MVS01_TARGET_PGDATABASE=postgres \
     "$SCRIPT_DIR/dr/restore-encrypted-backup.sh")"
+recovery_restore_completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 start_api "$API_PORT" "$RECOVERY_PORT" "$DR_TEMP/recovery-api.log"
 public_json="$(curl --fail --silent --show-error \
     "http://127.0.0.1:$API_PORT/api/public/questions/00000000-0000-0000-0000-000000000030")"
 recovered_audit_count="$("${psql_recovery[@]}" \
     --command="SELECT count(*) FROM audit_events WHERE target_id = '00000000-0000-0000-0000-000000000030' AND action = 'question.approve' AND result = 'success';")"
+recovery_accepted_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 recovery_success_epoch="$(date -u +%s)"
+route_switched_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 if [[ "$(jq -r '.id' <<<"$public_json")" == "00000000-0000-0000-0000-000000000030" \
     && "$(jq -r '.title' <<<"$public_json")" == "DR sentinel publication" \
@@ -407,9 +445,93 @@ else
     failed=$((failed + 1))
 fi
 
+failover_candidate="$DR_TEMP/dr-failover-candidate.json"
+failover_artifact="$DR_TEMP/dr-failover-artifact.json"
+failover_evidence="$DR_TEMP/dr-failover-evidence.json"
+jq -n \
+    --arg schemaVersion "1.0" \
+    --arg incidentId "$INCIDENT_ID" \
+    --arg measurementScope "native-local-dual-cluster-role-drill" \
+    --arg sourceRole "ishikari-primary" \
+    --arg recoveryRole "tokyo-recovery" \
+    --arg incidentCommander "$INCIDENT_COMMANDER_SUBJECT" \
+    --arg recoveryLead "$RECOVERY_LEAD_SUBJECT" \
+    --arg snapshotStartedAtUtc "$snapshot_started_at" \
+    --arg disasterDeclaredAtUtc "$disaster_declared_at" \
+    --arg sourceWriteIsolatedAtUtc "$source_write_isolated_at" \
+    --arg recoveryRestoreStartedAtUtc "$recovery_restore_started_at" \
+    --arg recoveryRestoreCompletedAtUtc "$recovery_restore_completed_at" \
+    --arg recoveryAcceptedAtUtc "$recovery_accepted_at" \
+    --arg routeSwitchedAtUtc "$route_switched_at" \
+    --argjson sourceWriteIsolated "$source_write_isolated" \
+    --argjson rpoSeconds "$rpo_seconds" \
+    --argjson rtoSeconds "$rto_seconds" \
+    --slurpfile restore "$recovery_report" \
+    '{
+        schemaVersion: $schemaVersion,
+        incidentId: $incidentId,
+        isSimulated: false,
+        measurementScope: $measurementScope,
+        physicalRegionFailover: false,
+        topology: {
+            sourceRole: $sourceRole,
+            recoveryRole: $recoveryRole,
+            routeSwitchMode: "local-logical-gate"
+        },
+        approvals: [
+            { role: "IncidentCommander", subjectId: $incidentCommander, decision: "approve-recovery", approvedAtUtc: $recoveryAcceptedAtUtc },
+            { role: "RecoveryLead", subjectId: $recoveryLead, decision: "approve-route-switch", approvedAtUtc: $recoveryAcceptedAtUtc }
+        ],
+        timeline: {
+            snapshotStartedAtUtc: $snapshotStartedAtUtc,
+            disasterDeclaredAtUtc: $disasterDeclaredAtUtc,
+            sourceWriteIsolatedAtUtc: $sourceWriteIsolatedAtUtc,
+            recoveryRestoreStartedAtUtc: $recoveryRestoreStartedAtUtc,
+            recoveryRestoreCompletedAtUtc: $recoveryRestoreCompletedAtUtc,
+            recoveryAcceptedAtUtc: $recoveryAcceptedAtUtc,
+            routeSwitchedAtUtc: $routeSwitchedAtUtc
+        },
+        safety: {
+            sourceWriteIsolated: $sourceWriteIsolated,
+            recoveryWriteEnabled: true,
+            simultaneousWritePrimaries: false,
+            physicalGslbChanged: false
+        },
+        schemaContract: ($restore[0].schemaContract // {}),
+        metrics: { rpoSeconds: $rpoSeconds, rtoSeconds: $rtoSeconds }
+    }' >"$failover_candidate"
+
+stage6r10_green=false
+if [[ -x "$SCRIPT_DIR/dr/seal-failover-evidence.py" ]] \
+    && "$SCRIPT_DIR/dr/seal-failover-evidence.py" \
+        --input "$failover_candidate" \
+        --artifact "$failover_artifact" \
+        --evidence "$failover_evidence"; then
+    expected_artifact_hash="$(jq -r '.artifactHash // empty' "$failover_evidence")"
+    actual_artifact_hash="sha256:$(sha256sum "$failover_artifact" | awk '{print $1}')"
+    if [[ "$source_write_isolated" == "true" \
+        && "$(jq -r '.platformSecurityEventCount // -1' "$recovery_report")" == "1" \
+        && "$(jq -r '.schemaContract.latestMigrationVersion // empty' "$recovery_report")" == *"005_stage6r7_append_only.sql" \
+        && "$(jq -r '.schemaContract.fkPublishedRevisionSameQuestion // false' "$recovery_report")" == "true" \
+        && "$(jq -r '.schemaContract.platformSecurityEvents // false' "$recovery_report")" == "true" \
+        && "$(jq -r '.isSimulated // true' "$failover_evidence")" == "false" \
+        && "$(jq -r '.measurementScope // empty' "$failover_evidence")" == "native-local-dual-cluster-role-drill" \
+        && "$expected_artifact_hash" == "$actual_artifact_hash" ]]; then
+        stage6r10_green=true
+    fi
+fi
+
+if [[ "$stage6r10_green" == "true" ]]; then
+    printf 'ok 5 - TC-ACC-MVS01-078-DR [ADR-0007-D5,ADR-0008-D3] 最新schema復元・二者承認・安全な東京切替証跡\n'
+    passed=$((passed + 1))
+else
+    printf 'not ok 5 - TC-ACC-MVS01-078-DR [ADR-0007-D5,ADR-0008-D3] 最新schema復元・二者承認・安全な東京切替証跡\n'
+    failed=$((failed + 1))
+fi
+
 printf '# metrics: rpo_seconds=%s rto_seconds=%s max_rpo_seconds=%s max_rto_seconds=%s\n' \
     "$rpo_seconds" "$rto_seconds" "$MAX_RPO_SECONDS" "$MAX_RTO_SECONDS"
-printf '# result: %s passed; %s failed; 4 total\n' "$passed" "$failed"
+printf '# result: %s passed; %s failed; 5 total\n' "$passed" "$failed"
 
 if [[ -n "${MVS01_DR_EVIDENCE_DIR:-}" ]]; then
     mkdir -p -- "$MVS01_DR_EVIDENCE_DIR"

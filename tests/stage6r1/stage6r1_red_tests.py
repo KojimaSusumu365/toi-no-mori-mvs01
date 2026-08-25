@@ -192,18 +192,6 @@ def tc075() -> tuple[bool, str]:
     return (not missing, "missing " + ", ".join(missing) if missing else "expand/contract migration markers present")
 
 
-def tc078() -> tuple[bool, str]:
-    return require(
-        "scripts/test-disaster-recovery.sh",
-        "TC-ACC-MVS01-078-DR",
-        "isSimulated",
-        "measurementScope",
-        "artifactHash",
-        "fk_published_revision_same_question",
-        "platform_security_events",
-    )
-
-
 def tc080() -> tuple[bool, str]:
     return require_across(
         [
@@ -232,14 +220,13 @@ def tc_perf() -> tuple[bool, str]:
 
 Contract = tuple[str, str, list[str], Callable[[], tuple[bool, str]]]
 CONTRACTS: list[Contract] = [
-    ("TC-ACC-MVS01-078-DR", "DR", ["ADR-0007-D5", "ADR-0008-D3"], tc078),
     ("TC-PERF-MVS01-002-PG", "Performance", ["RV-040"], tc_perf),
 ]
 
 
 def run() -> list[Result]:
     results: list[Result] = []
-    print("# ToiNoMori Stage 6R-9 remaining failure-first contracts")
+    print("# ToiNoMori Stage 6R-10 remaining failure-first contracts")
     print(f"1..{len(CONTRACTS)}")
     for number, (test_id, layer, requirements, check) in enumerate(CONTRACTS, start=1):
         started = perf_counter()
@@ -292,8 +279,8 @@ def main() -> int:
     harness_errors = sum(item.failureCode == "TEST_HARNESS_ERROR" for item in results)
     source_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     evidence = {
-        "stage": "6R-9",
-        "purpose": "remaining failure-first contracts after real OIDC tenant mapping and self-approval boundary moved to the native suite; failed is expected and is not acceptance",
+        "stage": "6R-10",
+        "purpose": "remaining failure-first contract after the Tokyo/Ishikari DR evidence boundary moved to the native suite; failed is expected and is not acceptance",
         "startedAtUtc": started_at,
         "environment": {
             "python": platform.python_version(),

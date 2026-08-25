@@ -1,34 +1,20 @@
 {
-  "stage": "6R-9",
-  "purpose": "remaining failure-first contracts after real OIDC tenant mapping and self-approval boundary moved to the native suite; failed is expected and is not acceptance",
-  "startedAtUtc": "2026-08-25T01:35:54.877963+00:00",
+  "stage": "6R-10",
+  "purpose": "remaining failure-first contract after the Tokyo/Ishikari DR evidence boundary moved to the native suite; failed is expected and is not acceptance",
+  "startedAtUtc": "2026-08-25T02:16:33.370792+00:00",
   "environment": {
     "python": "3.12.13",
     "dotnet": "10.0.400",
     "postgresql": "postgres (PostgreSQL) 18.6"
   },
-  "testCount": 2,
-  "failedCount": 2,
+  "testCount": 1,
+  "failedCount": 1,
   "passedCount": 0,
   "harnessErrorCount": 0,
-  "evidenceHash": "sha256:d8a5eaaed96b191aeccc0d8c3702d0cba078533eea75575129dda1ca65c147aa",
+  "evidenceHash": "sha256:ecfa5f3c0d62ca334046be7622ec0e8a66db384f02a31d47d2631ff7e97467a2",
   "isSimulated": false,
   "measurementScope": "local-static-contract",
   "results": [
-    {
-      "testId": "TC-ACC-MVS01-078-DR",
-      "layer": "DR",
-      "requirementIds": [
-        "ADR-0007-D5",
-        "ADR-0008-D3"
-      ],
-      "result": "failed",
-      "failureCode": "STAGE6R_IMPLEMENTATION_MISSING",
-      "detail": "scripts/test-disaster-recovery.sh: missing 'TC-ACC-MVS01-078-DR', 'isSimulated', 'measurementScope', 'artifactHash', 'fk_published_revision_same_question', 'platform_security_events'",
-      "durationMs": 0,
-      "isSimulated": false,
-      "measurementScope": "local-static-contract"
-    },
     {
       "testId": "TC-PERF-MVS01-002-PG",
       "layer": "Performance",

@@ -13,12 +13,14 @@ from pathlib import Path
 ID = r"TC-(?:ACC|PERF)-MVS01-[0-9]{3}(?:-[A-Z]+)?"
 CS_DECLARATION = re.compile(rf'new\("({ID})"')
 PY_DECLARATION = re.compile(rf'^\s*\("({ID})"', re.MULTILINE)
+SHELL_DECLARATION = re.compile(rf'^# TEST-ID: ({ID})$', re.MULTILINE)
 NEW_ID = re.compile(r"TC-(?:ACC-MVS01-(?:06[3-9]|07[0-9]|08[01])-[A-Z]+|PERF-MVS01-002-PG)")
 
 
 def executable_files(root: Path) -> list[Path]:
     files = list((root / "tests").glob("ToiNoMori.*.Tests/**/*.cs"))
     files.extend((root / "tests/stage6r1").glob("*.py"))
+    files.append(root / "scripts/test-disaster-recovery.sh")
     return sorted(path for path in files if path.is_file())
 
 
@@ -36,7 +38,12 @@ def collect(root: Path) -> tuple[dict[str, list[tuple[str, Path]]], dict[str, li
     new_global: dict[str, list[Path]] = defaultdict(list)
     for path in executable_files(root):
         content = path.read_text(encoding="utf-8")
-        pattern = CS_DECLARATION if path.suffix == ".cs" else PY_DECLARATION
+        if path.suffix == ".cs":
+            pattern = CS_DECLARATION
+        elif path.suffix == ".sh":
+            pattern = SHELL_DECLARATION
+        else:
+            pattern = PY_DECLARATION
         for test_id in pattern.findall(content):
             by_suite[suite(path, root)].append((test_id, path))
             if NEW_ID.fullmatch(test_id):
