@@ -82,7 +82,7 @@ var tests = new List<SpecTest>
         SpecAssert.Equal(HttpStatusCode.OK, response.StatusCode, "Published Question must be readable before DTO inspection.");
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var properties = document.RootElement.EnumerateObject().Select(value => value.Name).OrderBy(value => value).ToArray();
-        var expected = new[] { "body", "id", "publishedAt", "tags", "title" }.OrderBy(value => value).ToArray();
+        var expected = PublicQuestionFieldAllowlist.Names.OrderBy(value => value).ToArray();
         SpecAssert.True(properties.SequenceEqual(expected), "Public DTO must be an allowlist of id/title/body/tags/publishedAt only.");
         SpecAssert.False(document.RootElement.TryGetProperty("ownerSubject", out _), "Owner subject must never cross the public boundary.");
         SpecAssert.False(document.RootElement.TryGetProperty("reviewReason", out _), "Review reason must never cross the public boundary.");
@@ -204,6 +204,11 @@ static JsonSerializerOptions QuestionJsonOptions()
     var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
     options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseUpper));
     return options;
+}
+
+file static class PublicQuestionFieldAllowlist
+{
+    public static readonly string[] Names = ["body", "id", "publishedAt", "tags", "title"];
 }
 
 file sealed record QuestionResponse(
