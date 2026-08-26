@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../src/ToiNoMori.Api/ToiNoMori.Api.csproj" />
+    <ProjectReference Include="../ToiNoMori.Testing/ToiNoMori.Testing.csproj" />
+    <Compile Include="../ToiNoMori.Api.Tests/ApiFixture.cs" Link="ApiFixture.cs" />
+    <Compile Include="../ToiNoMori.Api.Tests/TestHeaderAuthenticationHandler.cs" Link="TestHeaderAuthenticationHandler.cs" />
+  </ItemGroup>
+</Project>
