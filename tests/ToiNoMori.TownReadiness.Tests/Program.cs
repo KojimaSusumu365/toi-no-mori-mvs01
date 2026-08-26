@@ -41,7 +41,7 @@ var tests = new List<SpecTest>
 
     new("TC-ACC-MVS01-083-TR", "REQ-QF-TR-002", "公開Read境界はPUBLISHEDだけを外部へ返す", async () =>
     {
-        var token = $"tr-public-{Guid.NewGuid():N}";
+        var token = UniqueToken("trp");
         using var editor = fixture.AuthenticatedClient("tr-public-editor", "Editor");
         var created = await CreateDraftAsync(editor, token);
         using var anonymous = fixture.AnonymousClient();
@@ -116,7 +116,7 @@ var tests = new List<SpecTest>
 
     new("TC-ACC-MVS01-086-TR", "REQ-QF-TR-005", "公開停止後は同じ参照IDの本文をPublic APIから取得できない", async () =>
     {
-        var token = $"tr-withdraw-{Guid.NewGuid():N}";
+        var token = UniqueToken("trw");
         using var editor = fixture.AuthenticatedClient("tr-withdraw-editor", "Editor");
         var created = await CreateDraftAsync(editor, token);
         var submitted = await SubmitAsync(editor, created.Id);
@@ -145,6 +145,8 @@ var tests = new List<SpecTest>
 };
 
 return await SpecTestRunner.RunAsync("ToiNoMori town-readiness specification tests", tests);
+
+static string UniqueToken(string prefix) => $"{prefix}-{Guid.NewGuid().ToString("N")[..12]}";
 
 static QuestionContentRequest ValidContent(string suffix) =>
     new($"question {suffix}", $"body {suffix}", ["town-readiness", suffix]);
