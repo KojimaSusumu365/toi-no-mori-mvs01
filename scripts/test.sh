@@ -37,4 +37,11 @@ if ! dotnet run \
   SUITE_FAILURE=1
 fi
 
+if ! dotnet run \
+  --project tests/ToiNoMori.TownReadiness.Tests/ToiNoMori.TownReadiness.Tests.csproj \
+  --configuration Release \
+  --no-build; then
+  SUITE_FAILURE=1
+fi
+
 exit "$SUITE_FAILURE"
