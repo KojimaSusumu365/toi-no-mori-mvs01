@@ -9,6 +9,7 @@ public sealed class PostgreSqlQuestionStore(
     PostgreSqlApplicationDataSource applicationDataSource,
     PostgreSqlMigrator migrator,
     PostgreSqlRoleBoundaryValidator roleBoundaryValidator,
+    PublicReadTenantContext publicReadTenant,
     TimeProvider timeProvider,
     ILogger<PostgreSqlQuestionStore> logger) : IQuestionStore
 {
@@ -329,12 +330,12 @@ public sealed class PostgreSqlQuestionStore(
         {
             await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-            await SetTenantAsync(connection, transaction, TenantIds.Mvs01, cancellationToken);
+            await SetTenantAsync(connection, transaction, publicReadTenant.TenantId, cancellationToken);
             await using var command = new NpgsqlCommand(
                 $"{SelectColumns} WHERE tenant_id = @tenant_id AND id = @id AND status = 'PUBLISHED';",
                 connection,
                 transaction);
-            command.Parameters.AddWithValue("tenant_id", TenantIds.Mvs01);
+            command.Parameters.AddWithValue("tenant_id", publicReadTenant.TenantId);
             command.Parameters.AddWithValue("id", id);
             QuestionSnapshot? result;
             await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -353,7 +354,7 @@ public sealed class PostgreSqlQuestionStore(
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await SetTenantAsync(connection, transaction, TenantIds.Mvs01, cancellationToken);
+        await SetTenantAsync(connection, transaction, publicReadTenant.TenantId, cancellationToken);
         await using var command = new NpgsqlCommand(
             $"""
             {SelectColumns}
@@ -369,7 +370,7 @@ public sealed class PostgreSqlQuestionStore(
             connection,
             transaction);
         var normalizedQuery = query?.Trim() ?? string.Empty;
-        command.Parameters.AddWithValue("tenant_id", TenantIds.Mvs01);
+        command.Parameters.AddWithValue("tenant_id", publicReadTenant.TenantId);
         command.Parameters.AddWithValue("query", normalizedQuery);
         command.Parameters.AddWithValue("pattern", $"%{EscapeLike(normalizedQuery)}%");
         command.Parameters.AddWithValue("tag", tag?.Trim() ?? string.Empty);

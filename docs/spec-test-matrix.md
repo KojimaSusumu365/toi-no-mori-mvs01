@@ -187,3 +187,14 @@
 | UML-DPL/SEQ/SM/TST-MVS01-6R10 | source隔離、最新schema復元、二者承認、切替証跡封印 | DR TC-078 |
 
 Pull Requestの完了条件は、要求ID、UML ID、実装、Domain/API/Mobile/OIDC E2E/PostgreSQL/DRテストIDのリンクが同じ変更内で維持されることです。Stage 6R-10 gateはDomain 12、API 41、Mobile 7、OIDC E2E 8、PostgreSQL 12、DR 5の全85件をexact-countで要求します。Stage 6R残存1件、実Entra tenant、実browser/スマートフォン、さくら実クラウドの物理リージョン切替は別gateです。
+
+## Stage 6R-11R external review reconciliation
+
+| Design / finding | Implementation boundary | Test / evidence | State |
+|---|---|---|---|
+| RVR-N10 | dynamic registered-suite totals and missing-suite rejection | Stage 6R-11 CI contract | implementation complete, exact-head CI pending |
+| RVR-N11 | typed tested/head/base/relationship identity | Stage 6R-11 JSON evidence | implementation complete, exact-head CI pending |
+| RVR-N13 | configuration-based single-tenant startup gate | API TC-065 | implementation complete, exact-head CI pending |
+| RV-030 / RVA-C01 | outer denial audit envelope | API TC-071 actual 401/403/429 rows | implementation complete, exact-head CI pending |
+| RVA-C06 | four NULLIF RLS policies and pooled empty-GUC behavior | PostgreSQL TC-067 | implementation complete, exact-head CI pending |
+| RVR-N06 | second audience negative path | OIDC TC-087 | formally not-run; owner System Architect; due VT-1 start |

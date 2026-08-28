@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "stage": "6R-11R",
+  "tests": [
+    {
+      "testId": "TC-ACC-MVS01-087-OIDC",
+      "requirementIds": [
+        "RVR-N06",
+        "RVR-N07"
+      ],
+      "description": "A token whose audience is virtual-town must receive 401 from the Question Forest Admin API.",
+      "status": "not-run",
+      "reasonCode": "VIRTUAL_TOWN_AUDIENCE_NOT_IMPLEMENTED",
+      "reason": "The second Virtual Town audience does not exist yet; fabricating a second production audience would exceed Stage 6R-11R.",
+      "owner": "System Architect",
+      "due": "VT-1 start",
+      "expectedStatusCode": 401
+    }
+  ]
+}

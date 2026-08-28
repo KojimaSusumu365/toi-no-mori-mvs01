@@ -23,11 +23,38 @@ jobs:
       CI: "true"
       MVS01_TOOL_DOWNLOAD_DIR: ${{ github.workspace }}/.tool-downloads
       MVS01_CI_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/stage6r11
+      MVS01_TESTED_COMMIT: ${{ github.sha }}
+      MVS01_AUTHORITATIVE_BRANCH: ${{ github.head_ref || github.ref_name }}
+      MVS01_AUTHORITATIVE_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      MVS01_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+      MVS01_COMMIT_RELATIONSHIP: ${{ github.event_name == 'pull_request' && 'pull_request_merge_ref' || 'same_commit' }}
+      MVS01_JOB_NAME: Question Forest Minimum Town readiness 90/90 gate
     steps:
       - name: Checkout without retained credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+
+      - name: Verify evidence source identity
+        run: |
+          test -n "$MVS01_TESTED_COMMIT"
+          test -n "$MVS01_AUTHORITATIVE_BRANCH_HEAD"
+          case "$MVS01_COMMIT_RELATIONSHIP" in
+            same_commit)
+              test "$MVS01_TESTED_COMMIT" = "$MVS01_AUTHORITATIVE_BRANCH_HEAD"
+              ;;
+            pull_request_merge_ref)
+              test -n "$MVS01_BASE_SHA"
+              git cat-file -e "$MVS01_TESTED_COMMIT^{commit}"
+              git cat-file -e "$MVS01_AUTHORITATIVE_BRANCH_HEAD^{commit}"
+              git merge-base --is-ancestor "$MVS01_AUTHORITATIVE_BRANCH_HEAD" "$MVS01_TESTED_COMMIT"
+              ;;
+            *)
+              echo "Unverified commit relationship: $MVS01_COMMIT_RELATIONSHIP" >&2
+              exit 1
+              ;;
+          esac
 
       - name: Verify CI contracts
         run: |

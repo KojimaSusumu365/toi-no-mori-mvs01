@@ -38,6 +38,7 @@ public static class AppHost
         builder.Services.AddSingleton<SecurityAuditQueue>();
         builder.Services.AddHostedService<SecurityAuditWorker>();
         builder.Services.AddSingleton<TenantResolver>();
+        builder.Services.AddSingleton(new PublicReadTenantContext(builder.Configuration));
         builder.Services.AddSingleton<RequireTenantFilter>();
         ConfigurePersistence(builder);
         builder.Services.AddSingleton<RequireCsrfFilter>();

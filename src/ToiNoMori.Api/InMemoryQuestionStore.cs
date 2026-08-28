@@ -6,7 +6,9 @@ namespace ToiNoMori.Api;
 /// MVS-01 の実行可能な最小リポジトリ。
 /// 次反復で同じ公開契約を PostgreSQL 実装へ差し替える。
 /// </summary>
-public sealed class InMemoryQuestionStore(TimeProvider timeProvider) : IQuestionStore
+public sealed class InMemoryQuestionStore(
+    TimeProvider timeProvider,
+    PublicReadTenantContext publicReadTenant) : IQuestionStore
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, Question> _questions = [];
@@ -200,7 +202,7 @@ public sealed class InMemoryQuestionStore(TimeProvider timeProvider) : IQuestion
         lock (_gate)
         {
             return _questions.TryGetValue(id, out var question)
-                && question.TenantId == TenantIds.Mvs01
+                && question.TenantId == publicReadTenant.TenantId
                 && question.Status == QuestionStatus.Published
                 ? question.Snapshot()
                 : null;
@@ -215,7 +217,7 @@ public sealed class InMemoryQuestionStore(TimeProvider timeProvider) : IQuestion
             var normalizedTag = tag?.Trim();
 
             return _questions.Values
-                .Where(question => question.TenantId == TenantIds.Mvs01
+                .Where(question => question.TenantId == publicReadTenant.TenantId
                     && question.Status == QuestionStatus.Published)
                 .Where(question => string.IsNullOrWhiteSpace(normalizedQuery)
                     || question.Title.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase)
