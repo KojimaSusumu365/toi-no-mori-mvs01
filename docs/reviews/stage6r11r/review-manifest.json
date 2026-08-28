@@ -1,6 +1,6 @@
 {
   "stage": "6R-11R",
-  "status": "IN_REVIEW",
+  "status": "RESPONSE_IMPLEMENTED_AWAITING_FINAL_CI",
   "repository": "KojimaSusumu365/toi-no-mori-mvs01",
   "base_branch": "stage-gh-org-0-claude-onboarding",
   "review_target": {
@@ -12,6 +12,9 @@
     "relationship": "pull_request_merge_ref"
   },
   "reviewer": "Claude",
+  "review_document_id": "QF-RVR-MVS01-007",
+  "review_decision": "PASS_WITH_FINDINGS",
+  "blocking_findings": 0,
   "evidence": {
     "navigation": {
       "workflow_name": "Repository navigation contract",
@@ -46,38 +49,120 @@
       "artifact_id": 9671907000,
       "artifact_digest": "sha256:fd4bd48943a0d9c6fb4f3fb20622856503f2f2783070da2070f3cd85878a1955",
       "conclusion": "success"
+    },
+    "taxonomy_overlay": {
+      "commit_sha": "80090e2eb56c4ddf438867572f8f6e8c389813ba",
+      "tree_sha": "5829359435e7d07a17196182653cbc72ae93e641",
+      "parent_sha": "b85459ff1db304346e159e75833b1c415ce7a575",
+      "navigation": {
+        "run_id": 33139913729,
+        "run_attempt": 1,
+        "job_id": 98748216209,
+        "conclusion": "success"
+      },
+      "stage6r10": {
+        "run_id": 33139913725,
+        "run_attempt": 1,
+        "job_id": 98748216295,
+        "expected": 85,
+        "passed": 85,
+        "artifact_id": 9673573611,
+        "artifact_digest": "sha256:02922ab03a11eec9dab41141fff03dc7b996f53542b9762a3a0d7330f61ee155",
+        "conclusion": "success"
+      },
+      "stage6r11": {
+        "run_id": 33139913757,
+        "run_attempt": 1,
+        "job_id": 98748216596,
+        "expected": 90,
+        "passed": 90,
+        "artifact_id": 9673576028,
+        "artifact_digest": "sha256:16c7a9e3f6b52674eaec601a5ac70f41a173c7af59ab01743ff85f6dcccc3ea8",
+        "conclusion": "success"
+      }
     }
   },
   "declared_not_run": [
     {
       "test_id": "TC-PERF-MVS01-002-PG",
       "owner": "Performance Owner",
-      "due": "before production readiness"
+      "due": "Before pilot Gate G3 or before the public dataset reaches 100,000 rows, whichever comes first",
+      "source": "spec/deferred-tests.json"
     },
     {
       "test_id": "TC-ACC-MVS01-087-OIDC",
       "owner": "System Architect",
-      "due": "VT-1 start"
+      "due": "VT-1 start",
+      "source": "spec/deferred-tests.json"
     }
   ],
   "findings": [
     {
       "id": "RVR-N10",
-      "implementation_status": "ADDRESSED_AWAITING_REVIEW"
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
     },
     {
       "id": "RVR-N11",
-      "implementation_status": "ADDRESSED_AWAITING_REVIEW"
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
     },
     {
       "id": "RVR-N12",
-      "implementation_status": "ADDRESSED_AWAITING_REVIEW"
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
     },
     {
       "id": "RVR-N13",
-      "implementation_status": "ADDRESSED_AWAITING_REVIEW"
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
+    },
+    {
+      "id": "RVR-N14",
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
+    },
+    {
+      "id": "RVR-N15",
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
+    },
+    {
+      "id": "RVR-N16",
+      "severity": "P2",
+      "status": "CLOSED_VERIFIED_REVIEWER"
+    },
+    {
+      "id": "RVR-N17",
+      "severity": "P2",
+      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+    },
+    {
+      "id": "RVR-N18",
+      "severity": "P2",
+      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+    },
+    {
+      "id": "RVR-N19",
+      "severity": "P3",
+      "status": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "id": "RVR-N20",
+      "severity": "P3",
+      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+    },
+    {
+      "id": "RVR-N21",
+      "severity": "P3",
+      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+    },
+    {
+      "id": "RVR-N22",
+      "severity": "P3",
+      "status": "ACCEPTED_IMPLEMENTED"
     }
   ],
   "final_acceptance": "NOT_READY",
-  "updated_at": "2026-08-28T02:22:00Z"
+  "updated_at": "2026-08-28T05:30:00Z"
 }

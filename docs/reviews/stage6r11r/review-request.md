@@ -1,6 +1,6 @@
 # Stage 6R-11R review request for Claude
 
-Status: **READY_FOR_CLAUDE_REVIEW**  
+Status: **REVIEW_COMPLETED — QF-RVR-MVS01-007**
 Target implementation commit: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
 Target implementation tree: `23de94ef1e6ded9e2122b11880b7cb80ff8378ae`  
 Draft PR: [#4](https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/4)  
@@ -13,12 +13,22 @@ Independently verify whether RVR-N10 through RVR-N13 and the listed P0 closure c
 
 ## Review order
 
+The review has two immutable source layers. Production code, tests, CI logic and
+the original evidence identity must be read from implementation commit `61b55e0`.
+The canonical review packet, repository indexes and reorganized paths must be read
+from taxonomy overlay commit `80090e2`. Files moved by the overlay have identical
+content unless the taxonomy manifest explicitly records a navigation-link rewrite.
+
 1. Read [GitHub acceptance evidence](../../evidence/stage6r11/stage6r11r-github-acceptance.md).
 2. Inspect the target implementation commit, not the later documentation-seal commit.
 3. Inspect [Forest–Town boundary](../../architecture/contracts/forest-town-boundary-v1.md).
 4. Inspect [Test ID mapping](test-id-mapping.md) and `spec/deferred-tests.json`.
 5. Re-evaluate the known Findings below.
 6. Record the response in [claude-findings.md](claude-findings.md).
+
+This split is intentional: paths under `docs/architecture/`, `docs/stages/` and
+`docs/evidence/stage6r11/` do not all exist at the fixed implementation commit.
+The implementation target remains `61b55e0`; the packet-path target is `80090e2`.
 
 ## Known Findings to re-evaluate
 

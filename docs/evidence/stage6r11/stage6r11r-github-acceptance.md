@@ -1,7 +1,7 @@
 # Stage 6R-11R GitHub acceptance evidence
 
 Captured at: 2026-08-28T02:22:00Z  
-Acceptance state: **IMPLEMENTATION GREEN — EXTERNAL REVIEW PENDING**
+Acceptance state: **IMPLEMENTATION GREEN — EXTERNAL REVIEW PASS_WITH_FINDINGS; FINAL RETEST PENDING**
 
 ## Source identity
 
@@ -48,10 +48,27 @@ The Stage 6R-11 workflow verified that the implementation HEAD is an ancestor of
 
 | Test ID | State | Reason / owner / due |
 |---|---|---|
-| `TC-PERF-MVS01-002-PG` | not-run | Production-equivalent load environment is not available / Performance Owner / before production readiness |
+| `TC-PERF-MVS01-002-PG` | not-run | Production-like 100,000-row execution has not run / Performance Owner / before pilot Gate G3 or before the public dataset reaches 100,000 rows, whichever comes first |
 | `TC-ACC-MVS01-087-OIDC` | not-run | Cross-audience Town client does not exist before VT-1 / System Architect / VT-1 start |
 
 These are governance declarations, not hidden passes inside the 90/90 total.
+The authoritative values are machine-enforced by `spec/deferred-tests.json`.
+
+## Taxonomy overlay Runs
+
+The following successful Runs evaluate taxonomy commit
+`80090e2eb56c4ddf438867572f8f6e8c389813ba` and close the overlay-ledger gap
+identified as RVR-N18.
+
+| Purpose | Run / attempt | Job | Result | Artifact |
+|---|---|---|---|---|
+| Stage 6R-10 historical evidence writer | `33139913725 / 1` | `98748216295` | 85/85 success | `9673573611`, `sha256:02922ab03a11eec9dab41141fff03dc7b996f53542b9762a3a0d7330f61ee155` |
+| Repository navigation, taxonomy and links | `33139913729 / 1` | `98748216209` | success | none |
+| Stage 6R-11 Town readiness | `33139913757 / 1` | `98748216596` | 90/90 success | `9673576028`, `sha256:16c7a9e3f6b52674eaec601a5ac70f41a173c7af59ab01743ff85f6dcccc3ea8` |
+
+GitHub reported all three jobs completed successfully and both artifacts identified
+the exact overlay head. Artifact expiry does not invalidate the recorded Run, Job,
+commit and digest identity.
 
 ## Superseded run
 

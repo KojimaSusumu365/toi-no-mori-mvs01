@@ -29,13 +29,37 @@
 
 Review packetをsealする後続documentation commitは、target実装を変更しません。Claudeのreview対象は常に `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` です。
 
+## Taxonomy overlay evidence
+
+| Type | Value |
+|---|---|
+| overlay commit | `80090e2eb56c4ddf438867572f8f6e8c389813ba` |
+| overlay tree | `5829359435e7d07a17196182653cbc72ae93e641` |
+| base / parent | `b85459ff1db304346e159e75833b1c415ce7a575` |
+| Stage 6R-10 Run / Job | `33139913725 / 98748216295` — success, historical 85/85 writer |
+| Stage 6R-10 artifact | `9673573611`, `sha256:02922ab03a11eec9dab41141fff03dc7b996f53542b9762a3a0d7330f61ee155` |
+| navigation/taxonomy Run / Job | `33139913729 / 98748216209` — success |
+| Stage 6R-11 Run / Job | `33139913757 / 98748216596` — success, 90/90 |
+| Stage 6R-11 artifact | `9673576028`, `sha256:16c7a9e3f6b52674eaec601a5ac70f41a173c7af59ab01743ff85f6dcccc3ea8` |
+
+The GitHub API was rechecked on 2026-08-28. Each artifact identifies
+`stage-gh-org-1-physical-taxonomy@80090e2` as its head. The navigation job has no
+artifact by design; its Run, Job, head commit and successful steps are the identity.
+
 ## Baseline chain
 
 - `main@c90dfdb154d99ee480571c8a397e99d88e12dea8` remains unchanged.
 - PR #1 is the cumulative Stage 6R-1〜11 baseline.
 - PR #3 adds repository navigation on top of PR #1.
 - PR #4 adds Stage 6R-11R on top of PR #3.
+- PR #5 adds the physical taxonomy on top of PR #4.
 - No PR is merged and all remain Draft.
+
+## Deferred-test source of truth
+
+`spec/deferred-tests.json` is the machine-readable source of truth for every
+current not-run test, including owner, reason and due condition. Review manifests
+and evidence tables must copy those values exactly and may not define alternatives.
 
 ## 必須台帳項目
 

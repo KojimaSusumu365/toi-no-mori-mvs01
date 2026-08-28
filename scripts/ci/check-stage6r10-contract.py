@@ -30,9 +30,13 @@ def load_evidence_module():
     return module
 
 
-def synthetic_log(dr_passed: int = 5, pg_passed: int = 12) -> str:
-    return "\n".join(
-        [
+def synthetic_log(
+    dr_passed: int = 5,
+    pg_passed: int = 12,
+    *,
+    include_town_readiness: bool = True,
+) -> str:
+    lines = [
             "test ID uniqueness: PASSED",
             "    0 Warning(s)",
             "    0 Error(s)",
@@ -44,17 +48,29 @@ def synthetic_log(dr_passed: int = 5, pg_passed: int = 12) -> str:
             "# result: 7 passed; 0 failed; 7 total",
             "# ToiNoMori OIDC browser protocol E2E tests",
             "# result: 8 passed; 0 failed; 8 total",
+    ]
+    if include_town_readiness:
+        lines.extend(
+            [
+                "# ToiNoMori town-readiness specification tests",
+                "# result: 5 passed; 0 failed; 5 total",
+            ]
+        )
+    lines.extend(
+        [
             "# ToiNoMori PostgreSQL integration tests",
             f"# result: {pg_passed} passed; {12 - pg_passed} failed; 12 total",
             "# ToiNoMori disaster-recovery specification tests",
             f"# result: {dr_passed} passed; {5 - dr_passed} failed; 5 total",
         ]
     )
+    return "\n".join(lines)
 
 
 def main() -> int:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     wrapper = WRAPPER.read_text(encoding="utf-8")
+    evidence_writer = EVIDENCE_WRITER.read_text(encoding="utf-8")
     checks: list[tuple[str, bool]] = []
     actions = ANY_ACTION.findall(workflow)
     pinned = PINNED_ACTION.findall(workflow)
@@ -63,6 +79,7 @@ def main() -> int:
     checks.append(("workflow fixes Ubuntu and checks non-root", "runs-on: ubuntu-24.04" in workflow and 'test "$(id -u)" -ne 0' in workflow))
     checks.append(("workflow invokes the Stage 6R-10 wrapper and immutable artifact", "run-stage6r10-full-regression-ci.sh" in workflow and "stage6r10-tokyo-ishikari-dr-evidence" in workflow))
     checks.append(("wrapper is fail-closed and runs every native suite", '[[ "$RUNNER_UID" -eq 0 ]]' in wrapper and "test-all.sh" in wrapper and "check-test-ids.sh" in wrapper))
+    checks.append(("evidence uses dynamic 90-test totals and no fixed 85 key", all(token in evidence_writer for token in ["expectedTotal", "passedTotal", "registeredSuitesComplete", "totalsMatch", "townReadiness"]) and "nativeTotal85Of85" not in evidence_writer))
 
     module = load_evidence_module()
     suites = module.parse_suites(synthetic_log())
@@ -98,7 +115,15 @@ def main() -> int:
         test_ids_unique=True,
         build_clean=True,
     )
-    checks.append(("evidence accepts only exact 85-test native non-root GREEN", accepted and all(acceptance.values()) and not root_run and not simulated and not incomplete))
+    missing_suite, _ = module.acceptance_status(
+        gate_exit_code=0,
+        uid=1001,
+        execution_mode="native",
+        suites=module.parse_suites(synthetic_log(include_town_readiness=False)),
+        test_ids_unique=True,
+        build_clean=True,
+    )
+    checks.append(("evidence accepts only complete 90-test native non-root GREEN", accepted and all(acceptance.values()) and not root_run and not simulated and not incomplete and not missing_suite))
 
     print(f"1..{len(checks)}")
     failed = 0

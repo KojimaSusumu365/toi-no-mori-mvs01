@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
 from pathlib import Path
@@ -18,6 +19,8 @@ SOLUTION = ROOT / "ToiNoMori.Mvs01.slnx"
 PUBLIC_READ_CONTEXT = ROOT / "src/ToiNoMori.Api/PublicReadTenantContext.cs"
 API_TESTS = ROOT / "tests/ToiNoMori.Api.Tests/Program.cs"
 DEFERRED_TESTS = ROOT / "spec/deferred-tests.json"
+FAILURE_FIRST_TESTS = ROOT / "tests/stage6r1/stage6r1_red_tests.py"
+POSTGRESQL_TESTS = ROOT / "tests/ToiNoMori.PostgreSql.Tests/Program.cs"
 PINNED_ACTION = re.compile(
     r"^\s*uses:\s+[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?:\s+#.*)?$",
     re.MULTILINE,
@@ -79,6 +82,9 @@ def main() -> int:
     public_read_context = PUBLIC_READ_CONTEXT.read_text(encoding="utf-8")
     api_tests = API_TESTS.read_text(encoding="utf-8")
     deferred_tests = DEFERRED_TESTS.read_text(encoding="utf-8")
+    deferred_registry = json.loads(deferred_tests)
+    failure_first_tests = FAILURE_FIRST_TESTS.read_text(encoding="utf-8")
+    postgresql_tests = POSTGRESQL_TESTS.read_text(encoding="utf-8")
     evidence_writer = EVIDENCE_WRITER.read_text(encoding="utf-8")
     checks: list[tuple[str, bool]] = []
 
@@ -93,8 +99,18 @@ def main() -> int:
     checks.append(("Public Read startup gate permits exactly one configured tenant without a BYPASSRLS query", all(token in public_read_context for token in ["single_tenant", "configuredTenantIds.Length != 1", "Architecture Gate", "System Architect"]) and "BYPASSRLS" not in public_read_context))
     checks.append(("TC-065 proves invalid mode, second tenant, and invalid UUID fail startup", all(token in api_tests for token in ["PublicRead:Mode=multi_tenant", "PublicRead:TenantIds:1=", "PublicRead:TenantIds:0=not-a-uuid"])))
     checks.append(("cross-audience negative test is formally registered not-run", all(token in deferred_tests for token in ["TC-ACC-MVS01-087-OIDC", '"status": "not-run"', '"owner": "System Architect"', '"due": "VT-1 start"'])))
-    checks.append(("evidence uses dynamic totals and typed source identity", all(token in evidence_writer for token in ["expectedTotal", "passedTotal", "registeredSuitesComplete", "totalsMatch", "testedCommit", "authoritativeBranchHead", "commitRelationship"]) and "nativeTotal90Of90" not in evidence_writer))
-    checks.append(("workflow verifies the tested commit relationship", all(token in workflow for token in ["MVS01_TESTED_COMMIT", "MVS01_AUTHORITATIVE_BRANCH_HEAD", "MVS01_COMMIT_RELATIONSHIP", "Verify evidence source identity"])))
+    performance_entry = next(
+        (
+            entry
+            for entry in deferred_registry.get("tests", [])
+            if entry.get("testId") == "TC-PERF-MVS01-002-PG"
+        ),
+        {},
+    )
+    checks.append(("performance test has one machine-readable not-run source", all(str(performance_entry.get(field, "")).strip() for field in ["reasonCode", "reason", "owner", "due"]) and performance_entry.get("status") == "not-run" and '("TC-PERF-MVS01-002-PG"' not in failure_first_tests))
+    checks.append(("RLS coverage derives every tenant table from the tenant_id column", all(token in postgresql_tests for token in ["pg_attribute AS tenant_column", "tenant_column.attname = 'tenant_id'", "tenantTableCount", "protectedTableCount", "Every current or future table with a tenant_id column"])) )
+    checks.append(("evidence uses dynamic totals and reconstructable source identity", all(token in evidence_writer for token in ["expectedTotal", "passedTotal", "registeredSuitesComplete", "totalsMatch", "testedCommit", "testedTree", "authoritativeBranchHead", "commitRelationship", "authoritativeHeadIncluded", "mergeRefParents"]) and "nativeTotal90Of90" not in evidence_writer))
+    checks.append(("workflow verifies and records the tested commit relationship", all(token in workflow for token in ["MVS01_TESTED_COMMIT", "MVS01_TESTED_TREE_SHA", "MVS01_AUTHORITATIVE_BRANCH_HEAD", "MVS01_AUTHORITATIVE_HEAD_INCLUDED", "MVS01_MERGE_REF_PARENT_1", "MVS01_MERGE_REF_PARENT_2", "MVS01_COMMIT_RELATIONSHIP", "Verify evidence source identity", "git merge-base --is-ancestor"])))
 
     module = load_evidence_module()
     suites = module.parse_suites(synthetic_log())

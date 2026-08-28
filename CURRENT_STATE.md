@@ -4,7 +4,7 @@
 
 ## 判定
 
-問いの森のStage 6R-11R実装は、固定した実装commitに対して90/90、累積85/85、repository navigationのすべてがGREENです。既知のRVR-N10〜N13には実装応答済みですが、Claudeの独立再検証とrepository ownerの最終受入が未完了のため、Stage 6R-11RはまだPASSではありません。Stage 6R-12へは進みません。
+問いの森のStage 6R-11R実装は、固定した実装commitに対して90/90、累積85/85、repository navigationのすべてがGREENです。Claude独立レビュー `QF-RVR-MVS01-007` は `PASS_WITH_FINDINGS`、P0/P1・blocking Findingなしです。RVR-N17〜N22への実装応答をGitHub Actionsで再検証し、repository ownerが最終受入を記録するまでStage 6R-12へは進みません。
 
 | 項目 | 状態 | 根拠 |
 |---|---|---|
@@ -14,7 +14,7 @@
 | Stage 6R-11 workflow | GREEN | Run `33135504039` / Job `98734412669` / 90/90 |
 | Stage 6R-10 workflow | GREEN | Run `33135504027` / Job `98734412535` / 85/85 |
 | Repository navigation | GREEN | Run `33135504210` / Job `98734413111` |
-| Claude review | AWAITING REVIEW | [review request](docs/reviews/stage6r11r/review-request.md) |
+| Claude review | PASS_WITH_FINDINGS / NO BLOCKER | [Claude Findings](docs/reviews/stage6r11r/claude-findings.md) |
 | Final acceptance | NOT READY | [final acceptance](docs/reviews/stage6r11r/final-acceptance.md) |
 | Stage 6R-12 | NOT STARTED | 6R-11R PASS後 |
 | Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |
@@ -28,7 +28,7 @@
 | #3 | `stage6r4c-postgresql-green-fix` → `stage-gh-org-0-claude-onboarding` | Claude/human navigation |
 | #4 | `stage-gh-org-0-claude-onboarding` → `stage6r11r-closure` | Stage 6R-11R closure implementation and review packet |
 
-All three remain Draft. No merge or `main` update has been performed.
+PR #5 (`stage6r11r-closure` → `stage-gh-org-1-physical-taxonomy`) adds the canonical physical taxonomy. All four remain Draft. No merge or `main` update has been performed.
 
 ## Stage 6R-11R identity
 
@@ -54,4 +54,4 @@ Full record: [Stage 6R-11R GitHub acceptance evidence](docs/evidence/stage6r11/s
 
 ## Repository taxonomy overlay
 
-This Draft-only overlay classifies ADR/UML/DR design, Stage documents, Manifests and Evidence into stable directories. It changes paths and navigation contracts, not the fixed Stage 6R-11R implementation target or its recorded acceptance Runs. Stage 6R-12 contains only a NOT STARTED placeholder.
+This Draft-only overlay classifies ADR/UML/DR design, Stage documents, Manifests and Evidence into stable directories. In addition to path moves, it rewrites the repository entry and navigation documents (`README.md`, `CLAUDE.md`, `ARCHITECTURE.md` and `docs/INDEX.md`) and strengthens navigation/taxonomy checks. It does not change the fixed Stage 6R-11R implementation target, production source, tests, specifications or recorded acceptance artifacts. Stage 6R-12 contains only a NOT STARTED placeholder.

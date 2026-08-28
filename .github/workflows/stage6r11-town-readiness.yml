@@ -40,15 +40,27 @@ jobs:
         run: |
           test -n "$MVS01_TESTED_COMMIT"
           test -n "$MVS01_AUTHORITATIVE_BRANCH_HEAD"
+          tested_tree_sha="$(git rev-parse "$MVS01_TESTED_COMMIT^{tree}")"
+          echo "MVS01_TESTED_TREE_SHA=$tested_tree_sha" >> "$GITHUB_ENV"
           case "$MVS01_COMMIT_RELATIONSHIP" in
             same_commit)
               test "$MVS01_TESTED_COMMIT" = "$MVS01_AUTHORITATIVE_BRANCH_HEAD"
+              echo "MVS01_AUTHORITATIVE_HEAD_INCLUDED=true" >> "$GITHUB_ENV"
               ;;
             pull_request_merge_ref)
               test -n "$MVS01_BASE_SHA"
               git cat-file -e "$MVS01_TESTED_COMMIT^{commit}"
               git cat-file -e "$MVS01_AUTHORITATIVE_BRANCH_HEAD^{commit}"
               git merge-base --is-ancestor "$MVS01_AUTHORITATIVE_BRANCH_HEAD" "$MVS01_TESTED_COMMIT"
+              read -r merge_parent_1 merge_parent_2 extra_parent < <(git show -s --format=%P "$MVS01_TESTED_COMMIT")
+              test -n "$merge_parent_1"
+              test -n "$merge_parent_2"
+              test -z "${extra_parent:-}"
+              test "$merge_parent_1" = "$MVS01_BASE_SHA"
+              test "$merge_parent_2" = "$MVS01_AUTHORITATIVE_BRANCH_HEAD"
+              echo "MVS01_AUTHORITATIVE_HEAD_INCLUDED=true" >> "$GITHUB_ENV"
+              echo "MVS01_MERGE_REF_PARENT_1=$merge_parent_1" >> "$GITHUB_ENV"
+              echo "MVS01_MERGE_REF_PARENT_2=$merge_parent_2" >> "$GITHUB_ENV"
               ;;
             *)
               echo "Unverified commit relationship: $MVS01_COMMIT_RELATIONSHIP" >&2

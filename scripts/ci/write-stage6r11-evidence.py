@@ -151,6 +151,14 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
         "MVS01_COMMIT_RELATIONSHIP",
         "same_commit" if tested_commit == authoritative_head else "different_unverified_head",
     )
+    merge_ref_parents = [
+        value
+        for value in (
+            os.environ.get("MVS01_MERGE_REF_PARENT_1", ""),
+            os.environ.get("MVS01_MERGE_REF_PARENT_2", ""),
+        )
+        if value
+    ]
     return {
         "schemaVersion": "1.1",
         "stage": "6R-11",
@@ -166,10 +174,15 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
             "event": os.environ.get("GITHUB_EVENT_NAME", "local"),
             "sourceRef": os.environ.get("GITHUB_REF", "unknown"),
             "testedCommit": tested_commit,
+            "testedTree": os.environ.get("MVS01_TESTED_TREE_SHA", "unknown"),
             "authoritativeBranch": os.environ.get("MVS01_AUTHORITATIVE_BRANCH", "local"),
             "authoritativeBranchHead": authoritative_head,
             "baseCommit": os.environ.get("MVS01_BASE_SHA", "unknown"),
             "commitRelationship": relationship,
+            "authoritativeHeadIncluded": os.environ.get(
+                "MVS01_AUTHORITATIVE_HEAD_INCLUDED", "false"
+            ).lower() == "true",
+            "mergeRefParents": merge_ref_parents,
             "workflowName": os.environ.get("GITHUB_WORKFLOW", "local"),
             "workflowRef": os.environ.get("GITHUB_WORKFLOW_REF", "local"),
             "runId": os.environ.get("GITHUB_RUN_ID", "unknown"),

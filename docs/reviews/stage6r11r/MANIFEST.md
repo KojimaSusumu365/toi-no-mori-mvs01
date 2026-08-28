@@ -1,6 +1,6 @@
 # MANIFEST — Stage 6R-11R External Review Reconciliation
 
-Status: **IMPLEMENTATION GREEN — EXTERNAL REVIEW PENDING**  
+Status: **PASS_WITH_FINDINGS REVIEW RECEIVED — FINAL RETEST PENDING**
 Review target: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`
 
 ## Scope
@@ -13,7 +13,7 @@ Stage 6R-11R reconciles the Stage 6R-11 implementation, machine gate, security c
 - Existing tenant test strengthened: `TC-ACC-MVS01-065-API`
 - Rejected-path audit proof strengthened: `TC-ACC-MVS01-071-API`
 - RLS pool reuse proof: `TC-ACC-MVS01-067-PG`
-- Deferred audience registry: `spec/deferred-tests.json`
+- Deferred test registry: `spec/deferred-tests.json`
 - Dynamic evidence: `scripts/ci/write-stage6r11-evidence.py`
 - Contract gate: `scripts/ci/check-stage6r11-contract.py`
 - Boundary contract: `docs/architecture/contracts/forest-town-boundary-v1.md`
@@ -25,7 +25,7 @@ Stage 6R-11R reconciles the Stage 6R-11 implementation, machine gate, security c
 
 - Request: `docs/reviews/stage6r11r/review-request.md`
 - Manifest: `docs/reviews/stage6r11r/review-manifest.json`
-- Claude Findings placeholder: `docs/reviews/stage6r11r/claude-findings.md`
+- Claude Findings `QF-RVR-MVS01-007`: `docs/reviews/stage6r11r/claude-findings.md`
 - Codex implementation response: `docs/reviews/stage6r11r/codex-response.md`
 - Owner acceptance gate: `docs/reviews/stage6r11r/final-acceptance.md`
 
@@ -39,4 +39,5 @@ Stage 6R-11R reconciles the Stage 6R-11 implementation, machine gate, security c
 
 No Town runtime, shared DB, BYPASSRLS role, Stage 6R-12 feature, merge, Draft removal or deployment.
 
-This manifest does not mark Stage 6R-11R PASS. Claude review and repository-owner acceptance remain required.
+Claude reported no blocking Finding. RVR-N17 through RVR-N22 are implemented and
+require the final affected-Gate rerun before repository-owner acceptance is sealed.
