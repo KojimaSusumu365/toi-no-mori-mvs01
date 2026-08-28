@@ -41,11 +41,11 @@
 - IdPの`PlatformAuditor`だけが期間必須APIを使用し、tenant `Auditor`には403を返す。
 - 429は不可逆partition hash・正規化action・UTC 1分窓で抑制し、監査書込み障害で元の429を変更しない。
 
-Stage 4は設定契約とローカルBFF/UIまでを実装している。実IdP、Load Balancer、共有key ring、secret注入はまだ構築していない。設計判断は`../../docs/adr-0004-mobile-bff-oidc.md`を正とする。
+Stage 4は設定契約とローカルBFF/UIまでを実装している。実IdP、Load Balancer、共有key ring、secret注入はまだ構築していない。設計判断は`../../docs/architecture/adr/adr-0004-mobile-bff-oidc.md`を正とする。
 
 ## Stage 5 IdP候補
 
-初期Editor/Reviewer向けmanaged IdPはMicrosoft Entra IDを第一候補とする。app本体はgeneric OIDCのまま、`roles`とMFA証跡claimを設定で切り替える。実tenant接続前に`../../docs/entra-id-setup.md`のENTRA-AT-01〜10を実施する。
+初期Editor/Reviewer向けmanaged IdPはMicrosoft Entra IDを第一候補とする。app本体はgeneric OIDCのまま、`roles`とMFA証跡claimを設定で切り替える。実tenant接続前に`../../docs/architecture/identity/entra-id-setup.md`のENTRA-AT-01〜10を実施する。
 
 Stage 5では署名付き試験IdPとのHTTPS OIDC往復を実装済みだが、実Entra tenantへresourceを作成していない。実ID tokenでMFA証跡を確認するまで、`amr=mfa`を確定値として扱わない。証跡が一致しなければ管理機能は403で停止させ、検査を外さない。
 
@@ -53,4 +53,4 @@ Stage 5では署名付き試験IdPとのHTTPS OIDC往復を実装済みだが、
 
 Provider/APIのresource schemaと変更計画を実アカウントでread-only検証してからIaCを追加する。`apply`は人のreview、plan保存、対象project/zone/bucketの二重確認を通す。Stage 3は資格情報がないため、推測したTerraform resourceを成果物へ含めない。
 
-運用手順は `../../docs/dr-runbook.md`、設計判断は `../../docs/adr-0003-ishikari-primary-tokyo-recovery.md` を正とする。
+運用手順は `../../docs/architecture/dr/dr-runbook.md`、設計判断は `../../docs/architecture/adr/adr-0003-ishikari-primary-tokyo-recovery.md` を正とする。

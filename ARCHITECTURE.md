@@ -34,4 +34,8 @@ Town runtime、Experience Ledger、Citizen Compute、実環境Sakura failover、
 
 ## Frozen integration contract
 
-The reviewable Forest–Town rules, storage allowlist, error mapping, and tenant Architecture Gate are fixed in [docs/forest-town-boundary-v1.md](docs/forest-town-boundary-v1.md).
+The reviewable Forest–Town rules, storage allowlist, error mapping, and tenant Architecture Gate are fixed in [docs/architecture/contracts/forest-town-boundary-v1.md](docs/architecture/contracts/forest-town-boundary-v1.md).
+
+## Detailed architecture index
+
+ADR, UML, DR, identity, runtime and integration contracts are indexed in [docs/architecture/README.md](docs/architecture/README.md).

@@ -13,10 +13,10 @@ Independently verify whether RVR-N10 through RVR-N13 and the listed P0 closure c
 
 ## Review order
 
-1. Read [GitHub acceptance evidence](../../evidence/stage6r11r-github-acceptance.md).
+1. Read [GitHub acceptance evidence](../../evidence/stage6r11/stage6r11r-github-acceptance.md).
 2. Inspect the target implementation commit, not the later documentation-seal commit.
-3. Inspect [Forest–Town boundary](../../forest-town-boundary-v1.md).
-4. Inspect [Test ID mapping](../../stage6r11r-test-id-mapping.md) and `spec/deferred-tests.json`.
+3. Inspect [Forest–Town boundary](../../architecture/contracts/forest-town-boundary-v1.md).
+4. Inspect [Test ID mapping](test-id-mapping.md) and `spec/deferred-tests.json`.
 5. Re-evaluate the known Findings below.
 6. Record the response in [claude-findings.md](claude-findings.md).
 

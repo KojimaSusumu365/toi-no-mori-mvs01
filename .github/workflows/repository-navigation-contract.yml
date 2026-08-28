@@ -10,6 +10,7 @@ on:
       - "ROADMAP.md"
       - "docs/**"
       - "scripts/check-repository-navigation.py"
+      - "scripts/check-repository-taxonomy.py"
       - ".github/workflows/repository-navigation-contract.yml"
   workflow_dispatch:
 
@@ -29,3 +30,6 @@ jobs:
 
       - name: Verify repository navigation
         run: python3 scripts/check-repository-navigation.py
+
+      - name: Verify repository taxonomy and links
+        run: python3 scripts/check-repository-taxonomy.py

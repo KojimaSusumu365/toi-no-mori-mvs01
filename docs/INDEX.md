@@ -3,33 +3,37 @@
 ## 15分で現在地を理解する
 
 1. [Current state](../CURRENT_STATE.md)
-2. [Architecture](../ARCHITECTURE.md)
-3. [Stage 6R-11 manifest](../MANIFEST-STAGE6R11.md)
-4. [Town readiness](stage6r11-town-readiness.md)
-5. [Source of truth](governance/SOURCE-OF-TRUTH.md)
+2. [Architecture boundaries](../ARCHITECTURE.md)
+3. [Repository taxonomy](governance/REPOSITORY-TAXONOMY.md)
+4. [Stage 6R-11 manifest](stages/stage6r11/MANIFEST-STAGE6R11.md)
+5. [Stage 6R-11 Town readiness](stages/stage6r11/stage6r11-town-readiness.md)
 6. [Stage 6R-11R review request](reviews/stage6r11r/review-request.md)
 
-## 読者別
+## Area index
 
-| 読者 | 開始点 |
+| Area | Contents |
 |---|---|
-| Claude / 外部reviewer | [CLAUDE.md](../CLAUDE.md) |
-| 実装担当 | [Architecture](../ARCHITECTURE.md) → `src/` → `tests/` |
-| CI担当 | `.github/workflows/` → `scripts/ci/` → `docs/evidence/` |
-| 受入判断者 | [Current state](../CURRENT_STATE.md) → [review packet](reviews/stage6r11r/) |
-| 将来計画 | [Roadmap](../ROADMAP.md) |
+| [Architecture](architecture/README.md) | ADR, UML, DR, identity, runtime and Forest–Town contracts |
+| [Governance](governance/REPOSITORY-TAXONOMY.md) | AI collaboration, source identity, review protocol and test traceability |
+| [Stages](stages/README.md) | Stage 6R-01〜6R-12 manifests and specifications |
+| [Reviews](reviews/README.md) | Claude findings, Codex responses and owner acceptance |
+| [Evidence](evidence/README.md) | Stage-scoped execution evidence |
+| [Archive](archive/README.md) | non-current material retained for provenance |
 
-## 既存成果物の扱い
+## Current review packet
 
-- rootの `MANIFEST-*.md` は各Stageの凍結目録として移動しない
-- `docs/evidence/` は実行証跡。設計文書と混ぜない
-- `docs/reviews/` はAI間の依頼・所見・応答・最終受入
-- `src/`、`tests/`、`scripts/` の既存pathはこの整理Stageで変更しない
+- [Review request](reviews/stage6r11r/review-request.md)
+- [Review manifest](reviews/stage6r11r/review-manifest.json)
+- [Claude findings](reviews/stage6r11r/claude-findings.md)
+- [Codex response](reviews/stage6r11r/codex-response.md)
+- [Closure ledger](reviews/stage6r11r/closure.md)
+- [Test ID mapping](reviews/stage6r11r/test-id-mapping.md)
+- [Final acceptance](reviews/stage6r11r/final-acceptance.md)
 
-## Stage 6R-11R closure
+## Rules
 
-- [Closure ledger](stage6r11r-closure.md)
-- [Exact GitHub acceptance evidence](evidence/stage6r11r-github-acceptance.md)
-- [Forest–Town boundary contract](forest-town-boundary-v1.md)
-- [Planned-to-actual Test ID mapping](stage6r11r-test-id-mapping.md)
-- [Deferred test registry](../spec/deferred-tests.json)
+- Root is reserved for onboarding and build entry points.
+- Stage manifests and specifications live under their zero-padded Stage folder.
+- Evidence is grouped by the Stage that generated or accepted it.
+- Archive content is historical and never silently treated as current.
+- CI rejects broken local Markdown links and legacy flat taxonomy paths.

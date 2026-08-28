@@ -1,0 +1,347 @@
+{
+  "schema_version": "1.0",
+  "status": "DRAFT_PHYSICAL_TAXONOMY",
+  "source_branch": "stage6r11r-closure",
+  "base_commit": "b85459ff1db304346e159e75833b1c415ce7a575",
+  "rules": {
+    "stage_directory_format": "docs/stages/stage6rNN",
+    "evidence_directory_format": "docs/evidence/stage6rNN",
+    "archive_is_non_normative": true,
+    "evidence_content_is_not_rewritten": true,
+    "legacy_flat_paths_forbidden": true
+  },
+  "moves": [
+    {
+      "from": "MANIFEST-DEV-ENVIRONMENT.md",
+      "to": "docs/architecture/runtime/MANIFEST-DEV-ENVIRONMENT.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R1.md",
+      "to": "docs/stages/stage6r01/MANIFEST-STAGE6R1.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R10.md",
+      "to": "docs/stages/stage6r10/MANIFEST-STAGE6R10.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R11.md",
+      "to": "docs/stages/stage6r11/MANIFEST-STAGE6R11.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R11R.md",
+      "to": "docs/reviews/stage6r11r/MANIFEST.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R2.md",
+      "to": "docs/stages/stage6r02/MANIFEST-STAGE6R2.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R3.md",
+      "to": "docs/stages/stage6r03/MANIFEST-STAGE6R3.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R4-DB.md",
+      "to": "docs/stages/stage6r04/MANIFEST-STAGE6R4-DB.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R4.md",
+      "to": "docs/stages/stage6r04/MANIFEST-STAGE6R4.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R4C-CI.md",
+      "to": "docs/stages/stage6r04/MANIFEST-STAGE6R4C-CI.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R5.md",
+      "to": "docs/stages/stage6r05/MANIFEST-STAGE6R5.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R6.md",
+      "to": "docs/stages/stage6r06/MANIFEST-STAGE6R6.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R7.md",
+      "to": "docs/stages/stage6r07/MANIFEST-STAGE6R7.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R8.md",
+      "to": "docs/stages/stage6r08/MANIFEST-STAGE6R8.md"
+    },
+    {
+      "from": "MANIFEST-STAGE6R9.md",
+      "to": "docs/stages/stage6r09/MANIFEST-STAGE6R9.md"
+    },
+    {
+      "from": "docs/adr-0001-first-executable-slice.md",
+      "to": "docs/architecture/adr/adr-0001-first-executable-slice.md"
+    },
+    {
+      "from": "docs/adr-0002-postgresql-persistence.md",
+      "to": "docs/architecture/adr/adr-0002-postgresql-persistence.md"
+    },
+    {
+      "from": "docs/adr-0003-ishikari-primary-tokyo-recovery.md",
+      "to": "docs/architecture/adr/adr-0003-ishikari-primary-tokyo-recovery.md"
+    },
+    {
+      "from": "docs/adr-0004-mobile-bff-oidc.md",
+      "to": "docs/architecture/adr/adr-0004-mobile-bff-oidc.md"
+    },
+    {
+      "from": "docs/adr-0005-managed-idp-and-oidc-e2e.md",
+      "to": "docs/architecture/adr/adr-0005-managed-idp-and-oidc-e2e.md"
+    },
+    {
+      "from": "docs/adr-0006-mobile-workflow-workspace.md",
+      "to": "docs/architecture/adr/adr-0006-mobile-workflow-workspace.md"
+    },
+    {
+      "from": "docs/adr-0010-platform-security-audit-and-rate-limit-suppression.md",
+      "to": "docs/architecture/adr/adr-0010-platform-security-audit-and-rate-limit-suppression.md"
+    },
+    {
+      "from": "docs/development-environment.md",
+      "to": "docs/architecture/runtime/development-environment.md"
+    },
+    {
+      "from": "docs/dr-runbook.md",
+      "to": "docs/architecture/dr/dr-runbook.md"
+    },
+    {
+      "from": "docs/entra-id-setup.md",
+      "to": "docs/architecture/identity/entra-id-setup.md"
+    },
+    {
+      "from": "docs/evidence/development-environment-20260820.md",
+      "to": "docs/evidence/environment/development-environment-20260820.md"
+    },
+    {
+      "from": "docs/evidence/dr-drill-latest.json",
+      "to": "docs/evidence/stage6r10/dr-drill-latest.json"
+    },
+    {
+      "from": "docs/evidence/stage6r1-red-result.json",
+      "to": "docs/evidence/stage6r01/stage6r1-red-result.json"
+    },
+    {
+      "from": "docs/evidence/stage6r1-red-result.md",
+      "to": "docs/evidence/stage6r01/stage6r1-red-result.md"
+    },
+    {
+      "from": "docs/evidence/stage6r10-failure-first-local.md",
+      "to": "docs/evidence/stage6r10/stage6r10-failure-first-local.md"
+    },
+    {
+      "from": "docs/evidence/stage6r10-github-acceptance.md",
+      "to": "docs/evidence/stage6r10/stage6r10-github-acceptance.md"
+    },
+    {
+      "from": "docs/evidence/stage6r11-github-acceptance.md",
+      "to": "docs/evidence/stage6r11/stage6r11-github-acceptance.md"
+    },
+    {
+      "from": "docs/evidence/stage6r11r-github-acceptance.md",
+      "to": "docs/evidence/stage6r11/stage6r11r-github-acceptance.md"
+    },
+    {
+      "from": "docs/evidence/stage6r2-domain-result.md",
+      "to": "docs/evidence/stage6r02/stage6r2-domain-result.md"
+    },
+    {
+      "from": "docs/evidence/stage6r2-remaining-red-result.json",
+      "to": "docs/evidence/stage6r02/stage6r2-remaining-red-result.json"
+    },
+    {
+      "from": "docs/evidence/stage6r3-approval-api-result.md",
+      "to": "docs/evidence/stage6r03/stage6r3-approval-api-result.md"
+    },
+    {
+      "from": "docs/evidence/stage6r3-remaining-red-result.json",
+      "to": "docs/evidence/stage6r03/stage6r3-remaining-red-result.json"
+    },
+    {
+      "from": "docs/evidence/stage6r4-db-security-result.json",
+      "to": "docs/evidence/stage6r04/stage6r4-db-security-result.json"
+    },
+    {
+      "from": "docs/evidence/stage6r4-postgresql-not-run.json",
+      "to": "docs/evidence/stage6r04/stage6r4-postgresql-not-run.json"
+    },
+    {
+      "from": "docs/evidence/stage6r4-remaining-red-result.json",
+      "to": "docs/evidence/stage6r04/stage6r4-remaining-red-result.json"
+    },
+    {
+      "from": "docs/evidence/stage6r4-tenant-api-result.md",
+      "to": "docs/evidence/stage6r04/stage6r4-tenant-api-result.md"
+    },
+    {
+      "from": "docs/evidence/stage6r4c-ci-construction-result.json",
+      "to": "docs/evidence/stage6r04/stage6r4c-ci-construction-result.json"
+    },
+    {
+      "from": "docs/evidence/stage6r6-github-acceptance.md",
+      "to": "docs/evidence/stage6r06/stage6r6-github-acceptance.md"
+    },
+    {
+      "from": "docs/evidence/stage6r6-platform-security-local.md",
+      "to": "docs/evidence/stage6r06/stage6r6-platform-security-local.md"
+    },
+    {
+      "from": "docs/evidence/stage6r7-github-acceptance.md",
+      "to": "docs/evidence/stage6r07/stage6r7-github-acceptance.md"
+    },
+    {
+      "from": "docs/evidence/stage6r8-failure-first-local.md",
+      "to": "docs/evidence/stage6r08/stage6r8-failure-first-local.md"
+    },
+    {
+      "from": "docs/evidence/stage6r8-github-acceptance.md",
+      "to": "docs/evidence/stage6r08/stage6r8-github-acceptance.md"
+    },
+    {
+      "from": "docs/evidence/stage6r9-failure-first-local.md",
+      "to": "docs/evidence/stage6r09/stage6r9-failure-first-local.md"
+    },
+    {
+      "from": "docs/evidence/stage6r9-github-acceptance.md",
+      "to": "docs/evidence/stage6r09/stage6r9-github-acceptance.md"
+    },
+    {
+      "from": "docs/forest-town-boundary-v1.md",
+      "to": "docs/architecture/contracts/forest-town-boundary-v1.md"
+    },
+    {
+      "from": "docs/spec-test-matrix.md",
+      "to": "docs/governance/testing/spec-test-matrix.md"
+    },
+    {
+      "from": "docs/stage6-detailed-spec.md",
+      "to": "docs/archive/legacy-stage6/stage6-detailed-spec.md"
+    },
+    {
+      "from": "docs/stage6r-test-plan-amendment-v0.2.md",
+      "to": "docs/governance/testing/stage6r-test-plan-amendment-v0.2.md"
+    },
+    {
+      "from": "docs/stage6r1-failure-first-spec.md",
+      "to": "docs/stages/stage6r01/stage6r1-failure-first-spec.md"
+    },
+    {
+      "from": "docs/stage6r10-tokyo-ishikari-dr.md",
+      "to": "docs/stages/stage6r10/stage6r10-tokyo-ishikari-dr.md"
+    },
+    {
+      "from": "docs/stage6r11-town-readiness.md",
+      "to": "docs/stages/stage6r11/stage6r11-town-readiness.md"
+    },
+    {
+      "from": "docs/stage6r11r-closure.md",
+      "to": "docs/reviews/stage6r11r/closure.md"
+    },
+    {
+      "from": "docs/stage6r11r-test-id-mapping.md",
+      "to": "docs/reviews/stage6r11r/test-id-mapping.md"
+    },
+    {
+      "from": "docs/stage6r2-domain-red-green.md",
+      "to": "docs/stages/stage6r02/stage6r2-domain-red-green.md"
+    },
+    {
+      "from": "docs/stage6r3-approval-api-red-green.md",
+      "to": "docs/stages/stage6r03/stage6r3-approval-api-red-green.md"
+    },
+    {
+      "from": "docs/stage6r4-db-security-boundary.md",
+      "to": "docs/stages/stage6r04/stage6r4-db-security-boundary.md"
+    },
+    {
+      "from": "docs/stage6r4-tenant-boundary-red-green.md",
+      "to": "docs/stages/stage6r04/stage6r4-tenant-boundary-red-green.md"
+    },
+    {
+      "from": "docs/stage6r4c-nonroot-postgresql-ci.md",
+      "to": "docs/stages/stage6r04/stage6r4c-nonroot-postgresql-ci.md"
+    },
+    {
+      "from": "docs/stage6r5-draft-pr-acceptance.md",
+      "to": "docs/stages/stage6r05/stage6r5-draft-pr-acceptance.md"
+    },
+    {
+      "from": "docs/stage6r6-platform-security-audit.md",
+      "to": "docs/stages/stage6r06/stage6r6-platform-security-audit.md"
+    },
+    {
+      "from": "docs/stage6r7-append-only-db.md",
+      "to": "docs/stages/stage6r07/stage6r7-append-only-db.md"
+    },
+    {
+      "from": "docs/stage6r8-mobile-etag-role-dto.md",
+      "to": "docs/stages/stage6r08/stage6r8-mobile-etag-role-dto.md"
+    },
+    {
+      "from": "docs/stage6r9-oidc-tenant-self-approval.md",
+      "to": "docs/stages/stage6r09/stage6r9-oidc-tenant-self-approval.md"
+    },
+    {
+      "from": "docs/uml-stage2.md",
+      "to": "docs/architecture/uml/uml-stage2.md"
+    },
+    {
+      "from": "docs/uml-stage3.md",
+      "to": "docs/architecture/uml/uml-stage3.md"
+    },
+    {
+      "from": "docs/uml-stage4.md",
+      "to": "docs/architecture/uml/uml-stage4.md"
+    },
+    {
+      "from": "docs/uml-stage5.md",
+      "to": "docs/architecture/uml/uml-stage5.md"
+    },
+    {
+      "from": "docs/uml-stage6.md",
+      "to": "docs/architecture/uml/uml-stage6.md"
+    },
+    {
+      "from": "docs/uml-stage6r1.md",
+      "to": "docs/architecture/uml/uml-stage6r1.md"
+    },
+    {
+      "from": "docs/uml-stage6r10-tokyo-ishikari-dr.md",
+      "to": "docs/architecture/uml/uml-stage6r10-tokyo-ishikari-dr.md"
+    },
+    {
+      "from": "docs/uml-stage6r2-domain.md",
+      "to": "docs/architecture/uml/uml-stage6r2-domain.md"
+    },
+    {
+      "from": "docs/uml-stage6r3-approval-api.md",
+      "to": "docs/architecture/uml/uml-stage6r3-approval-api.md"
+    },
+    {
+      "from": "docs/uml-stage6r4-tenant-boundary.md",
+      "to": "docs/architecture/uml/uml-stage6r4-tenant-boundary.md"
+    },
+    {
+      "from": "docs/uml-stage6r6-platform-security.md",
+      "to": "docs/architecture/uml/uml-stage6r6-platform-security.md"
+    },
+    {
+      "from": "docs/uml-stage6r7-append-only-db.md",
+      "to": "docs/architecture/uml/uml-stage6r7-append-only-db.md"
+    },
+    {
+      "from": "docs/uml-stage6r8-mobile-etag-role-dto.md",
+      "to": "docs/architecture/uml/uml-stage6r8-mobile-etag-role-dto.md"
+    },
+    {
+      "from": "docs/uml-stage6r9-oidc-tenant-self-approval.md",
+      "to": "docs/architecture/uml/uml-stage6r9-oidc-tenant-self-approval.md"
+    },
+    {
+      "from": "docs/verification-result.md",
+      "to": "docs/archive/legacy-stage6/verification-result.md"
+    }
+  ]
+}
