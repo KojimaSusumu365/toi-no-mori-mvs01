@@ -1,0 +1,85 @@
+name: QF Work Order contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/governance/work-orders/**"
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: qf-work-order-${{ github.repository_id }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: vars.QF_AI_PHASE == 'A'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Select exactly one changed Work Order
+        id: work_order
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.event.after }}
+        run: |
+          mapfile -t changed < <(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" -- 'docs/governance/work-orders/WO-*.yml')
+          test "${#changed[@]}" -eq 1
+          printf 'path=%s\n' "${changed[0]}" >> "$GITHUB_OUTPUT"
+      - name: Resolve durable execution dedup fail-closed
+        id: dedup
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          WORK_ORDER_PATH: ${{ steps.work_order.outputs.path }}
+          BEFORE_SHA: ${{ github.event.before }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs=require('fs');
+            const cp=require('child_process');
+            const work=JSON.parse(fs.readFileSync(process.env.WORK_ORDER_PATH,'utf8'));
+            const executionId=work.approval?.execution_id;
+            let processed=false;
+            cp.execFileSync('git',['cat-file','-e',`${process.env.BEFORE_SHA}^{commit}`]);
+            const priorPath=cp.execFileSync('git',['ls-tree','--name-only',process.env.BEFORE_SHA,'--',process.env.WORK_ORDER_PATH],{encoding:'utf8'}).trim();
+            if (priorPath) {
+              const prior=JSON.parse(cp.execFileSync('git',['show',`${process.env.BEFORE_SHA}:${process.env.WORK_ORDER_PATH}`],{encoding:'utf8'}));
+              processed=prior.approval?.execution_state==='READY' && prior.approval?.execution_id===executionId;
+            }
+            const prefix=`codex/${work.metadata.id}-`;
+            const branches=await github.paginate(github.rest.repos.listBranches,{owner:context.repo.owner,repo:context.repo.repo,per_page:100});
+            const prs=await github.paginate(github.rest.pulls.list,{owner:context.repo.owner,repo:context.repo.repo,state:'all',per_page:100});
+            processed=processed || branches.some(item=>item.name.startsWith(prefix)) || prs.some(item=>item.head?.repo?.full_name===`${context.repo.owner}/${context.repo.repo}` && item.head.ref.startsWith(prefix));
+            core.setOutput('state',processed?'processed':'first');
+            core.info(JSON.stringify({execution_id:executionId,dedup_state:processed?'processed':'first',branch_count:branches.length,pr_count:prs.length,pagination_complete:true}));
+      - name: Validate trusted Work Order
+        env:
+          QF_ACTOR: ${{ github.actor }}
+          QF_DEFAULT_SHA: ${{ github.sha }}
+          QF_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          QF_WORK_ORDER: ${{ steps.work_order.outputs.path }}
+          QF_DEDUP_STATE: ${{ steps.dedup.outputs.state }}
+        run: >-
+          python3 scripts/qf-ai-controller.py preflight >/dev/null &&
+          python3 scripts/qf-ai-controller.py --output artifacts/automation/work-order-contract.json
+          work-order --file "$QF_WORK_ORDER" --actor "$QF_ACTOR"
+          --default-branch-sha "$QF_DEFAULT_SHA"
+          --workflow-sha "$QF_WORKFLOW_SHA"
+          --dedup-state "$QF_DEDUP_STATE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-work-order-contract
+          path: |
+            artifacts/automation/work-order-contract.json
+            ${{ steps.work_order.outputs.path }}
+          if-no-files-found: error
+          retention-days: 7

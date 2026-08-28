@@ -1,0 +1,53 @@
+name: qf-role-appointment-signature
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  appointment-signature:
+    name: qf-role-appointment-signature
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted Organizer registry
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Evaluate applicability and current review state from API
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs=require('fs');
+            const prNumber = context.payload.pull_request?.number || context.payload.review?.pull_request_url?.split('/').pop();
+            if (!prNumber) return core.setFailed('indeterminate PR number');
+            const pr = (await github.rest.pulls.get({owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber)})).data;
+            const files = await github.paginate(github.rest.pulls.listFiles,{owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber),per_page:100});
+            if (!files.length) return core.setFailed('indeterminate empty file list');
+            const target='docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml';
+            const paths=files.flatMap(f=>[f.filename,f.previous_filename].filter(Boolean));
+            if (!paths.includes(target)) { core.info(JSON.stringify({applicability:'not_applicable',api_count:files.length,pagination_complete:true,head_sha:pr.head.sha,paths})); return; }
+            if (new Set(paths).size !== 1) return core.setFailed('appointment PR contains mixed paths');
+            const reviews=await github.paginate(github.rest.pulls.listReviews,{owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber),per_page:100});
+            const record=JSON.parse(Buffer.from((await github.rest.repos.getContent({owner:context.repo.owner,repo:context.repo.repo,path:target,ref:pr.head.sha})).data.content,'base64').toString('utf8'));
+            const allowlist=JSON.parse(fs.readFileSync('.github/ai/registries/organizer-allowlist.yml','utf8')).organizers.map(x=>x.github_login);
+            if (!allowlist.includes(record.organizer) || pr.user.login!==record.organizer) return core.setFailed('Organizer signature or allowlist mismatch');
+            if (!record.nominee || record.nominee === record.organizer || record.nominee===pr.user.login || allowlist.includes(record.nominee)) return core.setFailed('invalid independence record');
+            let permission='none';
+            try {
+              permission=(await github.rest.repos.getCollaboratorPermissionLevel({owner:context.repo.owner,repo:context.repo.repo,username:record.nominee})).data.permission;
+            } catch (error) {
+              if (error.status!==404) throw error;
+            }
+            if (['admin','maintain','write'].includes(permission)) return core.setFailed('nominee has repository write permission');
+            const nominee=reviews.filter(r=>r.user?.login===record.nominee).sort((a,b)=>a.id-b.id).at(-1);
+            if (!nominee || nominee.state!=='APPROVED' || nominee.commit_id!==pr.head.sha) return core.setFailed('current head lacks nominee APPROVED');
+            core.info(JSON.stringify({applicability:'applicable',review_id:nominee.id,reviewer_login:record.nominee,review_state:nominee.state,approved_commit_sha:nominee.commit_id,checked_head_sha:pr.head.sha,nominee_permission:permission,nominee_in_organizer_allowlist:false,api_count:files.length,pagination_complete:true,evaluated_at:new Date().toISOString()}));

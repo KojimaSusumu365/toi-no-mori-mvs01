@@ -1,0 +1,92 @@
+name: QF CI Gate Router
+
+on:
+  workflow_run:
+    workflows:
+      - "Stage 6R-10 Tokyo-Ishikari DR switch and recovery regression"
+      - "Stage 6R-11 Question Forest Minimum Town Readiness"
+      - "QF automation Controller bootstrap contract"
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  route:
+    if: >-
+      vars.QF_AI_PHASE == 'A' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'codex/WO-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Recheck origin and required checks before label write
+        id: route
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          EXPECTED_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const crypto=require('crypto');
+            const canonical=value=>Array.isArray(value)?`[${value.map(canonical).join(',')}]`:value&&typeof value==='object'?`{${Object.keys(value).sort().map(k=>`${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`:JSON.stringify(value);
+            if (context.payload.workflow_run.head_repository?.full_name !== `${context.repo.owner}/${context.repo.repo}`) return core.setFailed('origin changed');
+            const branchMatch=process.env.EXPECTED_HEAD_BRANCH.match(/^codex\/(WO-[0-9]{4,})-[A-Za-z0-9._-]+$/);
+            if (!branchMatch) return core.setFailed('invalid Controller branch');
+            const registry = JSON.parse(fs.readFileSync('.github/ai/registries/required-checks.yml', 'utf8'));
+            const expected = new Set(registry.required_checks.map(x => x.check_name));
+            const workOrderPath=`docs/governance/work-orders/${branchMatch[1]}.yml`;
+            if (!fs.existsSync(workOrderPath)) return core.setFailed(`missing default-branch Work Order: ${workOrderPath}`);
+            const workOrder=JSON.parse(fs.readFileSync(workOrderPath,'utf8'));
+            const workOrderChecks=new Set(workOrder.spec?.required_tests || []);
+            if (expected.size!==workOrderChecks.size || [...expected].some(name=>!workOrderChecks.has(name))) return core.setFailed('Work Order / required-check registry drift');
+            const specHash=crypto.createHash('sha256').update(canonical(workOrder.spec)).digest('hex');
+            const executionId=`${workOrder.metadata?.id}:${workOrder.metadata?.version}:${specHash}`;
+            if (workOrder.metadata?.id!==branchMatch[1] || workOrder.approval?.work_order_hash!==specHash || workOrder.approval?.execution_id!==executionId) return core.setFailed('Work Order identity mismatch');
+            const prs = await github.rest.pulls.list({owner: context.repo.owner, repo: context.repo.repo, head: `${context.repo.owner}:${process.env.EXPECTED_HEAD_BRANCH}`, state: 'open'});
+            if (prs.data.length !== 1 || prs.data[0].head.sha !== process.env.EXPECTED_HEAD_SHA) return core.setFailed('stale or ambiguous PR head');
+            const checks = await github.paginate(
+              github.rest.checks.listForRef,
+              {owner: context.repo.owner, repo: context.repo.repo, ref: process.env.EXPECTED_HEAD_SHA, filter: 'latest', per_page: 100},
+              response => response.data.check_runs,
+            );
+            const actual = new Map(checks.map(x => [x.name, x]));
+            for (const name of expected) if (actual.get(name)?.conclusion !== 'success') return core.setFailed(`required check not green: ${name}`);
+            if (core.isDebug()) core.info(`evaluated ${actual.size} checks`);
+            const commit=(await github.rest.repos.getCommit({owner:context.repo.owner,repo:context.repo.repo,ref:process.env.EXPECTED_HEAD_SHA})).data;
+            const relationship=(await github.rest.repos.compareCommitsWithBasehead({owner:context.repo.owner,repo:context.repo.repo,basehead:`${workOrder.approval.base_sha}...${process.env.EXPECTED_HEAD_SHA}`})).data;
+            if (!['ahead','identical'].includes(relationship.status)) return core.setFailed('approved Work Order base is not an ancestor of head');
+            const route={
+              protocol:'QF-AI-COLLAB-v5',
+              state:'qf:ci-green',
+              repository:`${context.repo.owner}/${context.repo.repo}`,
+              repository_id:context.payload.repository.id,
+              head_repository:prs.data[0].head.repo.full_name,
+              head_repository_id:prs.data[0].head.repo.id,
+              head_branch:process.env.EXPECTED_HEAD_BRANCH,
+              head_sha:process.env.EXPECTED_HEAD_SHA,
+              tree_sha:commit.commit.tree.sha,
+              base_sha:workOrder.approval.base_sha,
+              current_pr_base_sha:prs.data[0].base.sha,
+              pr_number:prs.data[0].number,
+              work_order_id:branchMatch[1],
+              work_order_hash:specHash,
+              required_checks:[...expected].sort(),
+            };
+            fs.mkdirSync('artifacts/automation',{recursive:true});
+            fs.writeFileSync('artifacts/automation/ci-gate-route.json',JSON.stringify(route,null,2)+'\n');
+            await github.rest.issues.addLabels({owner: context.repo.owner, repo: context.repo.repo, issue_number: prs.data[0].number, labels: ['qf:ci-green']});
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-ci-gate-route
+          path: artifacts/automation/ci-gate-route.json
+          if-no-files-found: error
+          retention-days: 7

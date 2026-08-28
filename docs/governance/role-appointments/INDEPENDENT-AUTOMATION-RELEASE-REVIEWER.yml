@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "role": "INDEPENDENT_AUTOMATION_RELEASE_REVIEWER",
+  "status": "VACANT",
+  "nominee": null,
+  "appointed_at": null,
+  "appointment_pr": null,
+  "approved_commit_sha": null,
+  "organizer": "KojimaSusumu365",
+  "note": "Phase A, governance merge and AI-credential run are prohibited while VACANT."
+}

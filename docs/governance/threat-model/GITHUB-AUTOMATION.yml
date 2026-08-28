@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "repository": {
+    "full_name": "KojimaSusumu365/toi-no-mori-mvs01",
+    "visibility": "public",
+    "measured_at": "2026-08-28T00:00:00Z",
+    "measured_by": "Codex",
+    "evidence": "public GitHub API read; remaining settings NOT_MEASURED"
+  },
+  "actions": {
+    "fork_pr_approval": "NOT_MEASURED",
+    "default_token_permission": "NOT_MEASURED",
+    "allow_actions_create_approve_pr": "NOT_MEASURED",
+    "required_checks": []
+  },
+  "github_app": {
+    "installed": false,
+    "repository_scope": [],
+    "branch_protection_bypass": false,
+    "ruleset_bypass_actors": [],
+    "permissions": {
+      "contents": "write",
+      "pull_requests": "write",
+      "actions": "none",
+      "workflows": "none",
+      "secrets": "none",
+      "administration": "none"
+    }
+  },
+  "claude_auth": {
+    "profile": "NOT_MEASURED",
+    "id_token_write_required": "NOT_MEASURED"
+  },
+  "job_b": {
+    "checkout_permission": "contents-read",
+    "measured_checkout_result": "NOT_MEASURED"
+  },
+  "role_appointment": {
+    "status": "VACANT",
+    "enforcement": "required-status-check",
+    "check_name": "qf-role-appointment-signature",
+    "workflow_paths_filter": "forbidden",
+    "applicability_default": "applicable",
+    "indeterminate_result": "red",
+    "merge_preflight_rerun": "required",
+    "nominee_write_permission": "none",
+    "nominee_in_organizer_allowlist": false,
+    "pull_request_events": ["opened", "reopened", "synchronize", "ready_for_review"],
+    "review_events": ["submitted", "edited", "dismissed"],
+    "review_api_permission": "pull-requests-read",
+    "measured_result": "NOT_MEASURED"
+  },
+  "automation": {
+    "phase": "BOOTSTRAP_DISABLED",
+    "default_branch_workflows": [],
+    "privileged_cache_usage": "forbidden",
+    "external_fork_policy": "no-op-before-artifact-or-secret",
+    "label_write_measured_result": "NOT_MEASURED"
+  },
+  "artifacts": {
+    "retention_days": "NOT_MEASURED",
+    "authority": "transport-only"
+  },
+  "review_result_records": {
+    "path": "docs/evidence/automation/reviews",
+    "append_only": true,
+    "content_addressed": true,
+    "publisher": "qf-evidence-publisher",
+    "measured_result": "NOT_MEASURED"
+  },
+  "disposition_records": {
+    "path": "docs/evidence/automation/dispositions",
+    "append_only": true,
+    "decided_by_allowlist": ".github/ai/registries/organizer-allowlist.yml",
+    "measured_result": "NOT_MEASURED"
+  }
+}

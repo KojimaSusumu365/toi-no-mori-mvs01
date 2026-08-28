@@ -11,6 +11,7 @@ This is the first authoritative document for Claude in this repository. Claude i
 5. [Review protocol](docs/governance/REVIEW-PROTOCOL.md)
 6. [Stage 6R-11R review request](docs/reviews/stage6r11r/review-request.md)
 7. Target implementation, tests and [typed evidence](docs/evidence/stage6r11/stage6r11r-github-acceptance.md)
+8. For Controller review only: [REVIEW.md](REVIEW.md) and the [automation review index](docs/reviews/automation/README.md)
 
 ## Fixed implementation review target
 
@@ -22,6 +23,15 @@ This is the first authoritative document for Claude in this repository. Claude i
 - Stage 6R-12: NOT STARTED
 
 The physical-taxonomy branch relocates documents without changing this implementation target. Do not substitute the taxonomy commit, tree object, PR merge ref or workflow checkout SHA for the fixed implementation commit.
+
+## Automation Controller review boundary
+
+The GitHub auto-drive Controller is a separate, later governance Draft governed
+by [QF-OPS-MVS01-001 v0.5.1](docs/governance/automation/QF-OPS-MVS01-001-v0.5.1.md).
+It is `BOOTSTRAP_DISABLED`; the Independent Automation Release Reviewer remains
+`VACANT`. Review its fixed SHA only when an automation packet names that SHA.
+Do not run AI credentials, enable Phase A, merge, or treat this Draft as Stage
+6R-12 work.
 
 ## Invariant boundaries
 

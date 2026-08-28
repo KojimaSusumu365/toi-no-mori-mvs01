@@ -1,0 +1,69 @@
+name: QF automation Controller bootstrap contract
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controller-contract:
+    name: QF auto-drive Controller 39/39 bootstrap gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Run deterministic bootstrap acceptance
+        run: ./scripts/test-github-autodrive-controller.sh
+      - name: Upload transport-only evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-autodrive-controller-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/automation/controller-test-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+  test-id-uniqueness:
+    name: Test ID uniqueness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: ./scripts/check-test-ids.sh
+
+  diff-check:
+    name: git diff --check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: git diff --check
+
+  manufacturing-denylist:
+    name: Manufacturing denylist
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest tests.automation.test_github_autodrive_controller.GitHubAutodriveControllerTests.test_t01_control_plane_denylist
+
+  work-order-scope:
+    name: Work Order scope contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest tests.automation.test_github_autodrive_controller.GitHubAutodriveControllerTests.test_t23_denylist_false_positive

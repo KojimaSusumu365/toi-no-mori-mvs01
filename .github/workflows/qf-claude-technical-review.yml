@@ -1,0 +1,69 @@
+name: QF Claude technical review
+
+on:
+  workflow_run:
+    workflows: ["QF deterministic Review Request"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+  id-token: write
+
+jobs:
+  review:
+    if: >-
+      vars.QF_AI_PHASE == 'A' &&
+      vars.QF_CLAUDE_MODEL != '' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-review-request
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: trusted-request
+      - name: Resolve verified PR head without executing it
+        id: identity
+        run: |
+          head_sha="$(python3 -c 'import json; print(json.load(open("trusted-request/review-request.json"))["head_sha"])')"
+          printf 'head_sha=%s\n' "$head_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.identity.outputs.head_sha }}
+          path: pr-head
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Run read-only Claude review
+        id: claude
+        uses: anthropics/claude-code-action@a60f3e1db3edbceed2b1e6c6a9d34c36b8a15eba # v1.0.209
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "Read .github/ai/prompts/claude-technical-review.md and trusted-request/review-request.json. Review only pr-head at the supplied SHA and return the required structured result."
+          claude_args: '--add-dir pr-head --json-schema .github/ai/schemas/technical-review.schema.json --disallowedTools "Write,Edit,NotebookEdit" --max-turns 20 --model ${{ vars.QF_CLAUDE_MODEL }}'
+          show_full_output: false
+          track_progress: false
+          use_sticky_comment: false
+      - name: Store minimal structured output
+        env:
+          CLAUDE_RESULT: ${{ steps.claude.outputs.structured_output }}
+        run: |
+          test -n "$CLAUDE_RESULT"
+          mkdir -p artifacts/automation
+          printf '%s\n' "$CLAUDE_RESULT" > artifacts/automation/technical-review.json
+          cp trusted-request/review-request.json artifacts/automation/review-request.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-claude-technical-review
+          path: artifacts/automation/
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,1 @@
+"""Automation controller acceptance tests."""

@@ -1,0 +1,93 @@
+name: QF durable Review Result publisher
+
+on:
+  workflow_run:
+    workflows: ["QF deterministic Review Gate"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publish:
+    if: >-
+      vars.QF_AI_PHASE == 'A' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted validation code without write credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: control
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-review-gate
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: transport
+      - name: Canonicalize and verify content address before reading publisher credential
+        id: record
+        run: |
+          mkdir -p canonical
+          read -r reviewed_sha digest < <(python3 - <<'PY'
+          import hashlib,json,pathlib
+          gate=json.load(open('transport/review-gate.json'))
+          if gate.get('protocol')!='QF-AI-COLLAB-v5' or gate.get('accepted') is not True:
+              raise SystemExit('Review Gate did not accept the result')
+          value=json.load(open('transport/technical-review.json'))
+          canonical=json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False)
+          digest=hashlib.sha256(canonical.encode()).hexdigest()
+          pathlib.Path('canonical/technical-review.json').write_text(canonical,encoding='utf-8')
+          print(value['reviewed_commit_sha'],digest)
+          PY
+          )
+          printf 'reviewed_sha=%s\ndigest=%s\n' "$reviewed_sha" "$digest" >> "$GITHUB_OUTPUT"
+      - name: Mint publisher-only token
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.1.1
+        with:
+          app-id: ${{ secrets.QF_GITHUB_APP_ID }}
+          private-key: ${{ secrets.QF_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Checkout default branch for append-only publication
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: publisher
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+          fetch-depth: 0
+      - name: Add one content-addressed Review Result without executing PR code
+        working-directory: publisher
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REVIEWED_SHA: ${{ steps.record.outputs.reviewed_sha }}
+          DIGEST: ${{ steps.record.outputs.digest }}
+        run: |
+          path="docs/evidence/automation/reviews/${REVIEWED_SHA}/${DIGEST}.json"
+          test ! -e "$path"
+          mkdir -p "$(dirname "$path")"
+          cp ../canonical/technical-review.json "$path"
+          test "$(sha256sum "$path" | cut -d' ' -f1)" = "$DIGEST"
+          branch="evidence/review-${DIGEST}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "organizer:hold — deterministic evidence branch already exists" >&2
+            exit 1
+          fi
+          git config user.name qf-evidence-publisher
+          git config user.email qf-evidence-publisher@users.noreply.github.com
+          git switch -c "$branch"
+          git add "$path"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          git commit -m "evidence: add immutable automation review result"
+          git push origin "$branch"
+          gh pr create --draft --base main --head "$branch" --title "Draft: durable Review Result ${DIGEST:0:12}" --body "Review Result transport only. Human merge is required before it becomes authoritative."

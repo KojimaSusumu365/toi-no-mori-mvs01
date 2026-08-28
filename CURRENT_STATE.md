@@ -6,6 +6,11 @@
 
 問いの森のStage 6R-11Rは **CLOSED — PASS_WITH_FINDINGS** です。Claude独立レビュー `QF-RVR-MVS01-007` はP0/P1・blocking Findingなし、再検証 `QF-RVR-MVS01-015` はRVR-N17〜N22を全件`VERIFIED`としました。Organizerの受入と合わせ、RVR-N10〜N22はすべて`CLOSED_VERIFIED`であり、未解決Findingはありません。Stage 6R-12はまだ開始していません。
 
+GitHub自動運転Controllerは、QF-OPS-MVS01-001 v0.5.1に基づく独立した
+governance Draftとして実装中です。現在は`BOOTSTRAP_DISABLED`であり、
+Independent Automation Release Reviewerは`VACANT`です。したがってAI資格情報を
+使うrun、Controllerの有効化、merge、Stage 6R-12開始は未実施です。
+
 | 項目 | 状態 | 根拠 |
 |---|---|---|
 | Stage 6R-1〜6R-11累積実装 | Draft baseline | PR #1 |
@@ -20,6 +25,8 @@
 | Stage 6R-12 | NOT STARTED | 6R-11R PASS後 |
 | Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |
 | VT-X0 | NOT EXECUTED | 実在Question 1件で後続実験 |
+| GitHub auto-drive Controller | BOOTSTRAP IMPLEMENTED / DISABLED | [Controller guide](docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md) |
+| Independent Automation Release Reviewer | VACANT | [appointment record](docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml) |
 
 ## Draft PR chain
 
@@ -32,6 +39,10 @@
 | #6 | `stage-gh-org-1-physical-taxonomy` → `stage6r11r-final-closure` | Final review responses and manufacturing evidence |
 
 All five stacked PRs remain Draft. No merge or `main` update has been performed.
+
+The Controller governance PR is stacked after PR #6 and is not part of the
+Stage 6R-11R closure identity. Its fixed implementation SHA and review packet
+are recorded separately under `docs/reviews/automation/`.
 
 ## Stage 6R-11R identity
 

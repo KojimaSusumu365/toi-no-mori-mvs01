@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "preconditions": [
+    {
+      "id": "WO-PRE-001",
+      "name": "trusted-default-workflow",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-001"
+    },
+    {
+      "id": "WO-PRE-002",
+      "name": "organizer-actor",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-002"
+    },
+    {
+      "id": "WO-PRE-003",
+      "name": "organizer-metadata",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-003"
+    },
+    {
+      "id": "WO-PRE-004",
+      "name": "organizer-decision",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-004"
+    },
+    {
+      "id": "WO-PRE-005",
+      "name": "work-order-present",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-005"
+    },
+    {
+      "id": "WO-PRE-006",
+      "name": "execution-ready",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-006"
+    },
+    {
+      "id": "WO-PRE-007",
+      "name": "execution-identity",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-007"
+    },
+    {
+      "id": "WO-PRE-008",
+      "name": "durable-dedup",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-008"
+    },
+    {
+      "id": "WO-PRE-009",
+      "name": "work-order-hash",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-009"
+    },
+    {
+      "id": "WO-PRE-010",
+      "name": "not-expired",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-010"
+    },
+    {
+      "id": "WO-PRE-011",
+      "name": "base-sha",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-011"
+    },
+    {
+      "id": "WO-PRE-012",
+      "name": "required-check-set",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-012"
+    },
+    {
+      "id": "WO-PRE-013",
+      "name": "risk-human-approval",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-013"
+    },
+    {
+      "id": "WO-PRE-014",
+      "name": "budget-complete",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-014"
+    },
+    {
+      "id": "WO-PRE-015",
+      "name": "visibility-baseline",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-015"
+    },
+    {
+      "id": "WO-PRE-016",
+      "name": "scope-present",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-016"
+    },
+    {
+      "id": "WO-PRE-017",
+      "name": "risk-inheritance",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-017"
+    },
+    {
+      "id": "WO-PRE-018",
+      "name": "workflow-sha",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "work_order.preconditions.WO-PRE-018"
+    }
+  ]
+}

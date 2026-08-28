@@ -1,0 +1,272 @@
+name: QF Codex manufacture
+
+on:
+  workflow_run:
+    workflows: ["QF Work Order contract"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qf-ai-${{ github.event.workflow_run.head_repository.id || github.event.repository.id }}-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  manufacture:
+    if: >-
+      vars.QF_AI_PHASE == 'A' &&
+      vars.QF_CODEX_MODEL != '' &&
+      vars.QF_CODEX_EFFORT != '' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      actions: read
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      should_run: ${{ steps.identity.outputs.should_run }}
+    steps:
+      - name: Checkout trusted default-branch control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: control
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-work-order-contract
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: trusted-work-order
+      - name: Revalidate Work Order and resolve fixed base
+        id: identity
+        env:
+          QF_ACTOR: ${{ github.event.workflow_run.actor.login }}
+          QF_WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          mapfile -t contracts < <(find trusted-work-order -type f -name 'work-order-contract.json')
+          test "${#contracts[@]}" -eq 1
+          contract_state="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["state"])' "${contracts[0]}")"
+          if [[ "$contract_state" == "qf:no-op" ]]; then
+            echo 'should_run=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          test "$contract_state" = "qf:manufacturing"
+          mapfile -t candidates < <(find trusted-work-order -type f -name 'WO-*.yml')
+          test "${#candidates[@]}" -eq 1
+          work_order="${candidates[0]}"
+          python3 control/scripts/qf-ai-controller.py preflight >/dev/null
+          python3 control/scripts/qf-ai-controller.py work-order --file "$work_order" --actor "$QF_ACTOR" --default-branch-sha "$QF_WORKFLOW_SHA" --workflow-sha "$QF_WORKFLOW_SHA" >/dev/null
+          read -r work_order_id base_sha < <(python3 - "$work_order" <<'PY'
+          import json,sys
+          value=json.load(open(sys.argv[1]))
+          print(value['metadata']['id'],value['approval']['base_sha'])
+          PY
+          )
+          printf 'should_run=true\nwork_order=%s\nwork_order_id=%s\nbase_sha=%s\n' "$work_order" "$work_order_id" "$base_sha" >> "$GITHUB_OUTPUT"
+      - name: Checkout untrusted manufacturing target at approved base
+        if: steps.identity.outputs.should_run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.identity.outputs.base_sha }}
+          path: product
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Assemble trusted manufacturer prompt
+        if: steps.identity.outputs.should_run == 'true'
+        env:
+          WORK_ORDER: ${{ steps.identity.outputs.work_order }}
+        run: |
+          mkdir -p trusted-input
+          python3 - "$WORK_ORDER" > trusted-input/codex-manufacture.md <<'PY'
+          import json,sys
+          print(open('control/.github/ai/prompts/codex-manufacture.md').read())
+          print('\n## Trusted Work Order\n```json')
+          print(json.dumps(json.load(open(sys.argv[1])),sort_keys=True,ensure_ascii=False))
+          print('```')
+          PY
+      - name: Run Codex manufacturer without executing repository code
+        if: steps.identity.outputs.should_run == 'true'
+        id: codex
+        uses: openai/codex-action@86365089eb2b84e0a8fb0717b304f8bdcb13b20e # v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ github.workspace }}/trusted-input/codex-manufacture.md
+          output-file: ${{ github.workspace }}/product/codex-manufacturing-result.json
+          output-schema-file: ${{ github.workspace }}/control/.github/ai/schemas/manufacturing-result.schema.json
+          working-directory: ${{ github.workspace }}/product
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          model: ${{ vars.QF_CODEX_MODEL }}
+          effort: ${{ vars.QF_CODEX_EFFORT }}
+          allow-users: KojimaSusumu365
+          codex-args: '["--ephemeral"]'
+      - name: Seal and validate manufacturer output without running product code
+        if: steps.identity.outputs.should_run == 'true'
+        env:
+          WORK_ORDER: ${{ steps.identity.outputs.work_order }}
+          BASE_SHA: ${{ steps.identity.outputs.base_sha }}
+        run: |
+          mkdir -p transport
+          git -C product diff --binary -- . > transport/codex.patch
+          (cd transport && sha256sum codex.patch > codex.patch.sha256)
+          git -C product diff --name-only -- . > transport/changed-paths.txt
+          patch_sha="$(cut -d' ' -f1 transport/codex.patch.sha256)"
+          python3 control/scripts/qf-ai-controller.py scope --work-order "$WORK_ORDER" --paths-file transport/changed-paths.txt >/dev/null
+          python3 control/scripts/qf-ai-controller.py manufacturing-result --file product/codex-manufacturing-result.json --work-order "$WORK_ORDER" --patch-sha256 "$patch_sha" --base-sha "$BASE_SHA" --paths-file transport/changed-paths.txt >/dev/null
+          cp product/codex-manufacturing-result.json transport/
+          cp "$WORK_ORDER" transport/work-order.yml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.identity.outputs.should_run == 'true'
+        with:
+          name: qf-codex-manufacturing
+          path: transport/
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: manufacture
+    if: needs.manufacture.outputs.should_run == 'true'
+    permissions:
+      actions: read
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout trusted Controller
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: control
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-codex-manufacturing
+          path: transport
+      - name: Resolve immutable identity
+        id: identity
+        run: |
+          read -r work_order_id base_sha < <(python3 - <<'PY'
+          import json
+          value=json.load(open('transport/work-order.yml'))
+          print(value['metadata']['id'],value['approval']['base_sha'])
+          PY
+          )
+          printf 'work_order_id=%s\nbase_sha=%s\n' "$work_order_id" "$base_sha" >> "$GITHUB_OUTPUT"
+      - name: Checkout product at approved base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.identity.outputs.base_sha }}
+          path: product
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify and apply exact patch
+        run: |
+          (cd transport && sha256sum --check codex.patch.sha256)
+          git -C product apply --check ../transport/codex.patch
+          git -C product apply ../transport/codex.patch
+          git -C product diff --check
+          git -C product diff --name-only -- . > transport/verified-changed-paths.txt
+      - name: Enforce trusted scope and manufacturer envelope
+        env:
+          BASE_SHA: ${{ steps.identity.outputs.base_sha }}
+        run: |
+          patch_sha="$(cut -d' ' -f1 transport/codex.patch.sha256)"
+          python3 control/scripts/qf-ai-controller.py preflight >/dev/null
+          python3 control/scripts/qf-ai-controller.py scope --work-order transport/work-order.yml --paths-file transport/verified-changed-paths.txt >/dev/null
+          python3 control/scripts/qf-ai-controller.py manufacturing-result --file transport/codex-manufacturing-result.json --work-order transport/work-order.yml --patch-sha256 "$patch_sha" --base-sha "$BASE_SHA" --paths-file transport/verified-changed-paths.txt >/dev/null
+      - name: Run full manufacturing tests without AI or publisher credentials
+        working-directory: product
+        run: ./scripts/test-all.sh
+      - name: Seal verified transport
+        env:
+          BASE_SHA: ${{ steps.identity.outputs.base_sha }}
+          WORK_ORDER_ID: ${{ steps.identity.outputs.work_order_id }}
+        run: |
+          mkdir -p verified
+          cp transport/codex.patch transport/codex.patch.sha256 transport/codex-manufacturing-result.json transport/work-order.yml verified/
+          patch_sha="$(cut -d' ' -f1 transport/codex.patch.sha256)"
+          python3 - "$BASE_SHA" "$WORK_ORDER_ID" "$patch_sha" > verified/verify-manifest.json <<'PY'
+          import json,sys
+          base,work_order,patch=sys.argv[1:]
+          print(json.dumps({'protocol':'QF-AI-COLLAB-v5','verified':True,'base_sha':base,'work_order_id':work_order,'patch_sha256':patch},sort_keys=True,separators=(',',':')))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-codex-verified-patch
+          path: verified/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: verify
+    if: vars.QF_AI_PHASE == 'A'
+    permissions:
+      actions: read
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-codex-verified-patch
+          path: verified
+      - name: Verify transport before reading publisher credential
+        id: identity
+        run: |
+          (cd verified && sha256sum --check codex.patch.sha256)
+          read -r work_order_id base_sha patch_sha < <(python3 - <<'PY'
+          import json
+          value=json.load(open('verified/verify-manifest.json'))
+          if value.get('protocol')!='QF-AI-COLLAB-v5' or value.get('verified') is not True:
+              raise SystemExit('invalid verify manifest')
+          print(value['work_order_id'],value['base_sha'],value['patch_sha256'])
+          PY
+          )
+          test "$patch_sha" = "$(cut -d' ' -f1 verified/codex.patch.sha256)"
+          printf 'work_order_id=%s\nbase_sha=%s\npatch_sha=%s\n' "$work_order_id" "$base_sha" "$patch_sha" >> "$GITHUB_OUTPUT"
+      - name: Mint short-lived, non-bypass App token
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.1.1
+        with:
+          app-id: ${{ secrets.QF_GITHUB_APP_ID }}
+          private-key: ${{ secrets.QF_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Checkout approved base for publication only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.identity.outputs.base_sha }}
+          path: publisher
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+          fetch-depth: 0
+      - name: Publish exact verified patch only
+        working-directory: publisher
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          WORK_ORDER_ID: ${{ steps.identity.outputs.work_order_id }}
+          PATCH_SHA: ${{ steps.identity.outputs.patch_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          (cd ../verified && sha256sum --check codex.patch.sha256)
+          git apply --check ../verified/codex.patch
+          git apply --index ../verified/codex.patch
+          branch="codex/${WORK_ORDER_ID}-${PATCH_SHA:0:12}"
+          test "$branch" != "main"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "organizer:hold — deterministic manufacturing branch already exists" >&2
+            exit 1
+          fi
+          git config user.name qf-codex-publisher
+          git config user.email qf-codex-publisher@users.noreply.github.com
+          git switch -c "$branch"
+          git commit -m "manufacture: publish verified ${WORK_ORDER_ID} patch"
+          git push origin "$branch"
+          gh pr create --draft --base main --head "$branch" --title "Draft: verified ${WORK_ORDER_ID} manufacturing" --body "<!-- QF-AI:CODEX-MANUFACTURING:v5 -->\nVerified transport patch from Run ${RUN_ID}. No merge is authorized."

@@ -8,6 +8,7 @@
 4. [Stage 6R-11 manifest](stages/stage6r11/MANIFEST-STAGE6R11.md)
 5. [Stage 6R-11 Town readiness](stages/stage6r11/stage6r11-town-readiness.md)
 6. [Stage 6R-11R review request](reviews/stage6r11r/review-request.md)
+7. [GitHub auto-drive Controller](governance/GITHUB-AUTODRIVE-CONTROLLER.md)
 
 ## Area index
 
@@ -19,6 +20,8 @@
 | [Reviews](reviews/README.md) | Claude findings, Codex responses and owner acceptance |
 | [Evidence](evidence/README.md) | Stage-scoped execution evidence |
 | [Archive](archive/README.md) | non-current material retained for provenance |
+| [Automation review](reviews/automation/README.md) | Controller implementation review packets |
+| [Automation evidence](evidence/automation/README.md) | content-addressed Review Results and dispositions |
 
 ## Current review packet
 

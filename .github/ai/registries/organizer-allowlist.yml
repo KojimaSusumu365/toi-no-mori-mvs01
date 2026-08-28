@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "organizers": [
+    {
+      "id": "ORG-001",
+      "name": "question-forest-organizer",
+      "required": true,
+      "owner": "repository-owner",
+      "implemented_by": "qf-work-order-contract",
+      "evidence_field": "work_order.organizer",
+      "github_login": "KojimaSusumu365"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "required_checks": [
+    {
+      "id": "REQ-001",
+      "name": "repository-navigation",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-001",
+      "check_name": "Human and AI onboarding contract"
+    },
+    {
+      "id": "REQ-002",
+      "name": "stage6r10-90",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-002",
+      "check_name": "Native cumulative and Tokyo-Ishikari DR regression 90/90 gate"
+    },
+    {
+      "id": "REQ-003",
+      "name": "stage6r11-90",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-003",
+      "check_name": "Question Forest Minimum Town readiness 90/90 gate"
+    },
+    {
+      "id": "REQ-004",
+      "name": "test-id-uniqueness",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-004",
+      "check_name": "Test ID uniqueness"
+    },
+    {
+      "id": "REQ-005",
+      "name": "diff-check",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-005",
+      "check_name": "git diff --check"
+    },
+    {
+      "id": "REQ-006",
+      "name": "manufacturing-denylist",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-006",
+      "check_name": "Manufacturing denylist"
+    },
+    {
+      "id": "REQ-007",
+      "name": "work-order-scope",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-ci-gate-router",
+      "evidence_field": "required_checks.REQ-007",
+      "check_name": "Work Order scope contract"
+    },
+    {
+      "id": "REQ-008",
+      "name": "automation-controller-39",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-automation-controller-contract",
+      "evidence_field": "required_checks.REQ-008",
+      "check_name": "QF auto-drive Controller 39/39 bootstrap gate"
+    }
+  ]
+}
