@@ -43,8 +43,8 @@ All six stacked PRs remain Draft. No merge or `main` update has been performed.
 
 The Controller governance PR #7 is stacked after PR #6 and is not part of the
 Stage 6R-11R closure identity. Its fixed implementation target is
-`c88b73a059b092cd5e806e58c21f5395678d7046`, tree
-`3d344f7a7a88d3a8da42809a68cc20b59a7a0915`; the
+`c5d316063bc16161e2808c02334f331603b20c32`, tree
+`01a38e0994d04e922a5929258570a5ecaa69450c`; the
 [review packet](docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md)
 is a later documentation-only seal.
 

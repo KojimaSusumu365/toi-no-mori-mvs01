@@ -80,8 +80,9 @@ reconstructable after GitHub recalculates the live PR merge ref.
 | Type | Value |
 |---|---|
 | Draft PR | `#7` |
-| implementation commit | `c88b73a059b092cd5e806e58c21f5395678d7046` |
-| implementation tree | `3d344f7a7a88d3a8da42809a68cc20b59a7a0915` |
+| implementation commit | `c5d316063bc16161e2808c02334f331603b20c32` |
+| implementation tree | `01a38e0994d04e922a5929258570a5ecaa69450c` |
+| superseded implementation | `c88b73a059b092cd5e806e58c21f5395678d7046` — role appointment CheckのRegistry登録前 |
 | parent / base | `b6959e86713c89b37a8d0e8009f402512c02e346` |
 | branch | `ops-github-autodrive-controller` |
 | state | `BOOTSTRAP_DISABLED` |

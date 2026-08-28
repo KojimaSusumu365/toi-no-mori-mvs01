@@ -8,10 +8,16 @@
 - Draft PR: #7
 - Base branch: `stage6r11r-final-closure`
 - Base commit: `b6959e86713c89b37a8d0e8009f402512c02e346`
-- Review対象implementation commit: `c88b73a059b092cd5e806e58c21f5395678d7046`
-- Review対象tree: `3d344f7a7a88d3a8da42809a68cc20b59a7a0915`
+- Review対象implementation commit: `c5d316063bc16161e2808c02334f331603b20c32`
+- Review対象tree: `01a38e0994d04e922a5929258570a5ecaa69450c`
 - packet commit: review対象外の後続documentation commit
 - 状態: **BOOTSTRAP_DISABLED / NOT ENABLED**
+
+初回implementation `c88b73a059b092cd5e806e58c21f5395678d7046`の
+GitHub実Runで、role appointment Checkは期待どおりREDになりましたが、その
+Check名がRequired Check Registryに未登録であることをCodexが検出しました。
+`c5d3160`は`REQ-009`として登録し、AUTO-T38へ回帰を追加した修正版です。初回
+commit/treeはreview対象ではありません。
 
 ## 1. Claudeさんへの依頼
 
