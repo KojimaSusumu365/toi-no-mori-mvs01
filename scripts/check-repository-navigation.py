@@ -41,6 +41,7 @@ REQUIRED = [
     "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml",
     "docs/governance/threat-model/GITHUB-AUTOMATION.yml",
     "docs/reviews/automation/README.md",
+    "docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md",
     "docs/evidence/automation/README.md",
     ".github/ai/registries/gate-checks.yml",
     ".github/ai/registries/work-order-preconditions.yml",

@@ -72,7 +72,24 @@ reconstructable after GitHub recalculates the live PR merge ref.
 - PR #4 adds Stage 6R-11R on top of PR #3.
 - PR #5 adds the physical taxonomy on top of PR #4.
 - PR #6 adds final review responses and manufacturing evidence on top of PR #5.
+- PR #7 adds the disabled GitHub auto-drive Controller on top of PR #6.
 - No PR is merged and all remain Draft.
+
+## GitHub auto-drive Controller identity
+
+| Type | Value |
+|---|---|
+| Draft PR | `#7` |
+| implementation commit | `c88b73a059b092cd5e806e58c21f5395678d7046` |
+| implementation tree | `3d344f7a7a88d3a8da42809a68cc20b59a7a0915` |
+| parent / base | `b6959e86713c89b37a8d0e8009f402512c02e346` |
+| branch | `ops-github-autodrive-controller` |
+| state | `BOOTSTRAP_DISABLED` |
+| review packet | `docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md` |
+
+The packet is a later documentation-only commit. Claude must review the fixed
+implementation commit/tree above, not the packet commit or a recalculated PR
+merge ref.
 
 ## Deferred-test source of truth
 

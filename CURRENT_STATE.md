@@ -37,12 +37,16 @@ Independent Automation Release Reviewerは`VACANT`です。したがってAI資�
 | #4 | `stage-gh-org-0-claude-onboarding` → `stage6r11r-closure` | Stage 6R-11R closure implementation and review packet |
 | #5 | `stage6r11r-closure` → `stage-gh-org-1-physical-taxonomy` | Canonical physical taxonomy |
 | #6 | `stage-gh-org-1-physical-taxonomy` → `stage6r11r-final-closure` | Final review responses and manufacturing evidence |
+| #7 | `stage6r11r-final-closure` → `ops-github-autodrive-controller` | Disabled Controller governance bootstrap |
 
-All five stacked PRs remain Draft. No merge or `main` update has been performed.
+All six stacked PRs remain Draft. No merge or `main` update has been performed.
 
-The Controller governance PR is stacked after PR #6 and is not part of the
-Stage 6R-11R closure identity. Its fixed implementation SHA and review packet
-are recorded separately under `docs/reviews/automation/`.
+The Controller governance PR #7 is stacked after PR #6 and is not part of the
+Stage 6R-11R closure identity. Its fixed implementation target is
+`c88b73a059b092cd5e806e58c21f5395678d7046`, tree
+`3d344f7a7a88d3a8da42809a68cc20b59a7a0915`; the
+[review packet](docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md)
+is a later documentation-only seal.
 
 ## Stage 6R-11R identity
 
