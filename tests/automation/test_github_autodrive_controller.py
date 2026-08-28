@@ -372,6 +372,7 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
         self.assertEqual("not_applicable",appointment_applicability(files,api_success=True,pagination_complete=True).state)
         workflow=(ROOT/".github/workflows/qf-role-appointment-signature.yml").read_text(encoding="utf-8")
         self.assertNotIn("paths-ignore:",workflow); self.assertIn("getCollaboratorPermissionLevel",workflow); self.assertIn("pull_request_review:",workflow)
+        self.assertIn("qf-role-appointment-signature", required_check_names())
 
 
 if __name__ == "__main__":

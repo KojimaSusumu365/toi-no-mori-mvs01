@@ -72,6 +72,15 @@
       "implemented_by": "qf-automation-controller-contract",
       "evidence_field": "required_checks.REQ-008",
       "check_name": "QF auto-drive Controller 39/39 bootstrap gate"
+    },
+    {
+      "id": "REQ-009",
+      "name": "independent-release-reviewer",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "qf-role-appointment-signature",
+      "evidence_field": "required_checks.REQ-009",
+      "check_name": "qf-role-appointment-signature"
     }
   ]
 }
