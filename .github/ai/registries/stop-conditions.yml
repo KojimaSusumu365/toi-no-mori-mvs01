@@ -6,7 +6,7 @@
       "name": "p0-p1-finding",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.loop_transition",
       "evidence_field": "controller.stop_conditions.STOP-001"
     },
     {
@@ -14,7 +14,7 @@
       "name": "external-fork",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.route_origin",
       "evidence_field": "controller.stop_conditions.STOP-002"
     },
     {
@@ -22,7 +22,7 @@
       "name": "work-order-identity",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
       "evidence_field": "controller.stop_conditions.STOP-003"
     },
     {
@@ -30,7 +30,7 @@
       "name": "actor-not-allowed",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
       "evidence_field": "controller.stop_conditions.STOP-004"
     },
     {
@@ -38,7 +38,7 @@
       "name": "scope-or-prohibited-path",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_scope",
       "evidence_field": "controller.stop_conditions.STOP-005"
     },
     {
@@ -46,7 +46,7 @@
       "name": "required-check-drift",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_required_checks",
       "evidence_field": "controller.stop_conditions.STOP-006"
     },
     {
@@ -54,7 +54,7 @@
       "name": "registry-drift",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_control_plane",
       "evidence_field": "controller.stop_conditions.STOP-007"
     },
     {
@@ -62,7 +62,7 @@
       "name": "review-sha-mismatch",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-008"
     },
     {
@@ -70,7 +70,7 @@
       "name": "review-ci-sha-mismatch",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_required_checks",
       "evidence_field": "controller.stop_conditions.STOP-009"
     },
     {
@@ -78,7 +78,7 @@
       "name": "base-drift",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-010"
     },
     {
@@ -86,7 +86,7 @@
       "name": "claude-failure",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-011"
     },
     {
@@ -94,7 +94,7 @@
       "name": "review-request-echo",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-012"
     },
     {
@@ -102,7 +102,7 @@
       "name": "reverify-prerequisite",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-013"
     },
     {
@@ -110,7 +110,7 @@
       "name": "durable-review-record",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_record",
       "evidence_field": "controller.stop_conditions.STOP-014"
     },
     {
@@ -118,7 +118,7 @@
       "name": "reviewer-output-boundary",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-015"
     },
     {
@@ -126,7 +126,7 @@
       "name": "deferral-incomplete",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_disposition_record",
       "evidence_field": "controller.stop_conditions.STOP-016"
     },
     {
@@ -134,7 +134,7 @@
       "name": "dedup-indeterminate",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
       "evidence_field": "controller.stop_conditions.STOP-017"
     },
     {
@@ -142,7 +142,7 @@
       "name": "non-convergent-patch",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.loop_transition",
       "evidence_field": "controller.stop_conditions.STOP-018"
     },
     {
@@ -150,7 +150,7 @@
       "name": "close-without-new-sha",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
       "evidence_field": "controller.stop_conditions.STOP-019"
     },
     {
@@ -158,7 +158,7 @@
       "name": "budget-exceeded",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.loop_transition",
       "evidence_field": "controller.stop_conditions.STOP-020"
     },
     {
@@ -166,7 +166,7 @@
       "name": "flaky-result",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_required_checks",
       "evidence_field": "controller.stop_conditions.STOP-021"
     },
     {
@@ -174,7 +174,7 @@
       "name": "ambiguous-work-order",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
       "evidence_field": "controller.stop_conditions.STOP-022"
     },
     {
@@ -182,7 +182,7 @@
       "name": "github-settings-drift",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_threat_baseline",
       "evidence_field": "controller.stop_conditions.STOP-023"
     },
     {
@@ -190,7 +190,7 @@
       "name": "visibility-drift",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_threat_baseline",
       "evidence_field": "controller.stop_conditions.STOP-024"
     },
     {
@@ -198,7 +198,7 @@
       "name": "sensitive-or-governance-boundary",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
       "evidence_field": "controller.stop_conditions.STOP-025"
     },
     {
@@ -206,7 +206,7 @@
       "name": "second-human-missing",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
       "evidence_field": "controller.stop_conditions.STOP-026"
     },
     {
@@ -214,7 +214,7 @@
       "name": "appointment-signature",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_appointment",
       "evidence_field": "controller.stop_conditions.STOP-027"
     },
     {
@@ -222,7 +222,7 @@
       "name": "appointment-revoked",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_appointment",
       "evidence_field": "controller.stop_conditions.STOP-028"
     },
     {
@@ -230,7 +230,7 @@
       "name": "required-check-applicability",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.appointment_applicability",
       "evidence_field": "controller.stop_conditions.STOP-029"
     },
     {
@@ -238,7 +238,7 @@
       "name": "review-result-authority",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_review_record",
       "evidence_field": "controller.stop_conditions.STOP-030"
     },
     {
@@ -246,7 +246,7 @@
       "name": "disposition-record-authority",
       "required": true,
       "owner": "loop-controller",
-      "implemented_by": "scripts.ai_controller.core",
+      "implemented_by": "scripts.ai_controller.core.validate_disposition_record",
       "evidence_field": "controller.stop_conditions.STOP-031"
     }
   ]

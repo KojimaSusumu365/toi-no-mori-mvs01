@@ -18,12 +18,24 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: qf-review-gate
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
           path: trusted-gate
+      - name: Evaluate deterministic Phase A transition
+        run: |
+          set -euo pipefail
+          python3 scripts/qf-ai-controller.py preflight --expected-phase A >/dev/null
+          state="$(python3 -c 'import json; print(json.load(open("trusted-gate/review-gate.json"))["state"])')"
+          if [[ "$state" != "qf:organizer-hold" ]]; then
+            python3 scripts/qf-ai-controller.py --output trusted-gate/loop-transition.json loop --review trusted-gate/technical-review.json --phase A --iteration 0 --max-iterations 0
+          fi
       - name: Phase A returns every review to a human
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
@@ -31,12 +43,19 @@ jobs:
           script: |
             const fs=require('fs');
             if (context.payload.workflow_run.head_repository?.full_name !== `${context.repo.owner}/${context.repo.repo}`) return;
-            const request=JSON.parse(fs.readFileSync('trusted-gate/review-request.json','utf8'));
             const gate=JSON.parse(fs.readFileSync('trusted-gate/review-gate.json','utf8'));
+            if (gate.state==='qf:organizer-hold') {
+              const pr=(await github.rest.pulls.get({owner:context.repo.owner,repo:context.repo.repo,pull_number:gate.pr_number})).data;
+              if (pr.head.sha!==gate.head_sha) return core.setFailed('stale organizer hold');
+              await github.rest.issues.addLabels({owner:context.repo.owner,repo:context.repo.repo,issue_number:pr.number,labels:['qf:organizer-hold']});
+              return;
+            }
+            const request=JSON.parse(fs.readFileSync('trusted-gate/review-request.json','utf8'));
+            const transition=JSON.parse(fs.readFileSync('trusted-gate/loop-transition.json','utf8'));
             const pr=(await github.rest.pulls.get({owner:context.repo.owner,repo:context.repo.repo,pull_number:request.pr_number})).data;
             if (pr.head.repo.full_name!==`${context.repo.owner}/${context.repo.repo}` || pr.head.sha!==request.head_sha) return core.setFailed('stale or external head');
-            const labels={'qf:review-green':'qf:organizer-acceptance','qf:changes-requested':'qf:changes-requested','qf:stopped':'qf:stopped'};
-            const label=labels[gate.state];
-            if (!label) return core.setFailed(`unknown gate state: ${gate.state}`);
+            const labels={'qf:organizer-acceptance':'qf:organizer-acceptance','qf:changes-requested':'qf:changes-requested','qf:stopped':'qf:stopped'};
+            const label=labels[transition.state];
+            if (!label) return core.setFailed(`unknown transition state: ${transition.state}`);
             await github.rest.issues.addLabels({owner:context.repo.owner,repo:context.repo.repo,issue_number:pr.number,labels:[label]});
             core.info('Phase A performs zero automatic correction iterations.');

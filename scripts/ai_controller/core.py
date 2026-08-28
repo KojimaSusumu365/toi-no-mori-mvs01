@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -20,6 +21,28 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_DIR = ROOT / ".github/ai/registries"
 SCHEMA_DIR = ROOT / ".github/ai/schemas"
+
+DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"
+APPROVED_SCHEMAS = {
+    "work-order.schema.json": "work-order.schema.json@1",
+    "manufacturing-result.schema.json": "manufacturing-result.schema.json@3",
+    "review-request.schema.json": "review-request.schema.json@1",
+    "technical-review.schema.json": "technical-review.schema.json@3",
+    "finding-disposition-record.schema.json": "finding-disposition-record.schema.json@2",
+}
+SUPPORTED_SCHEMA_KEYWORDS = frozenset({
+    "$schema", "$id", "title", "type", "additionalProperties", "required",
+    "properties", "const", "enum", "items", "minItems", "uniqueItems",
+    "minLength", "minimum", "maximum", "pattern", "format",
+})
+SUPPORTED_SCHEMA_TYPES = frozenset({
+    "object", "array", "string", "integer", "boolean", "null",
+})
+SUPPORTED_SCHEMA_FORMATS = frozenset({"date", "date-time"})
+RFC3339_DATE_TIME = re.compile(
+    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$"
+)
 
 PROTOCOL = "QF-AI-COLLAB-v5"
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
@@ -43,6 +66,39 @@ CONTROL_PLANE_DENY_FILES = {
 GATE_IDS = tuple(f"REV-GATE-{number:03d}" for number in range(1, 21))
 PRECONDITION_IDS = tuple(f"WO-PRE-{number:03d}" for number in range(1, 19))
 STOP_IDS = tuple(f"STOP-{number:03d}" for number in range(1, 32))
+STOP_IMPLEMENTATIONS = {
+    "STOP-001": "scripts.ai_controller.core.loop_transition",
+    "STOP-002": "scripts.ai_controller.core.route_origin",
+    "STOP-003": "scripts.ai_controller.core.validate_work_order",
+    "STOP-004": "scripts.ai_controller.core.validate_work_order",
+    "STOP-005": "scripts.ai_controller.core.validate_scope",
+    "STOP-006": "scripts.ai_controller.core.validate_required_checks",
+    "STOP-007": "scripts.ai_controller.core.validate_control_plane",
+    "STOP-008": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-009": "scripts.ai_controller.core.validate_required_checks",
+    "STOP-010": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-011": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-012": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-013": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-014": "scripts.ai_controller.core.validate_review_record",
+    "STOP-015": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-016": "scripts.ai_controller.core.validate_disposition_record",
+    "STOP-017": "scripts.ai_controller.core.validate_work_order",
+    "STOP-018": "scripts.ai_controller.core.loop_transition",
+    "STOP-019": "scripts.ai_controller.core.validate_review_gate",
+    "STOP-020": "scripts.ai_controller.core.loop_transition",
+    "STOP-021": "scripts.ai_controller.core.validate_required_checks",
+    "STOP-022": "scripts.ai_controller.core.validate_work_order",
+    "STOP-023": "scripts.ai_controller.core.validate_threat_baseline",
+    "STOP-024": "scripts.ai_controller.core.validate_threat_baseline",
+    "STOP-025": "scripts.ai_controller.core.validate_work_order",
+    "STOP-026": "scripts.ai_controller.core.validate_work_order",
+    "STOP-027": "scripts.ai_controller.core.validate_appointment",
+    "STOP-028": "scripts.ai_controller.core.validate_appointment",
+    "STOP-029": "scripts.ai_controller.core.appointment_applicability",
+    "STOP-030": "scripts.ai_controller.core.validate_review_record",
+    "STOP-031": "scripts.ai_controller.core.validate_disposition_record",
+}
 
 
 class ControllerError(ValueError):
@@ -57,12 +113,28 @@ class Decision:
     evidence: dict[str, Any]
 
     def as_dict(self) -> dict[str, Any]:
+        evidence = dict(self.evidence)
+        stop_ids = sorted({
+            match
+            for reason in self.reasons
+            for match in re.findall(r"STOP-[0-9]{3}", reason)
+        })
+        if stop_ids:
+            controller = dict(evidence.get("controller", {}))
+            stop_conditions = dict(controller.get("stop_conditions", {}))
+            for identifier in stop_ids:
+                stop_conditions[identifier] = {
+                    "result": "RED",
+                    "implemented_by": STOP_IMPLEMENTATIONS.get(identifier, "unknown"),
+                }
+            controller["stop_conditions"] = stop_conditions
+            evidence["controller"] = controller
         return {
             "protocol": PROTOCOL,
             "state": self.state,
             "accepted": self.accepted,
             "reasons": list(self.reasons),
-            "evidence": self.evidence,
+            "evidence": evidence,
         }
 
 
@@ -85,6 +157,292 @@ def load_json_yaml(path: Path) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ControllerError(f"unreadable control-plane document {path}: {exc}") from exc
+
+
+def _schema_location(path: tuple[str, ...]) -> str:
+    return "$" + "".join(f".{part}" for part in path)
+
+
+def _schema_types(schema: dict[str, Any]) -> tuple[str, ...]:
+    value = schema.get("type")
+    if value is None:
+        return ()
+    return (value,) if isinstance(value, str) else tuple(value)
+
+
+def _schema_requires_type(
+    schema: dict[str, Any], keyword: str, required_type: str, path: tuple[str, ...]
+) -> None:
+    if keyword in schema and required_type not in _schema_types(schema):
+        raise ControllerError(
+            f"schema {_schema_location(path)}: {keyword} requires type {required_type}"
+        )
+
+
+def validate_schema_definition(
+    schema: dict[str, Any], *, expected_id: str | None = None
+) -> None:
+    """Validate the approved, dependency-free Draft 2020-12 keyword subset."""
+
+    def walk(node: Any, path: tuple[str, ...]) -> None:
+        location = _schema_location(path)
+        if not isinstance(node, dict):
+            raise ControllerError(f"schema {location}: definition must be an object")
+
+        unknown = sorted(set(node) - SUPPORTED_SCHEMA_KEYWORDS)
+        if unknown:
+            raise ControllerError(f"schema {location}: unsupported keywords {unknown}")
+
+        if path:
+            metadata = sorted(set(node) & {"$schema", "$id", "title"})
+            if metadata:
+                raise ControllerError(
+                    f"schema {location}: root-only keywords used {metadata}"
+                )
+        else:
+            if node.get("$schema") != DRAFT_2020_12:
+                raise ControllerError(
+                    f"schema {location}: $schema must be Draft 2020-12"
+                )
+            if expected_id is not None and node.get("$id") != expected_id:
+                raise ControllerError(
+                    f"schema {location}: $id must be {expected_id}"
+                )
+            if "title" in node and not isinstance(node["title"], str):
+                raise ControllerError(f"schema {location}: title must be a string")
+
+        declared_type = node.get("type")
+        if declared_type is not None:
+            if isinstance(declared_type, str):
+                declared_types = (declared_type,)
+            elif (
+                isinstance(declared_type, list)
+                and declared_type
+                and all(isinstance(item, str) for item in declared_type)
+            ):
+                declared_types = tuple(declared_type)
+            else:
+                raise ControllerError(
+                    f"schema {location}: type must be a string or non-empty string list"
+                )
+            unsupported_types = sorted(set(declared_types) - SUPPORTED_SCHEMA_TYPES)
+            if unsupported_types or len(declared_types) != len(set(declared_types)):
+                raise ControllerError(
+                    f"schema {location}: unsupported or duplicate types {list(declared_types)}"
+                )
+
+        properties = node.get("properties")
+        if properties is not None:
+            if not isinstance(properties, dict) or not all(
+                isinstance(name, str) for name in properties
+            ):
+                raise ControllerError(f"schema {location}: properties must be an object")
+            for name, child in properties.items():
+                walk(child, path + ("properties", name))
+
+        required = node.get("required")
+        if required is not None:
+            if (
+                not isinstance(required, list)
+                or not all(isinstance(item, str) for item in required)
+                or len(required) != len(set(required))
+            ):
+                raise ControllerError(
+                    f"schema {location}: required must contain unique strings"
+                )
+            if properties is not None and not set(required) <= set(properties):
+                raise ControllerError(
+                    f"schema {location}: required names must exist in properties"
+                )
+
+        if "additionalProperties" in node and not isinstance(
+            node["additionalProperties"], bool
+        ):
+            raise ControllerError(
+                f"schema {location}: only boolean additionalProperties is supported"
+            )
+
+        enum = node.get("enum")
+        if enum is not None:
+            if not isinstance(enum, list) or not enum:
+                raise ControllerError(f"schema {location}: enum must be a non-empty list")
+            canonical_values = [canonical_json(item) for item in enum]
+            if len(canonical_values) != len(set(canonical_values)):
+                raise ControllerError(f"schema {location}: enum values must be unique")
+
+        items = node.get("items")
+        if items is not None:
+            walk(items, path + ("items",))
+
+        for keyword in ("minLength", "minItems"):
+            if keyword in node and (
+                not isinstance(node[keyword], int)
+                or isinstance(node[keyword], bool)
+                or node[keyword] < 0
+            ):
+                raise ControllerError(
+                    f"schema {location}: {keyword} must be a non-negative integer"
+                )
+
+        for keyword in ("minimum", "maximum"):
+            if keyword in node and (
+                not isinstance(node[keyword], (int, float))
+                or isinstance(node[keyword], bool)
+                or not math.isfinite(node[keyword])
+            ):
+                raise ControllerError(f"schema {location}: {keyword} must be finite")
+        if "minimum" in node and "maximum" in node and node["minimum"] > node["maximum"]:
+            raise ControllerError(f"schema {location}: minimum exceeds maximum")
+
+        if "uniqueItems" in node and not isinstance(node["uniqueItems"], bool):
+            raise ControllerError(f"schema {location}: uniqueItems must be boolean")
+
+        if "pattern" in node:
+            if not isinstance(node["pattern"], str):
+                raise ControllerError(f"schema {location}: pattern must be a string")
+            try:
+                re.compile(node["pattern"])
+            except re.error as exc:
+                raise ControllerError(
+                    f"schema {location}: pattern is invalid: {exc}"
+                ) from exc
+
+        if "format" in node and node["format"] not in SUPPORTED_SCHEMA_FORMATS:
+            raise ControllerError(
+                f"schema {location}: unsupported format {node['format']!r}"
+            )
+
+        for keyword in ("properties", "required", "additionalProperties"):
+            _schema_requires_type(node, keyword, "object", path)
+        for keyword in ("items", "minItems", "uniqueItems"):
+            _schema_requires_type(node, keyword, "array", path)
+        for keyword in ("minLength", "pattern", "format"):
+            _schema_requires_type(node, keyword, "string", path)
+        for keyword in ("minimum", "maximum"):
+            _schema_requires_type(node, keyword, "integer", path)
+
+    walk(schema, ())
+
+
+def load_approved_schema(name: str) -> dict[str, Any]:
+    expected_id = APPROVED_SCHEMAS.get(name)
+    if expected_id is None:
+        raise ControllerError(f"unapproved schema: {name}")
+    schema = load_json_yaml(SCHEMA_DIR / name)
+    if not isinstance(schema, dict):
+        raise ControllerError(f"schema {name}: root must be an object")
+    validate_schema_definition(schema, expected_id=expected_id)
+    return schema
+
+
+def _json_type_matches(value: Any, expected: str) -> bool:
+    if expected == "object":
+        return isinstance(value, dict)
+    if expected == "array":
+        return isinstance(value, list)
+    if expected == "string":
+        return isinstance(value, str)
+    if expected == "integer":
+        return (
+            isinstance(value, int) and not isinstance(value, bool)
+        ) or (
+            isinstance(value, float) and math.isfinite(value) and value.is_integer()
+        )
+    if expected == "boolean":
+        return isinstance(value, bool)
+    if expected == "null":
+        return value is None
+    return False
+
+
+def _instance_location(path: tuple[str | int, ...]) -> str:
+    location = "$"
+    for part in path:
+        location += f"[{part}]" if isinstance(part, int) else f".{part}"
+    return location
+
+
+def _format_is_valid(value: str, name: str) -> bool:
+    try:
+        if name == "date":
+            return re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value) is not None and bool(
+                date.fromisoformat(value)
+            )
+        if name == "date-time":
+            return RFC3339_DATE_TIME.fullmatch(value) is not None and bool(
+                datetime.fromisoformat(value.replace("Z", "+00:00"))
+            )
+    except ValueError:
+        return False
+    return False
+
+
+def _validate_instance(
+    value: Any,
+    schema: dict[str, Any],
+    path: tuple[str | int, ...],
+    errors: list[str],
+) -> None:
+    location = _instance_location(path)
+    declared_types = _schema_types(schema)
+    if declared_types and not any(
+        _json_type_matches(value, expected) for expected in declared_types
+    ):
+        errors.append(f"{location}:type")
+        return
+
+    if "const" in schema and canonical_json(value) != canonical_json(schema["const"]):
+        errors.append(f"{location}:const")
+    if "enum" in schema and canonical_json(value) not in {
+        canonical_json(item) for item in schema["enum"]
+    }:
+        errors.append(f"{location}:enum")
+
+    if isinstance(value, dict):
+        properties = schema.get("properties", {})
+        for name in schema.get("required", []):
+            if name not in value:
+                errors.append(f"{location}.{name}:required")
+        if schema.get("additionalProperties") is False:
+            for name in sorted(set(value) - set(properties)):
+                errors.append(f"{location}.{name}:additionalProperties")
+        for name, child_schema in properties.items():
+            if name in value:
+                _validate_instance(value[name], child_schema, path + (name,), errors)
+
+    if isinstance(value, list):
+        if len(value) < schema.get("minItems", 0):
+            errors.append(f"{location}:minItems")
+        if schema.get("uniqueItems") is True:
+            canonical_items = [canonical_json(item) for item in value]
+            if len(canonical_items) != len(set(canonical_items)):
+                errors.append(f"{location}:uniqueItems")
+        if "items" in schema:
+            for index, item in enumerate(value):
+                _validate_instance(item, schema["items"], path + (index,), errors)
+
+    if isinstance(value, str):
+        if len(value) < schema.get("minLength", 0):
+            errors.append(f"{location}:minLength")
+        if "pattern" in schema and re.search(schema["pattern"], value) is None:
+            errors.append(f"{location}:pattern")
+        if "format" in schema and not _format_is_valid(value, schema["format"]):
+            errors.append(f"{location}:format")
+
+    if _json_type_matches(value, "integer"):
+        if "minimum" in schema and value < schema["minimum"]:
+            errors.append(f"{location}:minimum")
+        if "maximum" in schema and value > schema["maximum"]:
+            errors.append(f"{location}:maximum")
+
+
+def schema_validation_errors(document: Any, schema_name: str) -> tuple[str, ...]:
+    """Return deterministic errors for a document and one approved Schema."""
+
+    schema = load_approved_schema(schema_name)
+    errors: list[str] = []
+    _validate_instance(document, schema, (), errors)
+    return tuple(errors)
 
 
 def _entries(document: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
@@ -139,20 +497,44 @@ def validate_control_plane() -> dict[str, Any]:
         "required_checks": validate_registry("required-checks.yml"),
         "finding_ids": validate_registry("finding-ids.yml"),
         "organizer_allowlist": validate_registry("organizer-allowlist.yml"),
+        "manufacturing_denylist": validate_registry("manufacturing-denylist.yml"),
     }
-    expected_schemas = {
-        "work-order.schema.json",
-        "manufacturing-result.schema.json",
-        "review-request.schema.json",
-        "technical-review.schema.json",
-        "finding-disposition-record.schema.json",
+    deny_document = load_registry("manufacturing-denylist.yml")
+    _, deny_entries = _entries(deny_document)
+    declared_prefixes = {
+        str(item.get("path")) for item in deny_entries if item.get("kind") == "prefix"
     }
+    declared_files = {
+        str(item.get("path")) for item in deny_entries if item.get("kind") == "file"
+    }
+    if declared_prefixes != set(CONTROL_PLANE_DENYLIST) or declared_files != CONTROL_PLANE_DENY_FILES:
+        raise ControllerError("manufacturing denylist registry/implementation drift")
+    stop_document = load_registry("stop-conditions.yml")
+    _, stop_entries = _entries(stop_document)
+    declared_stop_implementations = {
+        str(item.get("id")): str(item.get("implemented_by")) for item in stop_entries
+    }
+    if declared_stop_implementations != STOP_IMPLEMENTATIONS:
+        raise ControllerError("STOP registry/implementation drift")
+    result["stop_conditions"]["alignment"] = check_registry_execution(
+        "stop-conditions.yml",
+        STOP_IMPLEMENTATIONS,
+        {
+            identifier: {
+                "result": "GREEN",
+                "evidence": implementation,
+            }
+            for identifier, implementation in STOP_IMPLEMENTATIONS.items()
+        },
+    )
+    expected_schemas = set(APPROVED_SCHEMAS)
     missing = [name for name in sorted(expected_schemas) if not (SCHEMA_DIR / name).is_file()]
     if missing:
         raise ControllerError(f"missing schemas: {missing}")
     for name in expected_schemas:
-        load_json_yaml(SCHEMA_DIR / name)
+        load_approved_schema(name)
     result["schemas"] = sorted(expected_schemas)
+    result["schema_ids"] = [APPROVED_SCHEMAS[name] for name in sorted(expected_schemas)]
     return result
 
 
@@ -196,7 +578,16 @@ def organizer_logins() -> tuple[str, ...]:
 
 
 def path_is_denied(path: str) -> bool:
-    normalized = path.lstrip("./")
+    if not isinstance(path, str) or not path or "\x00" in path or "\\" in path:
+        return True
+    if path.startswith("/") or re.match(r"^[A-Za-z]:/", path):
+        return True
+    normalized = path[2:] if path.startswith("./") else path
+    if not normalized:
+        return True
+    segments = normalized.split("/")
+    if any(segment in {"", ".", ".."} for segment in segments):
+        return True
     return normalized in CONTROL_PLANE_DENY_FILES or normalized.startswith(CONTROL_PLANE_DENYLIST)
 
 
@@ -233,6 +624,7 @@ def validate_work_order(
     actor: str,
     default_branch_sha: str,
     workflow_sha: str | None = None,
+    base_is_ancestor: bool = True,
     now: datetime | None = None,
     dedup_state: str = "first",
     visibility: str = "public",
@@ -241,50 +633,44 @@ def validate_work_order(
     checks: dict[str, dict[str, Any]] = {}
     reasons: list[str] = []
 
-    metadata = work_order.get("metadata", {})
-    spec = work_order.get("spec", {})
-    approval = work_order.get("approval", {})
+    work_order_schema_errors = schema_validation_errors(
+        work_order, "work-order.schema.json"
+    )
+    work_order = work_order if isinstance(work_order, dict) else {}
+    metadata_value = work_order.get("metadata", {})
+    spec_value = work_order.get("spec", {})
+    approval_value = work_order.get("approval", {})
+    metadata = metadata_value if isinstance(metadata_value, dict) else {}
+    spec = spec_value if isinstance(spec_value, dict) else {}
+    approval = approval_value if isinstance(approval_value, dict) else {}
     expected_hash = content_hash(spec)
     expected_execution = f"{metadata.get('id')}:{metadata.get('version')}:{expected_hash}"
-    budget = approval.get("budget", {})
+    budget_value = approval.get("budget", {})
+    budget = budget_value if isinstance(budget_value, dict) else {}
     risk = spec.get("risk_class")
     organizer = metadata.get("organizer")
     allowlist = set(organizer_logins())
-    metadata_fields = {"id", "version", "source_issue", "organizer", "created_at"}
-    spec_fields = {
-        "objective", "source_question", "scope", "out_of_scope", "acceptance_criteria",
-        "required_tests", "prohibited_paths", "risk_class", "evidence_required",
-        "stop_conditions", "rollback_plan",
+    organizer_is_allowed = isinstance(organizer, str) and organizer in allowlist
+    risk_is_known = isinstance(risk, str) and risk in {
+        "normal", "sensitive", "governance",
     }
-    approval_required = {
-        "base_sha", "work_order_hash", "expires_at", "budget", "organizer_decision",
-        "execution_state", "execution_id", "second_human_reviewer", "second_human_decision",
-    }
-    approval_allowed = approval_required | {"second_human_approved_sha"}
-    work_order_shape = (
-        set(work_order) == {"metadata", "spec", "approval"}
-        and set(metadata) == metadata_fields
-        and set(spec) == spec_fields
-        and approval_required <= set(approval) <= approval_allowed
-        and re.fullmatch(r"WO-[0-9]{4,}", str(metadata.get("id", ""))) is not None
-        and isinstance(metadata.get("version"), int) and metadata.get("version") >= 1
-        and (metadata.get("source_issue") is None or isinstance(metadata.get("source_issue"), int))
-        and all(isinstance(spec.get(field), list) for field in (
-            "scope", "out_of_scope", "acceptance_criteria", "required_tests",
-            "prohibited_paths", "evidence_required", "stop_conditions",
-        ))
-        and all(isinstance(spec.get(field), str) and spec.get(field) for field in (
-            "objective", "source_question", "rollback_plan",
-        ))
+    required_tests_value = spec.get("required_tests", [])
+    required_tests = (
+        required_tests_value
+        if isinstance(required_tests_value, list)
+        and all(isinstance(item, str) for item in required_tests_value)
+        else []
     )
-
     workflow_sha = workflow_sha or default_branch_sha
     values = {
         "WO-PRE-001": (SHA40.fullmatch(default_branch_sha or "") is not None, default_branch_sha),
         "WO-PRE-002": (actor in allowlist, actor),
-        "WO-PRE-003": (organizer in allowlist, organizer),
+        "WO-PRE-003": (organizer_is_allowed, organizer),
         "WO-PRE-004": (approval.get("organizer_decision") == "APPROVED", approval.get("organizer_decision")),
-        "WO-PRE-005": (work_order_shape, metadata.get("id")),
+        "WO-PRE-005": (
+            not work_order_schema_errors,
+            {"id": metadata.get("id"), "schema_errors": list(work_order_schema_errors)},
+        ),
         "WO-PRE-006": (approval.get("execution_state") == "READY", approval.get("execution_state")),
         "WO-PRE-007": (approval.get("execution_id") == expected_execution, expected_execution),
         "WO-PRE-008": (dedup_state in {"first", "processed"}, dedup_state),
@@ -292,15 +678,23 @@ def validate_work_order(
         "WO-PRE-010": (False, approval.get("expires_at")),
         "WO-PRE-011": (
             SHA40.fullmatch(str(approval.get("base_sha", ""))) is not None
-            and SHA256.fullmatch(str(approval.get("work_order_hash", ""))) is not None,
-            {"base_sha": approval.get("base_sha"), "work_order_hash": approval.get("work_order_hash")},
+            and SHA256.fullmatch(str(approval.get("work_order_hash", ""))) is not None
+            and base_is_ancestor,
+            {
+                "base_sha": approval.get("base_sha"),
+                "work_order_hash": approval.get("work_order_hash"),
+                "base_is_default_ancestor": base_is_ancestor,
+            },
         ),
-        "WO-PRE-012": (set(spec.get("required_tests", [])) == set(required_check_names()), spec.get("required_tests", [])),
+        "WO-PRE-012": (
+            set(required_tests) == set(required_check_names()),
+            required_tests,
+        ),
         "WO-PRE-013": (False, approval.get("second_human_decision")),
         "WO-PRE-014": (False, budget),
         "WO-PRE-015": (visibility == "public", visibility),
         "WO-PRE-016": (bool(spec.get("scope")) and bool(spec.get("prohibited_paths")), spec.get("scope")),
-        "WO-PRE-017": (risk in {"normal", "sensitive", "governance"}, risk),
+        "WO-PRE-017": (risk_is_known, risk),
         "WO-PRE-018": (
             SHA40.fullmatch(workflow_sha or "") is not None and workflow_sha == default_branch_sha,
             {"workflow_sha": workflow_sha, "default_branch_sha": default_branch_sha},
@@ -316,7 +710,8 @@ def validate_work_order(
     values["WO-PRE-013"] = (
         (risk == "normal" and second_decision == "NOT_REQUIRED")
         or (
-            risk in {"sensitive", "governance"}
+            isinstance(risk, str)
+            and risk in {"sensitive", "governance"}
             and bool(second_reviewer)
             and second_reviewer != organizer
             and second_decision == "APPROVED"
@@ -325,9 +720,13 @@ def validate_work_order(
         {"reviewer": second_reviewer, "decision": second_decision},
     )
     values["WO-PRE-014"] = (
-        budget.get("max_iterations") in {0, 1, 2, 3}
+        isinstance(budget.get("max_iterations"), int)
+        and not isinstance(budget.get("max_iterations"), bool)
+        and 0 <= budget["max_iterations"] <= 3
         and all(
-            isinstance(budget.get(field), int) and budget[field] > 0
+            isinstance(budget.get(field), int)
+            and not isinstance(budget.get(field), bool)
+            and budget[field] > 0
             for field in (
                 "max_wall_minutes",
                 "max_openai_tokens",
@@ -438,8 +837,15 @@ def validate_manufacturing_result(
 ) -> Decision:
     """Validate the manufacturer envelope without trusting its self-report."""
 
-    metadata = work_order.get("metadata", {})
-    spec = work_order.get("spec", {})
+    schema_errors = schema_validation_errors(
+        result, "manufacturing-result.schema.json"
+    )
+    result = result if isinstance(result, dict) else {}
+    work_order = work_order if isinstance(work_order, dict) else {}
+    metadata_value = work_order.get("metadata", {})
+    spec_value = work_order.get("spec", {})
+    metadata = metadata_value if isinstance(metadata_value, dict) else {}
+    spec = spec_value if isinstance(spec_value, dict) else {}
     paths = sorted(set(changed_paths))
     required_fields = {
         "protocol", "schema_version", "role", "work_order_id", "work_order_ref",
@@ -447,6 +853,8 @@ def validate_manufacturing_result(
         "tests_requested", "known_limits", "iteration",
     }
     reasons: list[str] = []
+    if schema_errors:
+        reasons.append("manufacturing-result-json-schema")
     if set(result) != required_fields:
         reasons.append("manufacturing-result-shape")
     if result.get("protocol") != PROTOCOL:
@@ -463,22 +871,66 @@ def validate_manufacturing_result(
         reasons.append("manufacturing-result-base")
     if result.get("patch_sha256") != patch_sha256 or SHA256.fullmatch(patch_sha256 or "") is None:
         reasons.append("manufacturing-result-patch")
-    if sorted(set(result.get("scope_changed", []))) != paths:
+    scope_changed_value = result.get("scope_changed", [])
+    scope_changed = (
+        scope_changed_value
+        if isinstance(scope_changed_value, list)
+        and all(isinstance(item, str) for item in scope_changed_value)
+        else []
+    )
+    tests_requested_value = result.get("tests_requested", [])
+    tests_requested = (
+        tests_requested_value
+        if isinstance(tests_requested_value, list)
+        and all(isinstance(item, str) for item in tests_requested_value)
+        else []
+    )
+    required_tests_value = spec.get("required_tests", [])
+    required_tests = (
+        required_tests_value
+        if isinstance(required_tests_value, list)
+        and all(isinstance(item, str) for item in required_tests_value)
+        else []
+    )
+    allowed_scope_value = spec.get("scope", [])
+    allowed_scope = (
+        allowed_scope_value
+        if isinstance(allowed_scope_value, list)
+        and all(isinstance(item, str) for item in allowed_scope_value)
+        else []
+    )
+    prohibited_paths_value = spec.get("prohibited_paths", [])
+    prohibited_paths = (
+        prohibited_paths_value
+        if isinstance(prohibited_paths_value, list)
+        and all(isinstance(item, str) for item in prohibited_paths_value)
+        else []
+    )
+    if sorted(set(scope_changed)) != paths:
         reasons.append("manufacturing-result-scope")
-    if set(result.get("tests_requested", [])) != set(spec.get("required_tests", [])):
+    if set(tests_requested) != set(required_tests):
         reasons.append("manufacturing-result-tests")
     if not isinstance(result.get("known_limits"), list):
         reasons.append("manufacturing-result-known-limits")
-    if result.get("iteration") not in {1, 2, 3, 4}:
+    iteration = result.get("iteration")
+    if (
+        not isinstance(iteration, int)
+        or isinstance(iteration, bool)
+        or not 1 <= iteration <= 4
+    ):
         reasons.append("manufacturing-result-iteration")
-    scope = validate_scope(paths, spec.get("scope", []), spec.get("prohibited_paths", []))
+    scope = validate_scope(paths, allowed_scope, prohibited_paths)
     if not scope.accepted:
         reasons.extend(scope.reasons)
     return Decision(
         "qf:manufactured" if not reasons else "qf:stopped",
         not reasons,
         tuple(sorted(set(reasons))),
-        {"changed_paths": paths, "patch_sha256": patch_sha256},
+        {
+            "changed_paths": paths,
+            "patch_sha256": patch_sha256,
+            "schema_errors": list(schema_errors),
+        },
     )
 
 
@@ -494,23 +946,43 @@ def validate_review_gate(
     expected_default_branch_sha: str | None = None,
 ) -> Decision:
     values: dict[str, tuple[bool, Any]] = {}
-    review = review or {}
-    coverage = review.get("coverage", {})
-    findings = review.get("findings", []) if isinstance(review.get("findings", []), list) else []
+    request_schema_errors = schema_validation_errors(
+        request, "review-request.schema.json"
+    )
+    review_schema_errors = schema_validation_errors(
+        review if review is not None else {}, "technical-review.schema.json"
+    )
+    request = request if isinstance(request, dict) else {}
+    review = review if isinstance(review, dict) else {}
+    coverage_value = review.get("coverage", {})
+    coverage = coverage_value if isinstance(coverage_value, dict) else {}
+    findings_value = review.get("findings", [])
+    findings = (
+        [item for item in findings_value if isinstance(item, dict)]
+        if isinstance(findings_value, list)
+        else []
+    )
+    eligible_value = request.get("eligible_finding_ids", [])
+    eligible_finding_ids = (
+        eligible_value
+        if isinstance(eligible_value, list)
+        and all(isinstance(item, str) for item in eligible_value)
+        else []
+    )
+    fix_candidates_value = request.get("fix_candidates", [])
+    fix_candidates = (
+        [item for item in fix_candidates_value if isinstance(item, dict)]
+        if isinstance(fix_candidates_value, list)
+        else []
+    )
     mode = request.get("expected_review_mode")
-    verified_eligible = set(request.get("eligible_finding_ids", []))
-    fix_ids = {item.get("finding_id") for item in request.get("fix_candidates", [])}
+    verified_eligible = set(eligible_finding_ids)
+    fix_ids = {
+        item["finding_id"]
+        for item in fix_candidates
+        if isinstance(item.get("finding_id"), str)
+    }
     reviewed_sha = review.get("reviewed_commit_sha")
-    request_fields = {
-        "protocol", "schema_version", "request_id", "work_order_id", "pr_number",
-        "expected_review_mode", "head_sha", "tree_sha", "prior_review_artifact_sha256",
-        "eligible_finding_ids", "fix_candidates",
-    }
-    review_fields = {
-        "protocol", "schema_version", "role", "review_mode", "review_request_sha256",
-        "work_order_id", "reviewed_commit_sha", "reviewed_tree_sha", "default_branch_sha",
-        "decision", "coverage", "findings", "notes", "blocking", "unverified",
-    }
 
     values["REV-GATE-001"] = (claude_exit_code == 0, claude_exit_code)
     values["REV-GATE-002"] = (bool(review), bool(review))
@@ -530,17 +1002,20 @@ def validate_review_gate(
         coverage,
     )
     values["REV-GATE-007"] = (
-        request.get("protocol") == PROTOCOL
+        not request_schema_errors
+        and request.get("protocol") == PROTOCOL
         and request.get("schema_version") == "review-request.schema.json@1"
-        and set(request) == request_fields
         and isinstance(request.get("pr_number"), int) and request.get("pr_number") >= 1
         and SHA40.fullmatch(str(request.get("head_sha", ""))) is not None,
-        request.get("schema_version"),
+        {
+            "schema_version": request.get("schema_version"),
+            "schema_errors": list(request_schema_errors),
+        },
     )
     values["REV-GATE-008"] = (
-        review.get("protocol") == PROTOCOL
+        not review_schema_errors
+        and review.get("protocol") == PROTOCOL
         and review.get("schema_version") == "technical-review.schema.json@3"
-        and set(review) == review_fields
         and review.get("role") == "claude_reviewer"
         and review.get("work_order_id") == request.get("work_order_id")
         and SHA40.fullmatch(str(review.get("default_branch_sha", ""))) is not None,
@@ -548,6 +1023,7 @@ def validate_review_gate(
             "schema_version": review.get("schema_version"),
             "role": review.get("role"),
             "work_order_id": review.get("work_order_id"),
+            "schema_errors": list(review_schema_errors),
         },
     )
     decision = review.get("decision")
@@ -557,21 +1033,24 @@ def validate_review_gate(
         or (decision == "FAIL" and review.get("blocking") is True)
     )
     values["REV-GATE-009"] = (
-        decision in {"PASS", "PASS_WITH_FINDINGS", "FAIL"} and decision_consistent,
+        isinstance(decision, str)
+        and decision in {"PASS", "PASS_WITH_FINDINGS", "FAIL"}
+        and decision_consistent,
         {"decision": decision, "blocking": review.get("blocking"), "findings": len(findings)},
     )
     initial_shape = (
         request.get("prior_review_artifact_sha256") is None
-        and request.get("eligible_finding_ids") == []
-        and request.get("fix_candidates") == []
+        and eligible_finding_ids == []
+        and fix_candidates == []
     )
     reverify_shape = (
         SHA256.fullmatch(str(request.get("prior_review_artifact_sha256", ""))) is not None
-        and bool(request.get("eligible_finding_ids"))
-        and bool(request.get("fix_candidates"))
+        and bool(eligible_finding_ids)
+        and bool(fix_candidates)
     )
     values["REV-GATE-010"] = (
-        mode in {"INITIAL", "REVERIFY"}
+        isinstance(mode, str)
+        and mode in {"INITIAL", "REVERIFY"}
         and review.get("review_mode") == mode
         and ((mode == "INITIAL" and initial_shape) or (mode == "REVERIFY" and reverify_shape)),
         mode,
@@ -579,14 +1058,17 @@ def validate_review_gate(
     expected_request_hash = content_hash(request)
     values["REV-GATE-011"] = (review.get("review_request_sha256") == expected_request_hash, expected_request_hash)
     finding_ids = [item.get("id") for item in findings]
+    finding_ids_are_strings = all(isinstance(item, str) for item in finding_ids)
     required_finding_fields = {
         "id", "severity", "verification_status", "disposition", "path", "evidence",
         "risk", "required_change", "residual_risk",
     }
     values["REV-GATE-012"] = (
-        len(finding_ids) == len(set(finding_ids))
+        finding_ids_are_strings
+        and len(finding_ids) == len(set(finding_ids))
         and all(
             FINDING_ID.fullmatch(str(item.get("id", "")))
+            and isinstance(item.get("severity"), str)
             and item.get("severity") in {"P0", "P1", "P2", "P3"}
             and required_finding_fields == set(item)
             for item in findings
@@ -594,11 +1076,24 @@ def validate_review_gate(
         finding_ids,
     )
     allowed_status = {"OPEN"} if mode == "INITIAL" else {"OPEN", "VERIFIED"}
-    values["REV-GATE-013"] = (all(item.get("verification_status") in allowed_status for item in findings), allowed_status)
-    verified_ids = {item.get("id") for item in findings if item.get("verification_status") == "VERIFIED"}
+    values["REV-GATE-013"] = (
+        all(
+            isinstance(item.get("verification_status"), str)
+            and item.get("verification_status") in allowed_status
+            for item in findings
+        ),
+        allowed_status,
+    )
+    verified_ids = {
+        item["id"]
+        for item in findings
+        if item.get("verification_status") == "VERIFIED"
+        and isinstance(item.get("id"), str)
+    }
     candidate_by_id = {
-        item.get("finding_id"): item for item in request.get("fix_candidates", [])
-        if isinstance(item, dict)
+        item["finding_id"]: item
+        for item in fix_candidates
+        if isinstance(item.get("finding_id"), str)
     }
     candidate_identity = all(
         item.get("candidate_sha") == current_head_sha
@@ -613,7 +1108,11 @@ def validate_review_gate(
     )
     values["REV-GATE-015"] = (all(item.get("verification_status") != "CLOSED" for item in findings), "CLOSED forbidden")
     values["REV-GATE-016"] = (all(item.get("disposition") == "UNDECIDED" for item in findings), "UNDECIDED only")
-    p0p1 = [item for item in findings if item.get("severity") in {"P0", "P1"}]
+    p0p1 = [
+        item for item in findings
+        if isinstance(item.get("severity"), str)
+        and item.get("severity") in {"P0", "P1"}
+    ]
     values["REV-GATE-017"] = (not p0p1 or review.get("blocking") is True, [item.get("id") for item in p0p1])
     values["REV-GATE-018"] = (request.get("head_sha") == current_head_sha == reviewed_sha, current_head_sha)
     default_branch_matches = (
@@ -638,7 +1137,11 @@ def validate_review_gate(
     if not alignment["accepted"]:
         executed["REV-GATE-020"] = {"result": "RED", "evidence": alignment}
     reasons = tuple(identifier for identifier in GATE_IDS if executed[identifier]["result"] != "GREEN")
-    blocking = any(item.get("severity") in {"P0", "P1"} for item in findings)
+    blocking = any(
+        isinstance(item.get("severity"), str)
+        and item.get("severity") in {"P0", "P1"}
+        for item in findings
+    )
     if reasons:
         state = "qf:stopped"
     elif blocking or findings:
@@ -714,11 +1217,18 @@ def validate_disposition_record(
 ) -> Decision:
     now = now or date.today()
     reasons: list[str] = []
+    schema_errors = schema_validation_errors(
+        record, "finding-disposition-record.schema.json"
+    )
+    record = record if isinstance(record, dict) else {}
+    review_record = review_record if isinstance(review_record, dict) else None
     required_record_fields = {
         "protocol", "schema_version", "role", "decided_by", "decided_at",
         "review_artifact_sha256", "reviewed_commit_sha", "supersedes_record_sha256",
         "decisions",
     }
+    if schema_errors:
+        reasons.append("disposition-record-json-schema")
     if set(record) != required_record_fields:
         reasons.append("disposition-record-shape")
     if record.get("protocol") != PROTOCOL or record.get("schema_version") != "finding-disposition-record.schema.json@2" or record.get("role") != "organizer":
@@ -729,16 +1239,32 @@ def validate_disposition_record(
     review_hash = record.get("review_artifact_sha256")
     if not review_record or content_hash(review_record) != review_hash:
         reasons.append("review-artifact-reference")
-    review_ids = {item.get("id") for item in (review_record or {}).get("findings", [])}
-    for decision in record.get("decisions", []):
-        if decision.get("finding_id") not in review_ids:
+    review_findings_value = (review_record or {}).get("findings", [])
+    review_findings = (
+        [item for item in review_findings_value if isinstance(item, dict)]
+        if isinstance(review_findings_value, list)
+        else []
+    )
+    review_ids = {
+        item["id"] for item in review_findings if isinstance(item.get("id"), str)
+    }
+    decisions_value = record.get("decisions", [])
+    decisions = (
+        [item for item in decisions_value if isinstance(item, dict)]
+        if isinstance(decisions_value, list)
+        else []
+    )
+    for decision in decisions:
+        finding_id = decision.get("finding_id")
+        if not isinstance(finding_id, str) or finding_id not in review_ids:
             reasons.append("unknown-finding")
         disposition = decision.get("disposition")
         if disposition == "DEFERRED":
-            deferral = decision.get("deferral", {})
+            deferral_value = decision.get("deferral", {})
+            deferral = deferral_value if isinstance(deferral_value, dict) else {}
             try:
                 due = date.fromisoformat(str(deferral.get("due")))
-            except ValueError:
+            except (TypeError, ValueError):
                 due = date.min
             if not deferral.get("owner") or not deferral.get("reason") or due < now:
                 reasons.append("deferral-incomplete")
@@ -748,12 +1274,15 @@ def validate_disposition_record(
             not decision.get("policy_owner") or not decision.get("decision_due")
         ):
             reasons.append("policy-decision-incomplete")
-        elif disposition not in {
+        elif not isinstance(disposition, str) or disposition not in {
             "ACCEPTED_PLAN", "REJECTED_WITH_REASON", "DEFERRED", "POLICY_DECISION_REQUIRED", "CLOSED"
         }:
             reasons.append("disposition-enum")
     supersedes = record.get("supersedes_record_sha256")
-    if supersedes is not None and supersedes not in set(existing_record_hashes):
+    if supersedes is not None and (
+        not isinstance(supersedes, str)
+        or supersedes not in set(existing_record_hashes)
+    ):
         reasons.append("supersedes-invalid")
     digest = content_hash(record)
     path = f"docs/evidence/automation/dispositions/{review_hash}/{digest}.json"
@@ -761,7 +1290,7 @@ def validate_disposition_record(
         "qf:disposition-valid" if not reasons else "qf:stopped",
         not reasons,
         tuple(sorted(set(reasons))),
-        {"path": path, "sha256": digest},
+        {"path": path, "sha256": digest, "schema_errors": list(schema_errors)},
     )
 
 
@@ -798,11 +1327,17 @@ def validate_appointment(
     latest_review: dict[str, Any] | None,
     nominee_has_write: bool,
     only_appointment_path_changed: bool,
+    pr_author: str | None = None,
+    nominee_in_organizer_allowlist: bool = False,
 ) -> Decision:
     review = latest_review or {}
     reasons: list[str] = []
     if organizer not in organizer_logins() or nominee == organizer:
         reasons.append("independence")
+    if pr_author is not None and pr_author != organizer:
+        reasons.append("appointment-author")
+    if nominee_in_organizer_allowlist:
+        reasons.append("nominee-organizer")
     if nominee_has_write:
         reasons.append("nominee-write")
     if not only_appointment_path_changed:
@@ -824,7 +1359,9 @@ def public_output_is_clean(value: Any, canaries: Iterable[str]) -> bool:
     return all(canary not in serialized for canary in canaries)
 
 
-def validate_threat_baseline(baseline: dict[str, Any]) -> Decision:
+def validate_threat_baseline(
+    baseline: dict[str, Any], *, expected_phase: str | None = None
+) -> Decision:
     reasons: list[str] = []
     if baseline.get("repository", {}).get("visibility") != "public":
         reasons.append("STOP-024")
@@ -835,6 +1372,8 @@ def validate_threat_baseline(baseline: dict[str, Any]) -> Decision:
     if permissions.get("workflows") != "none" or permissions.get("actions") != "none":
         reasons.append("app-privilege")
     phase = baseline.get("automation", {}).get("phase")
+    if expected_phase is not None and phase != expected_phase:
+        reasons.append("STOP-023:phase-mismatch")
     appointment = baseline.get("role_appointment", {})
     if phase == "BOOTSTRAP_DISABLED":
         if appointment.get("status") != "VACANT":
@@ -864,5 +1403,9 @@ def validate_threat_baseline(baseline: dict[str, Any]) -> Decision:
         if not reasons else "qf:stopped",
         not reasons,
         tuple(reasons),
-        {"baseline_hash": content_hash(baseline)},
+        {
+            "baseline_hash": content_hash(baseline),
+            "baseline_phase": phase,
+            "expected_phase": expected_phase,
+        },
     )

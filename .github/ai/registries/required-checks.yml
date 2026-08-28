@@ -7,6 +7,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "Repository navigation contract",
       "evidence_field": "required_checks.REQ-001",
       "check_name": "Human and AI onboarding contract"
     },
@@ -16,6 +17,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "Stage 6R-10 Tokyo-Ishikari DR switch and recovery regression",
       "evidence_field": "required_checks.REQ-002",
       "check_name": "Native cumulative and Tokyo-Ishikari DR regression 90/90 gate"
     },
@@ -25,6 +27,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "Stage 6R-11 Question Forest Minimum Town Readiness",
       "evidence_field": "required_checks.REQ-003",
       "check_name": "Question Forest Minimum Town readiness 90/90 gate"
     },
@@ -34,6 +37,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "QF automation Controller bootstrap contract",
       "evidence_field": "required_checks.REQ-004",
       "check_name": "Test ID uniqueness"
     },
@@ -43,6 +47,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "QF automation Controller bootstrap contract",
       "evidence_field": "required_checks.REQ-005",
       "check_name": "git diff --check"
     },
@@ -52,6 +57,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "QF automation Controller bootstrap contract",
       "evidence_field": "required_checks.REQ-006",
       "check_name": "Manufacturing denylist"
     },
@@ -61,17 +67,19 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-ci-gate-router",
+      "workflow_name": "QF automation Controller bootstrap contract",
       "evidence_field": "required_checks.REQ-007",
       "check_name": "Work Order scope contract"
     },
     {
       "id": "REQ-008",
-      "name": "automation-controller-39",
+      "name": "automation-controller-40",
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-automation-controller-contract",
+      "workflow_name": "QF automation Controller bootstrap contract",
       "evidence_field": "required_checks.REQ-008",
-      "check_name": "QF auto-drive Controller 39/39 bootstrap gate"
+      "check_name": "QF auto-drive Controller 40/40 bootstrap gate"
     },
     {
       "id": "REQ-009",
@@ -79,6 +87,7 @@
       "required": true,
       "owner": "deterministic-ci",
       "implemented_by": "qf-role-appointment-signature",
+      "workflow_name": "qf-role-appointment-signature",
       "evidence_field": "required_checks.REQ-009",
       "check_name": "qf-role-appointment-signature"
     }

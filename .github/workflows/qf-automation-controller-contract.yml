@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   controller-contract:
-    name: QF auto-drive Controller 39/39 bootstrap gate
+    name: QF auto-drive Controller 40/40 bootstrap gate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

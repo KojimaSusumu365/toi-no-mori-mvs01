@@ -6,6 +6,8 @@ on:
       - "Stage 6R-10 Tokyo-Ishikari DR switch and recovery regression"
       - "Stage 6R-11 Question Forest Minimum Town Readiness"
       - "QF automation Controller bootstrap contract"
+      - "Repository navigation contract"
+      - "qf-role-appointment-signature"
     types: [completed]
 
 permissions:
@@ -26,6 +28,17 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+      - name: Deterministically validate route origin
+        env:
+          QF_REPOSITORY: ${{ github.repository }}
+          QF_HEAD_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+          QF_REPOSITORY_ID: ${{ github.repository_id }}
+          QF_HEAD_REPOSITORY_ID: ${{ github.event.workflow_run.head_repository.id }}
+          QF_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          python3 scripts/qf-ai-controller.py preflight --expected-phase A >/dev/null
+          python3 scripts/qf-ai-controller.py route --repository "$QF_REPOSITORY" --head-repository "$QF_HEAD_REPOSITORY" --repository-id "$QF_REPOSITORY_ID" --head-repository-id "$QF_HEAD_REPOSITORY_ID" --branch "$QF_HEAD_BRANCH" >/dev/null
       - name: Recheck origin and required checks before label write
         id: route
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0

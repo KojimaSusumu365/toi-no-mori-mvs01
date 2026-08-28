@@ -19,14 +19,21 @@ from scripts.ai_controller.core import (
     ROOT,
     ControllerError,
     canonical_json,
+    appointment_applicability,
     load_json_yaml,
     load_registry,
     loop_transition,
+    public_output_is_clean,
     required_check_names,
     route_origin,
+    validate_appointment,
     validate_control_plane,
+    validate_disposition_record,
     validate_manufacturing_result,
+    validate_patch_identity,
+    validate_required_checks,
     validate_review_gate,
+    validate_review_record,
     validate_scope,
     validate_threat_baseline,
     validate_work_order,
@@ -48,7 +55,9 @@ def _write_result(result: dict, output: str | None) -> None:
 def command_preflight(args: argparse.Namespace) -> dict:
     registries = validate_control_plane()
     baseline = load_json_yaml(ROOT / "docs/governance/threat-model/GITHUB-AUTOMATION.yml")
-    baseline_decision = validate_threat_baseline(baseline)
+    baseline_decision = validate_threat_baseline(
+        baseline, expected_phase=args.expected_phase
+    )
     if not baseline_decision.accepted:
         raise ControllerError(f"unsafe baseline: {baseline_decision.reasons}")
     return {
@@ -65,6 +74,7 @@ def command_work_order(args: argparse.Namespace) -> dict:
         actor=args.actor,
         default_branch_sha=args.default_branch_sha,
         workflow_sha=args.workflow_sha,
+        base_is_ancestor=args.base_is_ancestor,
         now=datetime.fromisoformat(args.now.replace("Z", "+00:00")) if args.now else datetime.now(timezone.utc),
         dedup_state=args.dedup_state,
         visibility=args.visibility,
@@ -74,22 +84,26 @@ def command_work_order(args: argparse.Namespace) -> dict:
 
 def command_review_gate(args: argparse.Namespace) -> dict:
     checks = _read(args.checks)
-    expected = set(required_check_names())
-    check_green = set(checks) == expected and all(
-        item.get("conclusion") == "success" and item.get("head_sha") == args.head_sha
-        for item in checks.values()
+    work_order = _read(args.work_order)
+    check_decision = validate_required_checks(
+        required_check_names(),
+        work_order.get("spec", {}).get("required_tests", []),
+        checks,
+        args.head_sha,
     )
     decision = validate_review_gate(
         _read(args.request),
         _read(args.review) if Path(args.review).is_file() else None,
         current_head_sha=args.head_sha,
         actual_tree_sha=args.tree_sha,
-        required_checks_green=check_green,
+        required_checks_green=check_decision.accepted,
         claude_exit_code=args.claude_exit_code,
         base_drift_allowed=not args.base_drift,
         expected_default_branch_sha=args.default_branch_sha,
     )
-    return decision.as_dict()
+    result = decision.as_dict()
+    result["evidence"]["required_checks"] = check_decision.as_dict()
+    return result
 
 
 def command_scope(args: argparse.Namespace) -> dict:
@@ -140,18 +154,112 @@ def command_route(args: argparse.Namespace) -> dict:
     ).as_dict()
 
 
+def command_patch_identity(args: argparse.Namespace) -> dict:
+    return validate_patch_identity(
+        args.manufactured, args.verified, args.published
+    ).as_dict()
+
+
+def command_public_output(args: argparse.Namespace) -> dict:
+    path = Path(args.file)
+    rendered = path.read_text(encoding="utf-8")
+    try:
+        value = json.loads(rendered)
+    except json.JSONDecodeError:
+        value = rendered
+    canaries = list(args.canary)
+    if args.canary_file:
+        canaries.extend(
+            line.rstrip("\r\n")
+            for line in Path(args.canary_file).read_text(encoding="utf-8").splitlines()
+            if line.rstrip("\r\n")
+        )
+    if not canaries:
+        raise ControllerError("public-output requires at least one runtime canary")
+    clean = public_output_is_clean(value, canaries)
+    return {
+        "protocol": "QF-AI-COLLAB-v5",
+        "state": "qf:public-output-clean" if clean else "qf:stopped",
+        "accepted": clean,
+        "reasons": [] if clean else ["public-output-canary"],
+        "evidence": {"path": str(path), "canary_count": len(canaries)},
+    }
+
+
+def command_review_record(args: argparse.Namespace) -> dict:
+    return validate_review_record(
+        args.path,
+        _read(args.record),
+        exists_on_default=args.exists_on_default,
+    ).as_dict()
+
+
+def command_disposition_record(args: argparse.Namespace) -> dict:
+    existing_hashes: list[str] = []
+    if args.existing_hashes_file:
+        existing_hashes = [
+            line.strip()
+            for line in Path(args.existing_hashes_file).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    return validate_disposition_record(
+        _read(args.record),
+        review_record=_read(args.review_record),
+        existing_record_hashes=existing_hashes,
+        now=datetime.fromisoformat(args.now).date() if args.now else None,
+    ).as_dict()
+
+
+def command_appointment(args: argparse.Namespace) -> dict:
+    value = _read(args.file)
+    changed_files = value.get("changed_files", [])
+    applicability = appointment_applicability(
+        changed_files,
+        api_success=value.get("api_success") is True,
+        pagination_complete=value.get("pagination_complete") is True,
+    )
+    if not applicability.accepted or applicability.state == "not_applicable":
+        return applicability.as_dict()
+    target = "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml"
+    changed_paths = {
+        path
+        for item in changed_files
+        for path in (item.get("filename"), item.get("previous_filename"))
+        if path
+    }
+    decision = validate_appointment(
+        organizer=str(value.get("organizer", "")),
+        nominee=str(value.get("nominee", "")),
+        head_sha=str(value.get("head_sha", "")),
+        latest_review=value.get("latest_review"),
+        nominee_has_write=value.get("nominee_has_write") is True,
+        only_appointment_path_changed=changed_paths == {target},
+        pr_author=str(value.get("pr_author", "")),
+        nominee_in_organizer_allowlist=value.get("nominee_in_organizer_allowlist") is True,
+    )
+    result = decision.as_dict()
+    result["evidence"]["applicability"] = applicability.as_dict()
+    return result
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("preflight")
+    preflight = sub.add_parser("preflight")
+    preflight.add_argument(
+        "--expected-phase",
+        choices=["BOOTSTRAP_DISABLED", "A"],
+        default="BOOTSTRAP_DISABLED",
+    )
 
     work = sub.add_parser("work-order")
     work.add_argument("--file", required=True)
     work.add_argument("--actor", required=True)
     work.add_argument("--default-branch-sha", required=True)
     work.add_argument("--workflow-sha")
+    work.add_argument("--base-is-ancestor", action="store_true")
     work.add_argument("--now")
     work.add_argument("--dedup-state", choices=["first", "processed", "indeterminate"], default="first")
     work.add_argument("--visibility", default="public")
@@ -160,6 +268,7 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--request", required=True)
     review.add_argument("--review", required=True)
     review.add_argument("--checks", required=True)
+    review.add_argument("--work-order", required=True)
     review.add_argument("--head-sha", required=True)
     review.add_argument("--tree-sha", required=True)
     review.add_argument("--claude-exit-code", type=int, default=0)
@@ -192,6 +301,30 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--repository-id", type=int, required=True)
     route.add_argument("--head-repository-id", type=int)
     route.add_argument("--branch", required=True)
+
+    patch_identity = sub.add_parser("patch-identity")
+    patch_identity.add_argument("--manufactured", required=True)
+    patch_identity.add_argument("--verified", required=True)
+    patch_identity.add_argument("--published", required=True)
+
+    public_output = sub.add_parser("public-output")
+    public_output.add_argument("--file", required=True)
+    public_output.add_argument("--canary", action="append", default=[])
+    public_output.add_argument("--canary-file")
+
+    review_record = sub.add_parser("review-record")
+    review_record.add_argument("--path", required=True)
+    review_record.add_argument("--record", required=True)
+    review_record.add_argument("--exists-on-default", action="store_true")
+
+    disposition = sub.add_parser("disposition-record")
+    disposition.add_argument("--record", required=True)
+    disposition.add_argument("--review-record", required=True)
+    disposition.add_argument("--existing-hashes-file")
+    disposition.add_argument("--now")
+
+    appointment = sub.add_parser("appointment")
+    appointment.add_argument("--file", required=True)
     return parser
 
 
@@ -206,6 +339,11 @@ def main() -> int:
         "manufacturing-result": command_manufacturing_result,
         "loop": command_loop,
         "route": command_route,
+        "patch-identity": command_patch_identity,
+        "public-output": command_public_output,
+        "review-record": command_review_record,
+        "disposition-record": command_disposition_record,
+        "appointment": command_appointment,
     }
     try:
         result = handlers[args.command](args)

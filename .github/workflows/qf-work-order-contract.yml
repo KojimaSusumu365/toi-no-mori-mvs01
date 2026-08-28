@@ -68,13 +68,18 @@ jobs:
           QF_WORKFLOW_SHA: ${{ github.workflow_sha }}
           QF_WORK_ORDER: ${{ steps.work_order.outputs.path }}
           QF_DEDUP_STATE: ${{ steps.dedup.outputs.state }}
-        run: >-
-          python3 scripts/qf-ai-controller.py preflight >/dev/null &&
-          python3 scripts/qf-ai-controller.py --output artifacts/automation/work-order-contract.json
-          work-order --file "$QF_WORK_ORDER" --actor "$QF_ACTOR"
-          --default-branch-sha "$QF_DEFAULT_SHA"
-          --workflow-sha "$QF_WORKFLOW_SHA"
-          --dedup-state "$QF_DEDUP_STATE"
+        run: |
+          set -euo pipefail
+          base_sha="$(python3 -c 'import json,os; print(json.load(open(os.environ["QF_WORK_ORDER"]))["approval"]["base_sha"])')"
+          git merge-base --is-ancestor "$base_sha" "$QF_DEFAULT_SHA"
+          python3 scripts/qf-ai-controller.py preflight --expected-phase A >/dev/null
+          python3 scripts/qf-ai-controller.py --output artifacts/automation/work-order-contract.json work-order \
+            --file "$QF_WORK_ORDER" \
+            --actor "$QF_ACTOR" \
+            --default-branch-sha "$QF_DEFAULT_SHA" \
+            --workflow-sha "$QF_WORKFLOW_SHA" \
+            --base-is-ancestor \
+            --dedup-state "$QF_DEDUP_STATE"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qf-work-order-contract

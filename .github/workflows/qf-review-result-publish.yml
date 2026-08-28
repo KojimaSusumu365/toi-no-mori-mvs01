@@ -31,8 +31,24 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
           path: transport
+      - name: Resolve gate publication decision without a write credential
+        id: decision
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+
+          gate = json.load(open('transport/review-gate.json', encoding='utf-8'))
+          state = gate.get('state')
+          if state == 'qf:organizer-hold':
+              print('should_publish=false')
+          elif gate.get('protocol') == 'QF-AI-COLLAB-v5' and gate.get('accepted') is True:
+              print('should_publish=true')
+          else:
+              raise SystemExit('Review Gate produced neither an accepted result nor organizer:hold')
+          PY
       - name: Canonicalize and verify content address before reading publisher credential
         id: record
+        if: steps.decision.outputs.should_publish == 'true'
         run: |
           mkdir -p canonical
           read -r reviewed_sha digest < <(python3 - <<'PY'
@@ -50,6 +66,7 @@ jobs:
           printf 'reviewed_sha=%s\ndigest=%s\n' "$reviewed_sha" "$digest" >> "$GITHUB_OUTPUT"
       - name: Mint publisher-only token
         id: app-token
+        if: steps.decision.outputs.should_publish == 'true'
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.1.1
         with:
           app-id: ${{ secrets.QF_GITHUB_APP_ID }}
@@ -59,6 +76,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
       - name: Checkout default branch for append-only publication
+        if: steps.decision.outputs.should_publish == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -67,6 +85,7 @@ jobs:
           persist-credentials: true
           fetch-depth: 0
       - name: Add one content-addressed Review Result without executing PR code
+        if: steps.decision.outputs.should_publish == 'true'
         working-directory: publisher
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

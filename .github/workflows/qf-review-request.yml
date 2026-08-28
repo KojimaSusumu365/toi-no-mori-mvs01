@@ -30,10 +30,12 @@ jobs:
           ref: main
           persist-credentials: false
           fetch-depth: 0
-      - name: Build trusted INITIAL request or fail closed
+      - name: Build trusted INITIAL request or explicit REVERIFY hold
         run: |
+          set -euo pipefail
+          python3 scripts/qf-ai-controller.py preflight --expected-phase A >/dev/null
           mkdir -p artifacts/automation
-          python3 - > artifacts/automation/review-request.json <<'PY'
+          python3 - <<'PY'
           import hashlib,json,pathlib
           route=json.load(open('trusted-route/ci-gate-route.json'))
           if route.get('protocol')!='QF-AI-COLLAB-v5' or route.get('state')!='qf:ci-green':
@@ -50,7 +52,22 @@ jobs:
               if value.get('work_order_id')==route['work_order_id']:
                   prior.append((path,value,digest))
           if prior:
-              raise SystemExit('organizer:hold — REVERIFY requires durable OPEN findings and current-SHA FIX_CANDIDATE records')
+              prior.sort(key=lambda item:str(item[0]))
+              path,value,digest=prior[-1]
+              same_sha=value.get('reviewed_commit_sha')==route['head_sha']
+              decision={
+                  'protocol':'QF-AI-COLLAB-v5',
+                  'state':'qf:organizer-hold',
+                  'reason':'PRIOR_REVIEW_SAME_SHA' if same_sha else 'REVERIFY_PHASE_BC_TRANSPORT_DEFERRED',
+                  'work_order_id':route['work_order_id'],
+                  'pr_number':route['pr_number'],
+                  'head_sha':route['head_sha'],
+                  'prior_reviewed_commit_sha':value.get('reviewed_commit_sha'),
+                  'prior_review_artifact_sha256':digest,
+                  'deferred_test_id':'TC-ACC-MVS01-091-REVERIFY',
+              }
+              pathlib.Path('artifacts/automation/review-request-decision.json').write_text(json.dumps(decision,sort_keys=True,separators=(',',':'))+'\n')
+              raise SystemExit(0)
           request={
               'protocol':'QF-AI-COLLAB-v5',
               'schema_version':'review-request.schema.json@1',
@@ -64,11 +81,13 @@ jobs:
               'eligible_finding_ids':[],
               'fix_candidates':[],
           }
-          print(json.dumps(request,sort_keys=True,separators=(',',':'),ensure_ascii=False))
+          pathlib.Path('artifacts/automation/review-request.json').write_text(json.dumps(request,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n')
+          decision={'protocol':'QF-AI-COLLAB-v5','state':'qf:review-request','work_order_id':route['work_order_id'],'head_sha':route['head_sha']}
+          pathlib.Path('artifacts/automation/review-request-decision.json').write_text(json.dumps(decision,sort_keys=True,separators=(',',':'))+'\n')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qf-review-request
-          path: artifacts/automation/review-request.json
+          path: artifacts/automation/
           if-no-files-found: error
           retention-days: 7

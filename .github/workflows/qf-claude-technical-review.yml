@@ -9,61 +9,104 @@ permissions:
   actions: read
   contents: read
   pull-requests: read
-  id-token: write
 
 jobs:
-  review:
+  relay:
     if: >-
       vars.QF_AI_PHASE == 'A' &&
-      vars.QF_CLAUDE_MODEL != '' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      actions: read
+      contents: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      should_review: ${{ steps.decision.outputs.should_review }}
+      head_sha: ${{ steps.decision.outputs.head_sha }}
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-review-request
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: request-source
+      - name: Relay deterministic request without AI
+        id: decision
+        run: |
+          set -euo pipefail
+          mkdir -p request-relay
+          cp request-source/review-request-decision.json request-relay/
+          state="$(python3 -c 'import json; print(json.load(open("request-source/review-request-decision.json"))["state"])')"
+          if [[ "$state" == "qf:organizer-hold" ]]; then
+            echo 'should_review=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          test "$state" = "qf:review-request"
+          test -f request-source/review-request.json
+          cp request-source/review-request.json request-relay/
+          head_sha="$(python3 -c 'import json; print(json.load(open("request-source/review-request.json"))["head_sha"])')"
+          printf 'should_review=true\nhead_sha=%s\n' "$head_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-review-request-relay
+          path: request-relay/
+          if-no-files-found: error
+          retention-days: 7
+
+  review:
+    needs: relay
+    if: needs.relay.outputs.should_review == 'true' && vars.QF_CLAUDE_MODEL != ''
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
+          path: control
           persist-credentials: false
           fetch-depth: 0
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          name: qf-review-request
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
+          name: qf-review-request-relay
           path: trusted-request
-      - name: Resolve verified PR head without executing it
-        id: identity
-        run: |
-          head_sha="$(python3 -c 'import json; print(json.load(open("trusted-request/review-request.json"))["head_sha"])')"
-          printf 'head_sha=%s\n' "$head_sha" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ steps.identity.outputs.head_sha }}
+          ref: ${{ needs.relay.outputs.head_sha }}
           path: pr-head
           persist-credentials: false
           fetch-depth: 0
-      - name: Run read-only Claude review
+      - name: Establish masked runtime canary
+        run: |
+          canary="QF_CANARY_$(openssl rand -hex 24)"
+          echo "::add-mask::$canary"
+          printf '%s\n' "$canary" > "$RUNNER_TEMP/qf-public-canary"
+      - name: Run read-only Claude review with the job-scoped token
         id: claude
         uses: anthropics/claude-code-action@a60f3e1db3edbceed2b1e6c6a9d34c36b8a15eba # v1.0.209
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: "Read .github/ai/prompts/claude-technical-review.md and trusted-request/review-request.json. Review only pr-head at the supplied SHA and return the required structured result."
-          claude_args: '--add-dir pr-head --json-schema .github/ai/schemas/technical-review.schema.json --disallowedTools "Write,Edit,NotebookEdit" --max-turns 20 --model ${{ vars.QF_CLAUDE_MODEL }}'
-          show_full_output: false
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: "Read control/.github/ai/prompts/claude-technical-review.md and trusted-request/review-request.json. Review only pr-head at the supplied SHA and return the required structured result."
+          claude_args: '--add-dir pr-head --add-dir control --json-schema control/.github/ai/schemas/technical-review.schema.json --allowedTools "Read,Glob,Grep" --max-turns 20 --model ${{ vars.QF_CLAUDE_MODEL }}'
           track_progress: false
           use_sticky_comment: false
-      - name: Store minimal structured output
+      - name: Validate and store only the technical review
         env:
           CLAUDE_RESULT: ${{ steps.claude.outputs.structured_output }}
         run: |
+          set -euo pipefail
           test -n "$CLAUDE_RESULT"
-          mkdir -p artifacts/automation
-          printf '%s\n' "$CLAUDE_RESULT" > artifacts/automation/technical-review.json
-          cp trusted-request/review-request.json artifacts/automation/review-request.json
+          mkdir -p technical-review
+          printf '%s\n' "$CLAUDE_RESULT" > technical-review/technical-review.json
+          python3 control/scripts/qf-ai-controller.py public-output --file technical-review/technical-review.json --canary-file "$RUNNER_TEMP/qf-public-canary" >/dev/null
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qf-claude-technical-review
-          path: artifacts/automation/
+          path: technical-review/technical-review.json
           if-no-files-found: error
           retention-days: 7
