@@ -1,6 +1,6 @@
 # MANIFEST — Stage 6R-11R External Review Reconciliation
 
-Status: **PASS_WITH_FINDINGS REVIEW RECEIVED — FINAL RETEST PENDING**
+Status: **CLOSED — PASS_WITH_FINDINGS**
 Review target: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`
 
 ## Scope
@@ -35,9 +35,17 @@ Stage 6R-11R reconciles the Stage 6R-11 implementation, machine gate, security c
 - Stage 6R-10: Run `33135504027`, Job `98734412535`, 85/85, artifact `9671915364`
 - Navigation: Run `33135504210`, Job `98734413111`, GREEN
 
+## Final Closure evidence
+
+- Response: `497d786fe687069c004b89b86b2b9345faeb9726`, tree `ba3711b6597013df8b268dc764098e7ed68681e6`
+- Stage 6R-10: Run `33152117623`, Job `98786286856`, 90/90, artifact `9678180236`
+- Stage 6R-11: Run `33152117552`, Job `98786286664`, 90/90, artifact `9678188675`
+- Navigation/taxonomy/links: Run `33152117524`, Job `98786286113`, GREEN
+
 ## Non-scope
 
 No Town runtime, shared DB, BYPASSRLS role, Stage 6R-12 feature, merge, Draft removal or deployment.
 
-Claude reported no blocking Finding. RVR-N17 through RVR-N22 are implemented and
-require the final affected-Gate rerun before repository-owner acceptance is sealed.
+Claude reported no blocking Finding. RVR-N17 through RVR-N22 are implemented,
+manufacturing-gate verified and owner-accepted. The final decision is recorded in
+`docs/reviews/stage6r11r/final-acceptance.md`.

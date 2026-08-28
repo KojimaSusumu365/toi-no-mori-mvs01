@@ -4,18 +4,18 @@
 
 ## 判定
 
-問いの森のStage 6R-11R実装は、固定した実装commitに対して90/90、累積85/85、repository navigationのすべてがGREENです。Claude独立レビュー `QF-RVR-MVS01-007` は `PASS_WITH_FINDINGS`、P0/P1・blocking Findingなしです。RVR-N17〜N22への実装応答をGitHub Actionsで再検証し、repository ownerが最終受入を記録するまでStage 6R-12へは進みません。
+問いの森のStage 6R-11Rは **CLOSED — PASS_WITH_FINDINGS** です。Claude独立レビュー `QF-RVR-MVS01-007` はP0/P1・blocking Findingなし、RVR-N17〜N22への応答はPR #6のGitHub Actionsで再検証され、Organizerの明示依頼に基づく最終受入を記録しました。Stage 6R-12はまだ開始していません。
 
 | 項目 | 状態 | 根拠 |
 |---|---|---|
 | Stage 6R-1〜6R-11累積実装 | Draft baseline | PR #1 |
 | Claude向けrepository整理 | Draft stacked PR | PR #3 |
-| Stage 6R-11R実装 | GREEN / IN REVIEW | Draft PR #4、target `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` |
-| Stage 6R-11 workflow | GREEN | Run `33135504039` / Job `98734412669` / 90/90 |
-| Stage 6R-10 workflow | GREEN | Run `33135504027` / Job `98734412535` / 85/85 |
-| Repository navigation | GREEN | Run `33135504210` / Job `98734413111` |
+| Stage 6R-11R | CLOSED / PASS_WITH_FINDINGS | [final acceptance](docs/reviews/stage6r11r/final-acceptance.md) |
+| Stage 6R-11 workflow | GREEN | Run `33152117552` / Job `98786286664` / 90/90 |
+| Stage 6R-10 workflow | GREEN | Run `33152117623` / Job `98786286856` / 90/90 |
+| Repository navigation | GREEN | Run `33152117524` / Job `98786286113` |
 | Claude review | PASS_WITH_FINDINGS / NO BLOCKER | [Claude Findings](docs/reviews/stage6r11r/claude-findings.md) |
-| Final acceptance | NOT READY | [final acceptance](docs/reviews/stage6r11r/final-acceptance.md) |
+| Final acceptance | ACCEPTED | [final acceptance](docs/reviews/stage6r11r/final-acceptance.md) |
 | Stage 6R-12 | NOT STARTED | 6R-11R PASS後 |
 | Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |
 | VT-X0 | NOT EXECUTED | 実在Question 1件で後続実験 |
@@ -27,8 +27,10 @@
 | #1 | `main` → `stage6r4c-postgresql-green-fix` | Stage 6R-1〜11 cumulative baseline |
 | #3 | `stage6r4c-postgresql-green-fix` → `stage-gh-org-0-claude-onboarding` | Claude/human navigation |
 | #4 | `stage-gh-org-0-claude-onboarding` → `stage6r11r-closure` | Stage 6R-11R closure implementation and review packet |
+| #5 | `stage6r11r-closure` → `stage-gh-org-1-physical-taxonomy` | Canonical physical taxonomy |
+| #6 | `stage-gh-org-1-physical-taxonomy` → `stage6r11r-final-closure` | Final review responses and manufacturing evidence |
 
-PR #5 (`stage6r11r-closure` → `stage-gh-org-1-physical-taxonomy`) adds the canonical physical taxonomy. All four remain Draft. No merge or `main` update has been performed.
+All five stacked PRs remain Draft. No merge or `main` update has been performed.
 
 ## Stage 6R-11R identity
 
@@ -44,13 +46,11 @@ PR #5 (`stage6r11r-closure` → `stage-gh-org-1-physical-taxonomy`) adds the can
 
 Full record: [Stage 6R-11R GitHub acceptance evidence](docs/evidence/stage6r11/stage6r11r-github-acceptance.md).
 
-## 次の完了条件
+## 次の段階
 
-1. Claudeがtarget SHAを独立reviewし、Findingを保存する。
-2. 新規FindingがあればCodexが応答し、影響するGateを再実行する。
-3. blocking Findingがない状態を確認する。
-4. repository ownerがfinal acceptanceを記録する。
-5. その後にのみStage 6R-12を別PRで開始する。
+Stage 6R-12は **NOT STARTED** です。開始する場合は、PR #6までの固定identity
+を基点にした別PRとし、Question Forest Minimum v1 RC以外のVirtual Town実装や
+deploymentを混在させません。
 
 ## Repository taxonomy overlay
 

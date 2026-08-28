@@ -1,7 +1,7 @@
 # Stage 6R-11R GitHub acceptance evidence
 
 Captured at: 2026-08-28T02:22:00Z  
-Acceptance state: **IMPLEMENTATION GREEN — EXTERNAL REVIEW PASS_WITH_FINDINGS; FINAL RETEST PENDING**
+Acceptance state: **ACCEPTED — STAGE 6R-11R PASS_WITH_FINDINGS**
 
 ## Source identity
 
@@ -70,10 +70,33 @@ GitHub reported all three jobs completed successfully and both artifacts identif
 the exact overlay head. Artifact expiry does not invalidate the recorded Run, Job,
 commit and digest identity.
 
+## Final Closure Runs
+
+The final response commit is
+`497d786fe687069c004b89b86b2b9345faeb9726`, tree
+`ba3711b6597013df8b268dc764098e7ed68681e6`. PR #6 evaluated merge ref
+`51e02a0488fbfdfaef3e26c05cc421e999e6d41d`, whose parents are the PR #5 base
+`80090e2eb56c4ddf438867572f8f6e8c389813ba` and the response head.
+
+| Purpose | Run / attempt | Job | Result | Artifact |
+|---|---|---|---|---|
+| Repository navigation, taxonomy and links | `33152117524 / 1` | `98786286113` | success | none |
+| Stage 6R-10 cumulative and DR | `33152117623 / 1` | `98786286856` | 90/90 success | `9678180236`, `sha256:44a0d252b572123c68afc43d4f7cad85083d0951815fa9638066f483d80a6261` |
+| Stage 6R-11 Town readiness | `33152117552 / 1` | `98786286664` | 90/90 success | `9678188675`, `sha256:3a04014251c64cf3ee5c69660c21697cdce45fd8848a08bfa95b44d477fd0b1e` |
+
+Direct artifact inspection confirmed both native records contain seven suites,
+`expectedTotal = passedTotal = executedTotal = 90`, `failedTotal = 0`, complete
+suite registration, matching totals, unique Test IDs, clean builds and non-root
+execution. The Stage 6R-11 record additionally contains the tested tree, both
+merge-ref parents and `authoritativeHeadIncluded = true`.
+
 ## Superseded run
 
 Run `33135291006` on implementation commit `756d7449769e5e27b891a28ba34d2212ed9b4c32` failed because the native DR harness launched the application without an explicit Public Read tenant. Commit `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` added that explicit test configuration. The failed run is not used as acceptance evidence; the exact corrected HEAD was rerun and passed.
 
 ## Limits of this evidence
 
-This record proves the implementation and registered regressions were green for the typed source identity above. It does not constitute Claude verification, repository-owner acceptance, merge approval, production deployment, or Stage 6R-12 authorization.
+This record proves the implementation and registered regressions were green for
+the typed identities above. Claude review and repository-owner acceptance are
+separately recorded in the Stage 6R-11R review packet. It does not constitute merge
+approval, production deployment or Stage 6R-12 authorization.

@@ -5,8 +5,9 @@
 ## 現在地
 
 - Stage 6R-1〜6R-11 cumulative implementation: Draft baseline
-- Stage 6R-11R implementation: exact-target 90/90 and 85/85 GREEN
-- Claude independent review: pending
+- Stage 6R-11R: **CLOSED — PASS_WITH_FINDINGS**
+- Final manufacturing gates: Stage 6R-10 90/90, Stage 6R-11 90/90, navigation GREEN
+- Claude independent review: `QF-RVR-MVS01-007`, no blocking Finding
 - Stage 6R-12: NOT STARTED
 - Virtual Town runtime: not implemented
 

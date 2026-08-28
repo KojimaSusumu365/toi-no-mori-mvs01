@@ -1,6 +1,6 @@
 # Stage 6R-11R closure ledger
 
-Status: **PASS_WITH_FINDINGS REVIEW RECEIVED — FINAL GITHUB RETEST PENDING**
+Status: **CLOSED — PASS_WITH_FINDINGS**
 
 Review target: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
 Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/stage6r11r-github-acceptance.md)
@@ -15,6 +15,8 @@ Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/
 - [x] Exact implementation HEAD Run, Job, artifact and digest are recorded.
 - [x] Stage 6R-11 is 90/90 GREEN for the review target.
 - [x] Historical Stage 6R-10 is 85/85 GREEN for the review target.
+- [x] Final response Stage 6R-10 is 90/90 GREEN with all seven executed suites recorded.
+- [x] Final response Stage 6R-11 is 90/90 GREEN with reconstructable merge-ref identity.
 - [x] Repository navigation is GREEN for the review target.
 
 ## B. Forest–Town boundary
@@ -61,15 +63,14 @@ Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/
 - [x] PR #5 taxonomy Runs are recorded in the source ledger.
 - [x] performance not-run owner/reason/due has one machine-readable source.
 - [x] RLS table coverage is derived rather than hard-coded.
-- [ ] affected GitHub gates rerun on the response commit.
-- [ ] repository owner records final acceptance.
+- [x] affected GitHub gates rerun on response commit `497d786f`.
+- [x] repository owner acceptance is recorded from the Organizer's explicit final-Closure request.
 
-## Remaining external actions
+## Closure decision
 
-1. GitHub Actions reruns Stage 6R-10, Stage 6R-11 and repository navigation on the response commit.
-2. Codex records Run, Job, artifact and digest identity.
-3. Repository owner records the requested final acceptance.
+Stage 6R-11R is closed as `PASS_WITH_FINDINGS`. RVR-N10 through N16 are
+`CLOSED_VERIFIED`; RVR-N17 through N22 are owner-`ACCEPTED`, implemented and
+manufacturing-gate verified. No P0/P1 or blocking Finding remains.
 
-This interim ledger is not yet the owner PASS declaration. The user's explicit
-final-Closure request authorizes preparation of that acceptance only after the
-affected GitHub gates are GREEN.
+Merge, Draft removal, branch deletion, deployment, Virtual Town implementation and
+Stage 6R-12 start remain outside this Closure.

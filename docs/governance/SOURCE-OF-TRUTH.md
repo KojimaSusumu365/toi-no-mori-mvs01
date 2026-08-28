@@ -46,6 +46,24 @@ The GitHub API was rechecked on 2026-08-28. Each artifact identifies
 `stage-gh-org-1-physical-taxonomy@80090e2` as its head. The navigation job has no
 artifact by design; its Run, Job, head commit and successful steps are the identity.
 
+## Final Closure response evidence
+
+| Type | Value |
+|---|---|
+| response commit | `497d786fe687069c004b89b86b2b9345faeb9726` |
+| response tree | `ba3711b6597013df8b268dc764098e7ed68681e6` |
+| evaluated PR #6 merge ref | `51e02a0488fbfdfaef3e26c05cc421e999e6d41d` |
+| merge-ref parents | `80090e2eb56c4ddf438867572f8f6e8c389813ba`, `497d786fe687069c004b89b86b2b9345faeb9726` |
+| navigation Run / Job | `33152117524 / 98786286113` — success |
+| Stage 6R-10 Run / Job | `33152117623 / 98786286856` — 90/90 success |
+| Stage 6R-10 artifact | `9678180236`, `sha256:44a0d252b572123c68afc43d4f7cad85083d0951815fa9638066f483d80a6261` |
+| Stage 6R-11 Run / Job | `33152117552 / 98786286664` — 90/90 success |
+| Stage 6R-11 artifact | `9678188675`, `sha256:3a04014251c64cf3ee5c69660c21697cdce45fd8848a08bfa95b44d477fd0b1e` |
+
+The Stage 6R-11 artifact records the response tree, verified inclusion of the
+authoritative head and both merge-ref parents. This relationship remains
+reconstructable after GitHub recalculates the live PR merge ref.
+
 ## Baseline chain
 
 - `main@c90dfdb154d99ee480571c8a397e99d88e12dea8` remains unchanged.
@@ -53,6 +71,7 @@ artifact by design; its Run, Job, head commit and successful steps are the ident
 - PR #3 adds repository navigation on top of PR #1.
 - PR #4 adds Stage 6R-11R on top of PR #3.
 - PR #5 adds the physical taxonomy on top of PR #4.
+- PR #6 adds final review responses and manufacturing evidence on top of PR #5.
 - No PR is merged and all remain Draft.
 
 ## Deferred-test source of truth

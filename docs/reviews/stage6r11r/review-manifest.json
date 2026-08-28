@@ -1,6 +1,6 @@
 {
   "stage": "6R-11R",
-  "status": "RESPONSE_IMPLEMENTED_AWAITING_FINAL_CI",
+  "status": "CLOSED_PASS_WITH_FINDINGS",
   "repository": "KojimaSusumu365/toi-no-mori-mvs01",
   "base_branch": "stage-gh-org-0-claude-onboarding",
   "review_target": {
@@ -10,6 +10,18 @@
     "base_commit": "60c10feb1fed4b4b5000fac4145aa4def591877f",
     "pull_request_merge_ref_commit": "83857ee48d4f5317dddf0023a8821a67e3e62980",
     "relationship": "pull_request_merge_ref"
+  },
+  "final_response": {
+    "pull_request": 6,
+    "base_commit": "80090e2eb56c4ddf438867572f8f6e8c389813ba",
+    "head_commit": "497d786fe687069c004b89b86b2b9345faeb9726",
+    "tree_sha": "ba3711b6597013df8b268dc764098e7ed68681e6",
+    "evaluated_merge_ref_commit": "51e02a0488fbfdfaef3e26c05cc421e999e6d41d",
+    "merge_ref_parents": [
+      "80090e2eb56c4ddf438867572f8f6e8c389813ba",
+      "497d786fe687069c004b89b86b2b9345faeb9726"
+    ],
+    "authoritative_head_included": true
   },
   "reviewer": "Claude",
   "review_document_id": "QF-RVR-MVS01-007",
@@ -80,6 +92,36 @@
         "artifact_digest": "sha256:16c7a9e3f6b52674eaec601a5ac70f41a173c7af59ab01743ff85f6dcccc3ea8",
         "conclusion": "success"
       }
+    },
+    "final_closure": {
+      "navigation": {
+        "run_id": 33152117524,
+        "run_attempt": 1,
+        "job_id": 98786286113,
+        "conclusion": "success"
+      },
+      "stage6r10": {
+        "run_id": 33152117623,
+        "run_attempt": 1,
+        "job_id": 98786286856,
+        "expected": 90,
+        "passed": 90,
+        "failed": 0,
+        "artifact_id": 9678180236,
+        "artifact_digest": "sha256:44a0d252b572123c68afc43d4f7cad85083d0951815fa9638066f483d80a6261",
+        "conclusion": "success"
+      },
+      "stage6r11": {
+        "run_id": 33152117552,
+        "run_attempt": 1,
+        "job_id": 98786286664,
+        "expected": 90,
+        "passed": 90,
+        "failed": 0,
+        "artifact_id": 9678188675,
+        "artifact_digest": "sha256:3a04014251c64cf3ee5c69660c21697cdce45fd8848a08bfa95b44d477fd0b1e",
+        "conclusion": "success"
+      }
     }
   },
   "declared_not_run": [
@@ -100,69 +142,69 @@
     {
       "id": "RVR-N10",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N11",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N12",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N13",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N14",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N15",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N16",
       "severity": "P2",
-      "status": "CLOSED_VERIFIED_REVIEWER"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N17",
       "severity": "P2",
-      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+      "status": "ACCEPTED"
     },
     {
       "id": "RVR-N18",
       "severity": "P2",
-      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+      "status": "ACCEPTED"
     },
     {
       "id": "RVR-N19",
       "severity": "P3",
-      "status": "ACCEPTED_IMPLEMENTED"
+      "status": "ACCEPTED"
     },
     {
       "id": "RVR-N20",
       "severity": "P3",
-      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+      "status": "ACCEPTED"
     },
     {
       "id": "RVR-N21",
       "severity": "P3",
-      "status": "ACCEPTED_IMPLEMENTED_AWAITING_FINAL_CI"
+      "status": "ACCEPTED"
     },
     {
       "id": "RVR-N22",
       "severity": "P3",
-      "status": "ACCEPTED_IMPLEMENTED"
+      "status": "ACCEPTED"
     }
   ],
-  "final_acceptance": "NOT_READY",
-  "updated_at": "2026-08-28T05:30:00Z"
+  "final_acceptance": "ACCEPTED_PASS_WITH_FINDINGS",
+  "updated_at": "2026-08-28T07:45:00Z"
 }

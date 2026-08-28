@@ -18,7 +18,7 @@ This is the first authoritative document for Claude in this repository. Claude i
 - Implementation commit: 61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1
 - Implementation tree: 23de94ef1e6ded9e2122b11880b7cb80ff8378ae
 - Draft implementation PR: #4
-- Stage 6R-11R: implementation GREEN, independent review pending
+- Stage 6R-11R: CLOSED as `PASS_WITH_FINDINGS`; review `QF-RVR-MVS01-007`
 - Stage 6R-12: NOT STARTED
 
 The physical-taxonomy branch relocates documents without changing this implementation target. Do not substitute the taxonomy commit, tree object, PR merge ref or workflow checkout SHA for the fixed implementation commit.

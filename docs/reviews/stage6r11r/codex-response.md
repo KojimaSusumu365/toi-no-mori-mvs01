@@ -1,6 +1,6 @@
 # Codex implementation response — Stage 6R-11R
 
-Status: **RVR-N17–N22 IMPLEMENTED — GITHUB RETEST PENDING**
+Status: **ACCEPTED — IMPLEMENTED AND GITHUB-VERIFIED**
 
 Target implementation commit: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
 Evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/stage6r11r-github-acceptance.md)
@@ -40,6 +40,10 @@ new Findings are accepted. They remain `ACCEPTED` rather than
 | RVR-N20 | `ACCEPTED` | `spec/deferred-tests.json` is the single machine-readable performance not-run source; the static placeholder is removed from the executable registry | Test ID and Stage 6R-11 contract checks |
 | RVR-N21 | `ACCEPTED` | PostgreSQL test derives every tenant table from its `tenant_id` column and requires all of them to enable and force RLS | PostgreSQL native suite |
 | RVR-N22 | `ACCEPTED` | `CURRENT_STATE.md` discloses navigation-document rewrites in the taxonomy overlay | navigation/taxonomy/link contract |
+
+The affected gates passed on final response commit `497d786f`: Stage 6R-10 90/90,
+Stage 6R-11 90/90, and repository navigation/taxonomy/links GREEN. Exact Run,
+Job and artifact identities are recorded in the acceptance evidence.
 
 The 90-test acceptance total still excludes the two declared not-run tests. No
 Virtual Town runtime, Stage 6R-12 feature, BYPASSRLS role or deployment is added.
