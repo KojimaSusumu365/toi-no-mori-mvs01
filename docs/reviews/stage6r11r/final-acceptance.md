@@ -17,6 +17,7 @@ Codex. It is not an autonomous AI acceptance.
 |---|---|
 | Claude-reviewed implementation | `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` |
 | Claude review | `QF-RVR-MVS01-007` — `PASS_WITH_FINDINGS`, no blocking Finding |
+| Claude response re-verification | `QF-RVR-MVS01-015` — RVR-N17–N22 `VERIFIED`, no new Finding |
 | Final response branch head | `497d786fe687069c004b89b86b2b9345faeb9726` |
 | Final response tree | `ba3711b6597013df8b268dc764098e7ed68681e6` |
 | Evaluated PR #6 merge ref | `51e02a0488fbfdfaef3e26c05cc421e999e6d41d` |
@@ -39,16 +40,18 @@ also records the tested tree, both merge-ref parents and
 ## Finding disposition
 
 - RVR-N10 through RVR-N16: `CLOSED_VERIFIED` by Claude and accepted by owner.
-- RVR-N17 through RVR-N22: `ACCEPTED`; implemented and verified by the affected
-  GitHub manufacturing gates. They are not mislabelled as a second Claude
-  re-verification.
+- RVR-N17 through RVR-N22: `CLOSED_VERIFIED`; implemented, verified by the
+  affected GitHub manufacturing gates, independently reverified by Claude in
+  `QF-RVR-MVS01-015`, and accepted by the owner.
+- Open Finding: zero.
 - Open P0/P1: zero.
 - Blocking Finding: zero.
 
 ## Decision
 
-Stage 6R-11R is closed as **PASS_WITH_FINDINGS**. Its scope and evidence are
-accepted for Question Forest Minimum v1 RC planning.
+Stage 6R-11R remains closed as **PASS_WITH_FINDINGS**, preserving the historical
+review decision. All Findings RVR-N10 through RVR-N22 are `CLOSED_VERIFIED`; its
+scope and evidence are accepted for Question Forest Minimum v1 RC planning.
 
 This acceptance does **not** merge any PR, remove Draft status, delete a branch,
 deploy an environment, implement Virtual Town, or start Stage 6R-12. Those actions

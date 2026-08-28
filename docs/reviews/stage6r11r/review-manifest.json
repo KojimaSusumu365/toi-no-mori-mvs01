@@ -26,6 +26,17 @@
   "reviewer": "Claude",
   "review_document_id": "QF-RVR-MVS01-007",
   "review_decision": "PASS_WITH_FINDINGS",
+  "review_reverification": {
+    "document_id": "QF-RVR-MVS01-015",
+    "target_commit": "497d786fe687069c004b89b86b2b9345faeb9726",
+    "target_tree": "ba3711b6597013df8b268dc764098e7ed68681e6",
+    "evaluated_merge_ref_commit": "51e02a0488fbfdfaef3e26c05cc421e999e6d41d",
+    "finding_range": "RVR-N17-RVR-N22",
+    "decision": "VERIFIED",
+    "new_findings": 0,
+    "github_actions_api_verified_by_reviewer": false,
+    "stage_closure_changed": false
+  },
   "blocking_findings": 0,
   "evidence": {
     "navigation": {
@@ -177,34 +188,34 @@
     {
       "id": "RVR-N17",
       "severity": "P2",
-      "status": "ACCEPTED"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N18",
       "severity": "P2",
-      "status": "ACCEPTED"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N19",
       "severity": "P3",
-      "status": "ACCEPTED"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N20",
       "severity": "P3",
-      "status": "ACCEPTED"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N21",
       "severity": "P3",
-      "status": "ACCEPTED"
+      "status": "CLOSED_VERIFIED"
     },
     {
       "id": "RVR-N22",
       "severity": "P3",
-      "status": "ACCEPTED"
+      "status": "CLOSED_VERIFIED"
     }
   ],
   "final_acceptance": "ACCEPTED_PASS_WITH_FINDINGS",
-  "updated_at": "2026-08-28T07:45:00Z"
+  "updated_at": "2026-08-28T09:51:21Z"
 }

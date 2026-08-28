@@ -4,7 +4,7 @@
 
 ## 判定
 
-問いの森のStage 6R-11Rは **CLOSED — PASS_WITH_FINDINGS** です。Claude独立レビュー `QF-RVR-MVS01-007` はP0/P1・blocking Findingなし、RVR-N17〜N22への応答はPR #6のGitHub Actionsで再検証され、Organizerの明示依頼に基づく最終受入を記録しました。Stage 6R-12はまだ開始していません。
+問いの森のStage 6R-11Rは **CLOSED — PASS_WITH_FINDINGS** です。Claude独立レビュー `QF-RVR-MVS01-007` はP0/P1・blocking Findingなし、再検証 `QF-RVR-MVS01-015` はRVR-N17〜N22を全件`VERIFIED`としました。Organizerの受入と合わせ、RVR-N10〜N22はすべて`CLOSED_VERIFIED`であり、未解決Findingはありません。Stage 6R-12はまだ開始していません。
 
 | 項目 | 状態 | 根拠 |
 |---|---|---|
@@ -15,6 +15,7 @@
 | Stage 6R-10 workflow | GREEN | Run `33152117623` / Job `98786286856` / 90/90 |
 | Repository navigation | GREEN | Run `33152117524` / Job `98786286113` |
 | Claude review | PASS_WITH_FINDINGS / NO BLOCKER | [Claude Findings](docs/reviews/stage6r11r/claude-findings.md) |
+| Claude re-verification | N17–N22 VERIFIED / NO NEW FINDING | [QF-RVR-MVS01-015](docs/reviews/stage6r11r/claude-reverification.md) |
 | Final acceptance | ACCEPTED | [final acceptance](docs/reviews/stage6r11r/final-acceptance.md) |
 | Stage 6R-12 | NOT STARTED | 6R-11R PASS後 |
 | Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |

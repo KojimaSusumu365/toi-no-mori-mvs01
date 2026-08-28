@@ -13,6 +13,11 @@ Reviewer: Claude (external review side)
 This repository record normalizes the independently supplied review into the
 Stage 6R-11R packet. It does not alter the reviewer's decision.
 
+Post-closure note: Claude subsequently reverified the response commit in
+[`QF-RVR-MVS01-015`](claude-reverification.md), marked RVR-N17 through RVR-N22
+`VERIFIED`, and raised no new Finding. The historical overall decision in this
+record remains `PASS_WITH_FINDINGS`.
+
 ## Overall decision
 
 Claude reported no P0 or P1 Finding and no blocking Finding for repository-owner

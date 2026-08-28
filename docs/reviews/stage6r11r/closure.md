@@ -60,6 +60,8 @@ Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/
 - [x] P0/P1 and blocking Findings are zero.
 - [x] RVR-N10 through RVR-N16 are reviewer-side `CLOSED_VERIFIED`.
 - [x] RVR-N17 through RVR-N22 have `ACCEPTED` implementation responses.
+- [x] Claude re-verification `QF-RVR-MVS01-015` independently marks RVR-N17 through RVR-N22 `VERIFIED` and raises no new Finding.
+- [x] Owner acceptance plus reviewer verification closes RVR-N17 through RVR-N22 as `CLOSED_VERIFIED`.
 - [x] PR #5 taxonomy Runs are recorded in the source ledger.
 - [x] performance not-run owner/reason/due has one machine-readable source.
 - [x] RLS table coverage is derived rather than hard-coded.
@@ -68,9 +70,9 @@ Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/
 
 ## Closure decision
 
-Stage 6R-11R is closed as `PASS_WITH_FINDINGS`. RVR-N10 through N16 are
-`CLOSED_VERIFIED`; RVR-N17 through N22 are owner-`ACCEPTED`, implemented and
-manufacturing-gate verified. No P0/P1 or blocking Finding remains.
+Stage 6R-11R remains closed as `PASS_WITH_FINDINGS`, preserving the historical
+review decision. RVR-N10 through N22 are `CLOSED_VERIFIED`; no open Finding, new
+Finding, P0/P1 or blocking Finding remains.
 
 Merge, Draft removal, branch deletion, deployment, Virtual Town implementation and
 Stage 6R-12 start remain outside this Closure.

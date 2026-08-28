@@ -26,6 +26,7 @@ Stage 6R-11R reconciles the Stage 6R-11 implementation, machine gate, security c
 - Request: `docs/reviews/stage6r11r/review-request.md`
 - Manifest: `docs/reviews/stage6r11r/review-manifest.json`
 - Claude Findings `QF-RVR-MVS01-007`: `docs/reviews/stage6r11r/claude-findings.md`
+- Claude re-verification `QF-RVR-MVS01-015`: `docs/reviews/stage6r11r/claude-reverification.md`
 - Codex implementation response: `docs/reviews/stage6r11r/codex-response.md`
 - Owner acceptance gate: `docs/reviews/stage6r11r/final-acceptance.md`
 
@@ -46,6 +47,8 @@ Stage 6R-11R reconciles the Stage 6R-11 implementation, machine gate, security c
 
 No Town runtime, shared DB, BYPASSRLS role, Stage 6R-12 feature, merge, Draft removal or deployment.
 
-Claude reported no blocking Finding. RVR-N17 through RVR-N22 are implemented,
-manufacturing-gate verified and owner-accepted. The final decision is recorded in
-`docs/reviews/stage6r11r/final-acceptance.md`.
+Claude reported no blocking Finding. QF-RVR-MVS01-015 independently reverified
+RVR-N17 through RVR-N22 with no new Finding. Owner acceptance and reviewer
+verification are both recorded, so RVR-N10 through RVR-N22 are
+`CLOSED_VERIFIED`. The historical Stage decision remains `PASS_WITH_FINDINGS` and
+is recorded in `docs/reviews/stage6r11r/final-acceptance.md`.
