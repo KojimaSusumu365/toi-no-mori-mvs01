@@ -1,4 +1,21 @@
-# 問いの森 CORE — MVS-01 Stage 6R-7 DB追記専用・改ざん防止境界
+# 問いの森 CORE — MVS-01
+
+> 現在の累積実装はDraft PR #1のStage 6R-1〜6R-11です。初めて読む人とAI reviewerは、下の4文書から開始してください。
+
+| 目的 | 正本 |
+|---|---|
+| 現在地と証跡 | [CURRENT_STATE.md](CURRENT_STATE.md) |
+| Claude向け作業規約 | [CLAUDE.md](CLAUDE.md) |
+| アーキテクチャ境界 | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| 次段階 | [ROADMAP.md](ROADMAP.md) |
+
+文書索引は [docs/INDEX.md](docs/INDEX.md)、レビューの受け渡しは [docs/reviews/README.md](docs/reviews/README.md) を参照してください。
+
+この整理コミットは既存の実装、試験ID、マニフェスト、履歴を移動・改変しません。以下は来歴保持のため残している従来READMEです。
+
+---
+
+## 問いの森 CORE — MVS-01 Stage 6R-7 DB追記専用・改ざん防止境界
 
 > Stage 6R-7のGitHub Actions Run #3で、非root全体回帰81/81を確認済みです。tenant監査、platform監査、revisionを権限とDB triggerの二重境界で追記専用化しました。
 
