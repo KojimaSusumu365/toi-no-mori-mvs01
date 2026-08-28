@@ -80,13 +80,15 @@ reconstructable after GitHub recalculates the live PR merge ref.
 | Type | Value |
 |---|---|
 | Draft PR | `#7` |
-| implementation commit | `c5d316063bc16161e2808c02334f331603b20c32` |
-| implementation tree | `01a38e0994d04e922a5929258570a5ecaa69450c` |
-| superseded implementation | `c88b73a059b092cd5e806e58c21f5395678d7046` — role appointment CheckのRegistry登録前 |
-| parent / base | `b6959e86713c89b37a8d0e8009f402512c02e346` |
+| implementation commit | `4911801f1b1c51f6878e84d60e614dfaee9e8d25` |
+| implementation tree | `f1d37e7a2965e1c795b343510c18bef54231ec2e` |
+| superseded implementation | `c5d316063bc16161e2808c02334f331603b20c32` — QF-RVR-MVS01-016 review target |
+| implementation parent | `a3f5ec7f1851fd1ed18836d3219c87ad7a315753` |
+| stacked base | `b6959e86713c89b37a8d0e8009f402512c02e346` |
 | branch | `ops-github-autodrive-controller` |
 | state | `BOOTSTRAP_DISABLED` |
-| review packet | `docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md` |
+| review packet | `docs/reviews/automation/QF-RRQ-MVS01-002-controller-r1-reverify.md` |
+| Organizer disposition | `docs/evidence/automation/dispositions/QF-ORG-MVS01-001-controller-r1-disposition.md` |
 
 The packet is a later documentation-only commit. Claude must review the fixed
 implementation commit/tree above, not the packet commit or a recalculated PR

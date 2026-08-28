@@ -1,6 +1,6 @@
 # Current state
 
-更新日: 2026-08-28
+更新日: 2026-08-29
 
 ## 判定
 
@@ -42,11 +42,12 @@ Independent Automation Release Reviewerは`VACANT`です。したがってAI資�
 All six stacked PRs remain Draft. No merge or `main` update has been performed.
 
 The Controller governance PR #7 is stacked after PR #6 and is not part of the
-Stage 6R-11R closure identity. Its fixed implementation target is
-`c5d316063bc16161e2808c02334f331603b20c32`, tree
-`01a38e0994d04e922a5929258570a5ecaa69450c`; the
-[review packet](docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md)
-is a later documentation-only seal.
+Stage 6R-11R closure identity. The R1 fixed implementation target is
+`4911801f1b1c51f6878e84d60e614dfaee9e8d25`, tree
+`f1d37e7a2965e1c795b343510c18bef54231ec2e`; the
+[R1 REVERIFY packet](docs/reviews/automation/QF-RRQ-MVS01-002-controller-r1-reverify.md)
+is a later documentation-only seal. All 15 implementation-review Findings stay
+OPEN pending independent REVERIFY.
 
 ## Stage 6R-11R identity
 
