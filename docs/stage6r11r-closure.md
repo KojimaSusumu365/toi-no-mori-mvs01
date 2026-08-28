@@ -1,6 +1,9 @@
 # Stage 6R-11R closure ledger
 
-Status: **IMPLEMENTED — AWAITING EXACT-HEAD CI AND CLAUDE REVIEW**
+Status: **IMPLEMENTATION GREEN — AWAITING CLAUDE REVIEW AND OWNER ACCEPTANCE**
+
+Review target: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
+Acceptance evidence: [stage6r11r-github-acceptance.md](evidence/stage6r11r-github-acceptance.md)
 
 ## A. Evidence Gate
 
@@ -9,7 +12,10 @@ Status: **IMPLEMENTED — AWAITING EXACT-HEAD CI AND CLAUDE REVIEW**
 - [x] A missing suite rejects the synthetic contract test.
 - [x] Fixed key `nativeTotal90Of90` is removed.
 - [x] tested commit, branch head, base commit, relationship, workflow, Run and attempt are typed evidence fields.
-- [ ] Exact implementation HEAD Run/Job/artifact is recorded after CI.
+- [x] Exact implementation HEAD Run, Job, artifact and digest are recorded.
+- [x] Stage 6R-11 is 90/90 GREEN for the review target.
+- [x] Stage 6R-10 is 85/85 GREEN for the review target.
+- [x] Repository navigation is GREEN for the review target.
 
 ## B. Forest–Town boundary
 
@@ -27,15 +33,15 @@ Status: **IMPLEMENTED — AWAITING EXACT-HEAD CI AND CLAUDE REVIEW**
 
 ## C. P0 closure evidence
 
-| Finding | Evidence | State |
+| Finding | Evidence | Implementation state |
 |---|---|---|
-| RV-010 version-bound approval | `TC-ACC-MVS01-063-DOM`, `064-API`, `077-OIDC` | implemented; CI pending |
-| RV-020 tenant/RLS boundary | `TC-ACC-MVS01-065-API`, `066/067/068-PG` | implemented; CI pending |
-| RV-030 rejection audit | middleware wraps Authentication/Authorization; `TC-ACC-MVS01-071-API` now retrieves 401/403/429 rows | implemented; CI pending |
-| RVA-C01 outer audit envelope | `TC-ACC-MVS01-071-API` actual rejected paths | implemented; CI pending |
-| RVA-C06 empty GUC/pool reuse | `TC-ACC-MVS01-067-PG`; four RLS policies use `NULLIF` | implemented; CI pending |
-| PostgreSQL | expected 12/12 | CI pending |
-| DR | expected 5/5 | CI pending |
+| RV-010 version-bound approval | `TC-ACC-MVS01-063-DOM`, `064-API`, `077-OIDC` | GREEN |
+| RV-020 tenant/RLS boundary | `TC-ACC-MVS01-065-API`, `066/067/068-PG` | GREEN |
+| RV-030 rejection audit | `TC-ACC-MVS01-071-API` retrieves actual 401/403/429 audit rows | GREEN |
+| RVA-C01 outer audit envelope | audit middleware wraps Authentication/Authorization; rejected-path proof is GREEN | GREEN |
+| RVA-C06 empty GUC/pool reuse | `TC-ACC-MVS01-067-PG`; four RLS policies use `NULLIF` | GREEN |
+| PostgreSQL | 12/12 | GREEN |
+| DR | 5/5 | GREEN |
 
 ## D. Traceability
 
@@ -43,13 +49,13 @@ Status: **IMPLEMENTED — AWAITING EXACT-HEAD CI AND CLAUDE REVIEW**
 - [x] API +1 explained by approved supplemental `066-API`.
 - [x] `TC-PERF-MVS01-002-PG` is not counted as passed and has owner/reason/due.
 - [x] Town 5 IDs mapped.
-- [x] duplicate modern IDs and deferred/executable collision rejected by CI.
+- [x] deferred `087-OIDC` has owner/reason/due.
+- [x] duplicate modern IDs and deferred/executable collision are rejected by CI.
 
 ## Remaining external actions
 
-1. Record exact-head CI evidence.
-2. Claude reviews the fixed implementation SHA and returns Findings.
-3. Codex responds by Finding ID.
-4. Repository owner records final acceptance.
+1. Claude reviews `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` and records Findings.
+2. Codex responds to any new Finding ID and reruns affected gates if code changes.
+3. Repository owner records final acceptance.
 
-This file must not be changed to PASS by an implementing AI alone.
+This ledger is not a PASS declaration. An implementing AI cannot change final acceptance to `ACCEPTED`.

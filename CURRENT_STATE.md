@@ -4,38 +4,50 @@
 
 ## 判定
 
-問いの森の累積実装はStage 6R-11まで存在し、現在のDraft PR #1のHEADに対するStage 6R-11 gateは90/90で成功しています。ただし、外部レビュー所見と証跡の身元を整合させるStage 6R-11Rは未完了です。Stage 6R-12へはまだ進みません。
+問いの森のStage 6R-11R実装は、固定した実装commitに対して90/90、累積85/85、repository navigationのすべてがGREENです。既知のRVR-N10〜N13には実装応答済みですが、Claudeの独立再検証とrepository ownerの最終受入が未完了のため、Stage 6R-11RはまだPASSではありません。Stage 6R-12へは進みません。
 
 | 項目 | 状態 | 根拠 |
 |---|---|---|
 | Stage 6R-1〜6R-11累積実装 | Draft baseline | PR #1 |
-| Stage 6R-11 workflow | GREEN | Run 33002851599 / Job 98288871317 / 90/90 |
-| Stage 6R-10 workflow | GREEN | Run 33002852735 |
-| Stage 6R-11R | IN PROGRESS | [review packet](docs/reviews/stage6r11r/review-request.md) |
+| Claude向けrepository整理 | Draft stacked PR | PR #3 |
+| Stage 6R-11R実装 | GREEN / IN REVIEW | Draft PR #4、target `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` |
+| Stage 6R-11 workflow | GREEN | Run `33135504039` / Job `98734412669` / 90/90 |
+| Stage 6R-10 workflow | GREEN | Run `33135504027` / Job `98734412535` / 85/85 |
+| Repository navigation | GREEN | Run `33135504210` / Job `98734413111` |
+| Claude review | AWAITING REVIEW | [review request](docs/reviews/stage6r11r/review-request.md) |
+| Final acceptance | NOT READY | [final acceptance](docs/reviews/stage6r11r/final-acceptance.md) |
 | Stage 6R-12 | NOT STARTED | 6R-11R PASS後 |
-| Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを先に固定 |
-| Experience Ledger / Citizen Compute | NOT IMPLEMENTED | 下流構想 |
+| Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |
 | VT-X0 | NOT EXECUTED | 実在Question 1件で後続実験 |
 
-## 現在の識別子
+## Draft PR chain
 
-| 種別 | 値 | 意味 |
+| PR | Base → Head | Purpose |
 |---|---|---|
-| Branch | `stage6r4c-postgresql-green-fix` | 累積作業branch |
-| Commit HEAD | `4537085c25ed3178214b0693afac7e42ce1b64de` | 文書sealを含む現在のcommit |
-| Parent functional commit | `07815c1a9b22c437c72a991fe120a1f8be61bc9e` | seal commitの親 |
-| Git tree | `4402dd93d1a50fe58e96d0fa0242e30cdcc6450e` | HEADが参照するtree。commitではない |
-| PR #1 base | `main@c90dfdb154d99ee480571c8a397e99d88e12dea8` | 現在のbase |
-| PR merge ref commit | `3a3ff47d7972ad5fee7e9c5062e2267539c52429` | 現時点の仮想merge commit |
-| Stage 6R-11 Run | `33002851599` attempt 1 | pull_request event、success |
-| Stage 6R-11 Job | `98288871317` | “Question Forest Minimum Town readiness 90/90 gate” |
+| #1 | `main` → `stage6r4c-postgresql-green-fix` | Stage 6R-1〜11 cumulative baseline |
+| #3 | `stage6r4c-postgresql-green-fix` → `stage-gh-org-0-claude-onboarding` | Claude/human navigation |
+| #4 | `stage-gh-org-0-claude-onboarding` → `stage6r11r-closure` | Stage 6R-11R closure implementation and review packet |
 
-詳細な扱いは [SOURCE-OF-TRUTH.md](docs/governance/SOURCE-OF-TRUTH.md) を参照してください。
+All three remain Draft. No merge or `main` update has been performed.
+
+## Stage 6R-11R identity
+
+| Type | Value |
+|---|---|
+| Implementation HEAD | `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` |
+| Git tree | `23de94ef1e6ded9e2122b11880b7cb80ff8378ae` |
+| Base commit | `60c10feb1fed4b4b5000fac4145aa4def591877f` |
+| Evaluated PR merge ref | `83857ee48d4f5317dddf0023a8821a67e3e62980` |
+| Relationship | `pull_request_merge_ref` |
+| Stage 6R-11 artifact | `9671907000` / `sha256:fd4bd48943a0d9c6fb4f3fb20622856503f2f2783070da2070f3cd85878a1955` |
+| Stage 6R-10 artifact | `9671915364` / `sha256:9016ac324d339ece6e10027e78acacb5b459d74593030b12d98563070f9ce13e` |
+
+Full record: [Stage 6R-11R GitHub acceptance evidence](docs/evidence/stage6r11r-github-acceptance.md).
 
 ## 次の完了条件
 
-1. RVR-N10〜N13を現在の実装と証跡に照合する
-2. 実行Run・head commit・merge ref・Test IDの対応を固定する
-3. Stage 6R-11RのClaude reviewとCodex responseを保存する
-4. ユーザーがfinal acceptanceを行う
-5. その後にStage 6R-12を別PRで開始する
+1. Claudeがtarget SHAを独立reviewし、Findingを保存する。
+2. 新規FindingがあればCodexが応答し、影響するGateを再実行する。
+3. blocking Findingがない状態を確認する。
+4. repository ownerがfinal acceptanceを記録する。
+5. その後にのみStage 6R-12を別PRで開始する。

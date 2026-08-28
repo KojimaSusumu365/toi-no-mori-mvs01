@@ -29,6 +29,7 @@
 ## Stage 6R-11R closure
 
 - [Closure ledger](stage6r11r-closure.md)
+- [Exact GitHub acceptance evidence](evidence/stage6r11r-github-acceptance.md)
 - [Forest–Town boundary contract](forest-town-boundary-v1.md)
 - [Planned-to-actual Test ID mapping](stage6r11r-test-id-mapping.md)
 - [Deferred test registry](../spec/deferred-tests.json)
