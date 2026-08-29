@@ -8,8 +8,10 @@
 
 GitHub自動運転Controllerは、QF-OPS-MVS01-001 v0.5.1に基づく独立した
 governance Draftとして実装中です。現在は`BOOTSTRAP_DISABLED`であり、
-Independent Automation Release Reviewerは`VACANT`です。したがってAI資格情報を
-使うrun、Controllerの有効化、merge、Stage 6R-12開始は未実施です。
+Independent Automation Release Reviewerには`SusumuKojima1967`へのOrganizer任命指示と
+独立bootstrap署名が記録されました。ただしPR #7はmixed-change Draftかつunmergedのため、
+凍結仕様上の運用状態は`VACANT / PENDING ACTIVATION`です。したがってAI資格情報を使うrun、
+Controllerの有効化、merge、Stage 6R-12開始は未実施です。
 
 | 項目 | 状態 | 根拠 |
 |---|---|---|
@@ -26,7 +28,7 @@ Independent Automation Release Reviewerは`VACANT`です。したがってAI資�
 | Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |
 | VT-X0 | NOT EXECUTED | 実在Question 1件で後続実験 |
 | GitHub auto-drive Controller | BOOTSTRAP IMPLEMENTED / DISABLED | [Controller guide](docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md) |
-| Independent Automation Release Reviewer | VACANT | [appointment record](docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml) |
+| Independent Automation Release Reviewer | VACANT / PENDING ACTIVATION — nominee `SusumuKojima1967` | [appointment evidence](docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md) |
 
 ## Draft PR chain
 
@@ -50,7 +52,10 @@ is `PASS_WITH_FINDINGS / blocking=false`, with 21 Findings `VERIFIED` and only
 P3-015 `OPEN`. The Organizer
 [final Finding disposition](docs/evidence/automation/dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md)
 therefore records `CLOSED_VERIFIED 21 / OPEN_DEFERRED 1`. This is not final
-Controller acceptance: the independent human signature and
+Controller acceptance: the independent bootstrap signature and Organizer
+appointment direction are now recorded in
+[QF-APT-MVS01-001](docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md),
+but contract-compliant appointment activation and
 [Step 2.5 live measurement](docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md)
 remain pending, so Draft, unmerged and `BOOTSTRAP_DISABLED` are unchanged.
 

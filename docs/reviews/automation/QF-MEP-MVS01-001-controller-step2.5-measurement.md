@@ -22,11 +22,11 @@
 | Gate | 状態 | 次の証拠 |
 |---:|---|---|
 | 1. 先行PR chainのmerge | 未充足 | PR #1、#3〜#6の順序付きmerge記録 |
-| 2. Independent Automation Release Reviewer任命 | 未充足（`VACANT`） | 固定SHAへの別人の独立署名、初回はTC-094 |
+| 2. Independent Automation Release Reviewer任命 | 部分充足 — Organizer指示・TC-094署名済、正式activation未了 | 契約適合任命PRのcurrent-head署名・GREEN・default merge |
 | 3. Step 2.5 / `NOT_MEASURED`解消 | 未充足 | 本書の測定結果 |
 | 4. 固定SHAで40 test | 充足 | `dcfc9e03…`で40/40 |
 | 5. 同一SHAのClaude技術レビュー | 充足 | QF-RVR-MVS01-020 |
-| 6. 独立人間署名 + Organizer final acceptance | 未充足 | 署名記録と後続Organizer acceptance |
+| 6. 独立人間署名 + Organizer final acceptance | 部分充足 — 独立署名済、final acceptance未了 | Step 2.5後のOrganizer final acceptance |
 | 7. governance PRの手動merge | 未充足 | Gate 1〜6後の別承認 |
 | 8. secrets/App/rules設定 | 未充足 | merge後の別途明示承認 |
 
@@ -41,13 +41,18 @@
   別操作として実施する。観測だけで足りる項目はread-onlyで取得する。
 - 実行前にPR head、base、fixed implementation commit/treeを再取得し、drift時は停止する。
 
-## Track A — bootstrap独立署名
+## Track A — bootstrap独立署名（記録済）
 
 `TC-ACC-MVS01-094-BOOTSTRAP`として、Independent Automation Release Reviewerが
 固定implementation SHA `dcfc9e03…`、tree `ab04ccd8…`、QF-RVR-MVS01-020、
 本Organizer処置を読み、署名時刻、GitHub login、対象SHA、結論、残存リスクを記録する。
 署名は任命またはPhase A有効化そのものではない。署名者がOrganizer allowlist外かつ
 write権限なしであることも同じ証拠へ保存する。
+
+実測記録: [QF-APT-MVS01-001](../../evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md)。
+GitHub author `SusumuKojima1967`、repository permission `read`、Organizer allowlist外、
+固定implementation SHA/tree、P3-015残存、禁止操作維持を確認した。PR #7はmixed-change
+Draftのため、これは正式activationやRequired Check GREENを意味しない。
 
 ## Track B — P3-015 event coverage
 
@@ -109,7 +114,7 @@ label smoke testが失敗しても`issues: write`を自動追加しない。必�
 | TC-ACC-MVS01-091-REVERIFY | Organizer | Before Phase B enablement | Phase B前まで継続 |
 | TC-ACC-MVS01-092-STEP | Independent Automation Release Reviewer | Step 2.5, before Phase A enablement | 本書の主対象 |
 | TC-ACC-MVS01-093-DISPOSITION | Organizer | Before Phase A enablement | publication transportを別測定 |
-| TC-ACC-MVS01-094-BOOTSTRAP | Organizer | Before initial governance PR merge | Track Aで人手署名 |
+| TC-ACC-MVS01-094-BOOTSTRAP | Organizer | Before initial governance PR merge | Track A人手署名をQF-APT-MVS01-001へ記録。正式activationは未了 |
 
 ## 完了条件と次のOrganizer判断
 
@@ -120,4 +125,3 @@ Organizer CLOSE候補となる。不足が1つでもあれば`OPEN / DEFERRED`�
 計測完了後は、Independent Automation Release Reviewerの署名、QF-020、QF-ORG-004、
 測定結果、残存`NOT_MEASURED`、PR/branch-protection状態をまとめた別のOrganizer final
 acceptanceを作る。それまではPR #7のmerge、Draft解除、Phase A、Stage 6R-12を開始しない。
-

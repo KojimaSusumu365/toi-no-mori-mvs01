@@ -15,3 +15,11 @@ Bootstrap human-readable disposition chain:
 QF-ORG-MVS01-004 closes 21 independently verified Findings and leaves P3-015
 `OPEN / DEFERRED`. It is not final Controller acceptance and remains Draft-only
 until the durable default-branch publication and all enablement gates complete.
+
+Role appointment evidence:
+
+- [QF-APT-MVS01-001 — Independent Automation Release Reviewer appointment direction](appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md)
+
+The Organizer direction and independent bootstrap signature are recorded, but
+the role remains `VACANT / PENDING ACTIVATION` until the frozen appointment
+contract and default-branch merge condition are satisfied.
