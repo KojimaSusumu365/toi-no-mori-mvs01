@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-request.schema.json@1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "schema_version",
+    "request_id",
+    "work_order_id",
+    "pr_number",
+    "expected_review_mode",
+    "head_sha",
+    "tree_sha",
+    "prior_review_artifact_sha256",
+    "eligible_finding_ids",
+    "fix_candidates"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "QF-AI-COLLAB-v5"
+    },
+    "schema_version": {
+      "const": "review-request.schema.json@1"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "work_order_id": {
+      "type": "string",
+      "pattern": "^WO-[0-9]{4,}$"
+    },
+    "pr_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expected_review_mode": {
+      "enum": [
+        "INITIAL",
+        "REVERIFY"
+      ]
+    },
+    "head_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "tree_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "prior_review_artifact_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "eligible_finding_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^AUTO-IMPL-P[0-3]-[0-9]{3}$"
+      }
+    },
+    "fix_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "candidate_sha",
+          "record_sha256"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "pattern": "^AUTO-IMPL-P[0-3]-[0-9]{3}$"
+          },
+          "candidate_sha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "record_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

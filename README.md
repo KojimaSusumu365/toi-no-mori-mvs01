@@ -10,6 +10,7 @@
 - Claude independent review: `QF-RVR-MVS01-007`, no blocking Finding
 - Stage 6R-12: NOT STARTED
 - Virtual Town runtime: not implemented
+- GitHub auto-drive Controller: **BOOTSTRAP IMPLEMENTED — DISABLED**
 
 正確なSHA、Run、Artifact、未完了条件は [CURRENT_STATE.md](CURRENT_STATE.md) を参照してください。
 
@@ -22,6 +23,7 @@
 | アーキテクチャ境界 | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | 文書地図 | [docs/INDEX.md](docs/INDEX.md) |
 | 次段階 | [ROADMAP.md](ROADMAP.md) |
+| GitHub自動運転 | [Controller guide](docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md) |
 
 ## Repository structure
 
@@ -48,6 +50,7 @@ Main regression and organization gates:
     ./scripts/test-stage6r11-ci-contract.sh
     python3 scripts/check-repository-navigation.py
     python3 scripts/check-repository-taxonomy.py
+    ./scripts/test-github-autodrive-controller.sh
 
 ## Safety and acceptance
 
@@ -56,6 +59,7 @@ Main regression and organization gates:
 - PostgreSQL application and migration roles remain NOBYPASSRLS.
 - 404 hides absent versus withdrawn; 429/503/timeout/DNS remain unresolved.
 - AI cannot merge, remove Draft status, close its own Finding or record final acceptance without explicit human authorization.
+- The Controller remains disabled while the Independent Automation Release Reviewer is `VACANT`; no AI credential run is authorized.
 - A GREEN CI result is evidence for a fixed source identity, not production approval.
 
 ## Historical material

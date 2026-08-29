@@ -27,6 +27,54 @@
       "owner": "System Architect",
       "due": "VT-1 start",
       "expectedStatusCode": 401
+    },
+    {
+      "testId": "TC-ACC-MVS01-091-REVERIFY",
+      "requirementIds": [
+        "AUTO-IMPL-P3-012"
+      ],
+      "description": "Exercise the automatic REVERIFY request and FIX_CANDIDATE transport for Phase B/C against a durable prior review on a different implementation SHA.",
+      "status": "not-run",
+      "reasonCode": "PHASE_BC_REVERIFY_TRANSPORT_NOT_ENABLED",
+      "reason": "R1 emits a deterministic qf:organizer-hold record. Automatic REVERIFY construction remains disabled until the bounded Phase B/C transport is independently reviewed.",
+      "owner": "Organizer",
+      "due": "Before Phase B enablement"
+    },
+    {
+      "testId": "TC-ACC-MVS01-092-STEP",
+      "requirementIds": [
+        "AUTO-IMPL-P3-015"
+      ],
+      "description": "Measure branch-protection required-check event coverage for role appointment changes and compare the registry provider set with actual pull_request and pull_request_review executions.",
+      "status": "not-run",
+      "reasonCode": "STEP_2_5_LIVE_MEASUREMENT_PENDING",
+      "reason": "Event sufficiency depends on live GitHub branch-protection and check-run observations and may not be asserted from static workflow text.",
+      "owner": "Independent Automation Release Reviewer",
+      "due": "Step 2.5, before Phase A enablement"
+    },
+    {
+      "testId": "TC-ACC-MVS01-093-DISPOSITION",
+      "requirementIds": [
+        "AUTO-IMPL-P1-005"
+      ],
+      "description": "Exercise construction, Controller validation, content-addressed publication, supersession, and Organizer authority checks for a Finding Disposition Record.",
+      "status": "not-run",
+      "reasonCode": "PHASE_A_DISPOSITION_TRANSPORT_NOT_ENABLED",
+      "reason": "R2 exposes the deterministic disposition-record command, but the Organizer-owned publication workflow remains disabled until the bounded Phase A human-return transport is independently reviewed.",
+      "owner": "Organizer",
+      "due": "Before Phase A enablement"
+    },
+    {
+      "testId": "TC-ACC-MVS01-094-BOOTSTRAP",
+      "requirementIds": [
+        "AUTO-IMPL-P3-021"
+      ],
+      "description": "Verify the initial Independent Automation Release Reviewer appointment by a human signature anchored to the fixed Controller implementation SHA while the trusted default branch does not yet contain the appointment Required Check.",
+      "status": "not-run",
+      "reasonCode": "PREMERGE_APPOINTMENT_CHECK_UNAVAILABLE",
+      "reason": "The first governance PR cannot execute the Controller-backed appointment Required Check from the default branch before that Controller is merged. The bootstrap appointment therefore requires a recorded independent human signature; later appointments must use the deterministic Required Check.",
+      "owner": "Organizer",
+      "due": "Before the initial governance PR is merged"
     }
   ]
 }

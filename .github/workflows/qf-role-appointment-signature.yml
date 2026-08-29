@@ -1,0 +1,76 @@
+name: qf-role-appointment-signature
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  appointment-signature:
+    name: qf-role-appointment-signature
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted Organizer registry
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Gather appointment evidence from API
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs=require('fs');
+            const prNumber = context.payload.pull_request?.number || context.payload.review?.pull_request_url?.split('/').pop();
+            if (!prNumber) return core.setFailed('indeterminate PR number');
+            const pr = (await github.rest.pulls.get({owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber)})).data;
+            const files = await github.paginate(github.rest.pulls.listFiles,{owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber),per_page:100});
+            if (!files.length) return core.setFailed('indeterminate empty file list');
+            const target='docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml';
+            const paths=files.flatMap(f=>[f.filename,f.previous_filename].filter(Boolean));
+            let record={organizer:'',nominee:''};
+            let reviews=[];
+            let permission='none';
+            let nomineeInOrganizerAllowlist=false;
+            if (paths.includes(target)) {
+              const allowlist=JSON.parse(fs.readFileSync('.github/ai/registries/organizer-allowlist.yml','utf8')).organizers.map(x=>x.github_login);
+              reviews=await github.paginate(github.rest.pulls.listReviews,{owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber),per_page:100});
+              record=JSON.parse(Buffer.from((await github.rest.repos.getContent({owner:context.repo.owner,repo:context.repo.repo,path:target,ref:pr.head.sha})).data.content,'base64').toString('utf8'));
+              nomineeInOrganizerAllowlist=allowlist.includes(record.nominee);
+              if (record.nominee) {
+                try {
+                  permission=(await github.rest.repos.getCollaboratorPermissionLevel({owner:context.repo.owner,repo:context.repo.repo,username:record.nominee})).data.permission;
+                } catch (error) {
+                  if (error.status!==404) throw error;
+                }
+              }
+            }
+            const nominee=reviews.filter(r=>r.user?.login===record.nominee).sort((a,b)=>a.id-b.id).at(-1);
+            const input={
+              changed_files:files.map(f=>({filename:f.filename,previous_filename:f.previous_filename||null})),
+              api_success:true,
+              pagination_complete:true,
+              organizer:record.organizer||'',
+              nominee:record.nominee||'',
+              pr_author:pr.user.login,
+              head_sha:pr.head.sha,
+              latest_review:nominee?{user:nominee.user.login,state:nominee.state,commit_id:nominee.commit_id}:null,
+              nominee_has_write:['admin','maintain','write'].includes(permission),
+              nominee_in_organizer_allowlist:nomineeInOrganizerAllowlist,
+            };
+            fs.mkdirSync('artifacts/automation',{recursive:true});
+            fs.writeFileSync('artifacts/automation/appointment-input.json',JSON.stringify(input,null,2)+'\n');
+      - name: Evaluate appointment in the deterministic Controller
+        env:
+          QF_AI_PHASE: ${{ vars.QF_AI_PHASE }}
+        run: |
+          set -euo pipefail
+          expected_phase="${QF_AI_PHASE:-BOOTSTRAP_DISABLED}"
+          python3 scripts/qf-ai-controller.py preflight --expected-phase "$expected_phase" >/dev/null
+          python3 scripts/qf-ai-controller.py --output artifacts/automation/appointment-decision.json appointment --file artifacts/automation/appointment-input.json

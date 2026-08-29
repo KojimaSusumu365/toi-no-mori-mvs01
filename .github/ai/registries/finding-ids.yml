@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "finding_ids": [
+    {
+      "id": "FINDING-PREFIX-001",
+      "name": "automation-implementation-p0",
+      "required": true,
+      "owner": "review-gate",
+      "implemented_by": "technical-review.schema.json",
+      "evidence_field": "findings.P0",
+      "prefix": "AUTO-IMPL-P0-",
+      "aliases": []
+    },
+    {
+      "id": "FINDING-PREFIX-002",
+      "name": "automation-implementation-p1",
+      "required": true,
+      "owner": "review-gate",
+      "implemented_by": "technical-review.schema.json",
+      "evidence_field": "findings.P1",
+      "prefix": "AUTO-IMPL-P1-",
+      "aliases": []
+    },
+    {
+      "id": "FINDING-PREFIX-003",
+      "name": "automation-implementation-p2",
+      "required": true,
+      "owner": "review-gate",
+      "implemented_by": "technical-review.schema.json",
+      "evidence_field": "findings.P2",
+      "prefix": "AUTO-IMPL-P2-",
+      "aliases": []
+    },
+    {
+      "id": "FINDING-PREFIX-004",
+      "name": "automation-implementation-p3",
+      "required": true,
+      "owner": "review-gate",
+      "implemented_by": "technical-review.schema.json",
+      "evidence_field": "findings.P3",
+      "prefix": "AUTO-IMPL-P3-",
+      "aliases": []
+    }
+  ]
+}

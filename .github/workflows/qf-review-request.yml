@@ -1,0 +1,93 @@
+name: QF deterministic Review Request
+
+on:
+  workflow_run:
+    workflows: ["QF CI Gate Router"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  request:
+    if: >-
+      vars.QF_AI_PHASE == 'A' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: qf-ci-gate-route
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: trusted-route
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Build trusted INITIAL request or explicit REVERIFY hold
+        run: |
+          set -euo pipefail
+          python3 scripts/qf-ai-controller.py preflight --expected-phase A >/dev/null
+          mkdir -p artifacts/automation
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          route=json.load(open('trusted-route/ci-gate-route.json'))
+          if route.get('protocol')!='QF-AI-COLLAB-v5' or route.get('state')!='qf:ci-green':
+              raise SystemExit('invalid route record')
+          if route.get('repository')!=__import__('os').environ['GITHUB_REPOSITORY']:
+              raise SystemExit('route repository mismatch')
+          prior=[]
+          for path in pathlib.Path('docs/evidence/automation/reviews').glob('*/*.json'):
+              value=json.loads(path.read_text())
+              canonical=json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()
+              digest=hashlib.sha256(canonical).hexdigest()
+              if path.stem!=digest or path.parent.name!=value.get('reviewed_commit_sha'):
+                  raise SystemExit(f'invalid durable Review Result: {path}')
+              if value.get('work_order_id')==route['work_order_id']:
+                  prior.append((path,value,digest))
+          if prior:
+              prior.sort(key=lambda item:str(item[0]))
+              path,value,digest=prior[-1]
+              same_sha=value.get('reviewed_commit_sha')==route['head_sha']
+              decision={
+                  'protocol':'QF-AI-COLLAB-v5',
+                  'state':'qf:organizer-hold',
+                  'reason':'PRIOR_REVIEW_SAME_SHA' if same_sha else 'REVERIFY_PHASE_BC_TRANSPORT_DEFERRED',
+                  'work_order_id':route['work_order_id'],
+                  'pr_number':route['pr_number'],
+                  'head_sha':route['head_sha'],
+                  'prior_reviewed_commit_sha':value.get('reviewed_commit_sha'),
+                  'prior_review_artifact_sha256':digest,
+                  'deferred_test_id':'TC-ACC-MVS01-091-REVERIFY',
+              }
+              pathlib.Path('artifacts/automation/review-request-decision.json').write_text(json.dumps(decision,sort_keys=True,separators=(',',':'))+'\n')
+              raise SystemExit(0)
+          request={
+              'protocol':'QF-AI-COLLAB-v5',
+              'schema_version':'review-request.schema.json@1',
+              'request_id':f"RR-{route['work_order_id']}-{route['head_sha'][:12]}",
+              'work_order_id':route['work_order_id'],
+              'pr_number':route['pr_number'],
+              'expected_review_mode':'INITIAL',
+              'head_sha':route['head_sha'],
+              'tree_sha':route['tree_sha'],
+              'prior_review_artifact_sha256':None,
+              'eligible_finding_ids':[],
+              'fix_candidates':[],
+          }
+          pathlib.Path('artifacts/automation/review-request.json').write_text(json.dumps(request,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n')
+          decision={'protocol':'QF-AI-COLLAB-v5','state':'qf:review-request','work_order_id':route['work_order_id'],'head_sha':route['head_sha']}
+          pathlib.Path('artifacts/automation/review-request-decision.json').write_text(json.dumps(decision,sort_keys=True,separators=(',',':'))+'\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qf-review-request
+          path: artifacts/automation/
+          if-no-files-found: error
+          retention-days: 7

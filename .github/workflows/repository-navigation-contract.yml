@@ -2,16 +2,6 @@ name: Repository navigation contract
 
 on:
   pull_request:
-    paths:
-      - "README.md"
-      - "CLAUDE.md"
-      - "CURRENT_STATE.md"
-      - "ARCHITECTURE.md"
-      - "ROADMAP.md"
-      - "docs/**"
-      - "scripts/check-repository-navigation.py"
-      - "scripts/check-repository-taxonomy.py"
-      - ".github/workflows/repository-navigation-contract.yml"
   workflow_dispatch:
 
 permissions:
@@ -33,3 +23,6 @@ jobs:
 
       - name: Verify repository taxonomy and links
         run: python3 scripts/check-repository-taxonomy.py
+
+      - name: Verify disabled Controller bootstrap contract
+        run: ./scripts/test-github-autodrive-controller.sh

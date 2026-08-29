@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "checks": [
+    {
+      "id": "REV-GATE-001",
+      "name": "claude-exit-zero",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-001"
+    },
+    {
+      "id": "REV-GATE-002",
+      "name": "structured-output-nonempty",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-002"
+    },
+    {
+      "id": "REV-GATE-003",
+      "name": "reviewed-commit-sha",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-003"
+    },
+    {
+      "id": "REV-GATE-004",
+      "name": "reviewed-tree-sha",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-004"
+    },
+    {
+      "id": "REV-GATE-005",
+      "name": "required-ci-green",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-005"
+    },
+    {
+      "id": "REV-GATE-006",
+      "name": "coverage-and-unverified-present",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-006"
+    },
+    {
+      "id": "REV-GATE-007",
+      "name": "review-request-integrity",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-007"
+    },
+    {
+      "id": "REV-GATE-008",
+      "name": "schema-version",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-008"
+    },
+    {
+      "id": "REV-GATE-009",
+      "name": "decision-enum",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-009"
+    },
+    {
+      "id": "REV-GATE-010",
+      "name": "review-mode",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-010"
+    },
+    {
+      "id": "REV-GATE-011",
+      "name": "review-request-echo",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-011"
+    },
+    {
+      "id": "REV-GATE-012",
+      "name": "finding-id-and-severity",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-012"
+    },
+    {
+      "id": "REV-GATE-013",
+      "name": "verification-status-by-mode",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-013"
+    },
+    {
+      "id": "REV-GATE-014",
+      "name": "verified-finding-mapping",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-014"
+    },
+    {
+      "id": "REV-GATE-015",
+      "name": "closed-forbidden",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-015"
+    },
+    {
+      "id": "REV-GATE-016",
+      "name": "disposition-undecided",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-016"
+    },
+    {
+      "id": "REV-GATE-017",
+      "name": "blocking-severity-consistency",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-017"
+    },
+    {
+      "id": "REV-GATE-018",
+      "name": "head-stability",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-018"
+    },
+    {
+      "id": "REV-GATE-019",
+      "name": "base-drift",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-019"
+    },
+    {
+      "id": "REV-GATE-020",
+      "name": "registry-alignment",
+      "required": true,
+      "owner": "deterministic-ci",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "review_gate.checks.REV-GATE-020"
+    }
+  ]
+}

@@ -1,0 +1,533 @@
+{
+  "schema_version": "1.0",
+  "document_id": "QF-MEP-MVS01-001-MR1",
+  "record_type": "step-2.5-read-only-live-measurement",
+  "captured_at": "2026-08-29T15:49:09.033Z",
+  "captured_by": {
+    "tool": "GitHub connector and local read-only inspection",
+    "authenticated_github_login": "KojimaSusumu365",
+    "github_user_id": 72760450
+  },
+  "scope": {
+    "repository": "KojimaSusumu365/toi-no-mori-mvs01",
+    "pull_requests": [7, 8],
+    "basis": "QF-MEP-MVS01-001",
+    "mode": "read-only"
+  },
+  "prohibited_mutations_preserved": {
+    "secrets": true,
+    "github_app": true,
+    "rulesets": true,
+    "branch_protection": true,
+    "draft_state": true,
+    "pull_request_state": true,
+    "branch_refs": true,
+    "reviews": true,
+    "labels": true
+  },
+  "fixed_identity": {
+    "implementation_sha": "dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d",
+    "implementation_tree": "ab04ccd8f4415ad4188917264cc20309dfbd04a9",
+    "pr7_contains_implementation": true,
+    "pr7_commits_ahead_of_implementation": 3,
+    "pr7_implementation_ancestry": "ahead",
+    "sources": [
+      "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/commit/dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d",
+      "https://api.github.com/repos/KojimaSusumu365/toi-no-mori-mvs01/compare/dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d...de0215c74bc02b40883267af5f7dd7c1d8a763b6"
+    ]
+  },
+  "repository": {
+    "id": 1341164060,
+    "visibility": "public",
+    "default_branch": "main",
+    "default_branch_sha": "c90dfdb154d99ee480571c8a397e99d88e12dea8",
+    "default_branch_tree": "a6ea796aa8f2129f251f647f94fdadb3c69dce08",
+    "authenticated_actor_permissions": {
+      "admin": true,
+      "maintain": true,
+      "push": true,
+      "pull": true,
+      "triage": true
+    },
+    "branch_protection": {
+      "protected": false,
+      "enabled": false,
+      "required_status_checks_enforcement": "off",
+      "contexts": [],
+      "checks": [],
+      "detailed_endpoint": {
+        "api_success": false,
+        "http_status": 403,
+        "error": "Resource not accessible by integration"
+      },
+      "result": "FAIL"
+    },
+    "rulesets": [],
+    "default_branch_workflows": [
+      {
+        "path": ".github/workflows/stage6r4c-nonroot-postgresql.yml",
+        "blob_sha": "a9e1cfe7e76ec758950c5b867c3dab51e6de0edd"
+      }
+    ],
+    "controller_workflows_on_default_branch": false,
+    "organizer_allowlist_on_default_branch": false,
+    "organizer_allowlist_default_branch_fetch_status": 404,
+    "sources": [
+      "https://api.github.com/repos/KojimaSusumu365/toi-no-mori-mvs01/branches/main",
+      "https://api.github.com/repos/KojimaSusumu365/toi-no-mori-mvs01/rulesets",
+      "https://api.github.com/repos/KojimaSusumu365/toi-no-mori-mvs01/contents/.github/workflows?ref=main"
+    ]
+  },
+  "pull_requests": {
+    "7": {
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/7",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "unstable",
+      "base": {
+        "ref": "stage6r11r-final-closure",
+        "sha": "b6959e86713c89b37a8d0e8009f402512c02e346"
+      },
+      "head": {
+        "ref": "ops-github-autodrive-controller",
+        "sha": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+        "tree": "14c2b3e7cc7e4b74d5fd28e6865ee4af103b6617"
+      },
+      "changed_file_count": 70,
+      "changed_files_pagination_complete": true,
+      "appointment_file_in_change_set": true,
+      "appointment_record_status": "VACANT",
+      "changed_files": [
+        ".github/ai/README.md",
+        ".github/ai/prompts/claude-technical-review.md",
+        ".github/ai/prompts/codex-fix-findings.md",
+        ".github/ai/prompts/codex-manufacture.md",
+        ".github/ai/registries/finding-ids.yml",
+        ".github/ai/registries/gate-checks.yml",
+        ".github/ai/registries/manufacturing-denylist.yml",
+        ".github/ai/registries/organizer-allowlist.yml",
+        ".github/ai/registries/required-checks.yml",
+        ".github/ai/registries/stop-conditions.yml",
+        ".github/ai/registries/work-order-preconditions.yml",
+        ".github/ai/schemas/finding-disposition-record.schema.json",
+        ".github/ai/schemas/manufacturing-result.schema.json",
+        ".github/ai/schemas/review-request.schema.json",
+        ".github/ai/schemas/technical-review.schema.json",
+        ".github/ai/schemas/work-order.schema.json",
+        ".github/workflows/qf-ai-loop-controller.yml",
+        ".github/workflows/qf-automation-controller-contract.yml",
+        ".github/workflows/qf-ci-gate-router.yml",
+        ".github/workflows/qf-claude-technical-review.yml",
+        ".github/workflows/qf-codex-manufacture.yml",
+        ".github/workflows/qf-review-gate.yml",
+        ".github/workflows/qf-review-request.yml",
+        ".github/workflows/qf-review-result-publish.yml",
+        ".github/workflows/qf-role-appointment-signature.yml",
+        ".github/workflows/qf-work-order-contract.yml",
+        ".github/workflows/repository-navigation-contract.yml",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "CURRENT_STATE.md",
+        "README.md",
+        "REVIEW.md",
+        "ROADMAP.md",
+        "docs/INDEX.md",
+        "docs/evidence/automation/README.md",
+        "docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md",
+        "docs/evidence/automation/appointments/README.md",
+        "docs/evidence/automation/dispositions/.gitkeep",
+        "docs/evidence/automation/dispositions/QF-ORG-MVS01-001-controller-r1-disposition.md",
+        "docs/evidence/automation/dispositions/QF-ORG-MVS01-002-controller-r2-disposition.md",
+        "docs/evidence/automation/dispositions/QF-ORG-MVS01-003-controller-r3-disposition.md",
+        "docs/evidence/automation/dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md",
+        "docs/evidence/automation/reviews/.gitkeep",
+        "docs/governance/AI-COLLABORATION.md",
+        "docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md",
+        "docs/governance/REVIEW-PROTOCOL.md",
+        "docs/governance/SOURCE-OF-TRUTH.md",
+        "docs/governance/automation/QF-OPS-MVS01-001-v0.5.1.md",
+        "docs/governance/automation/QF-RVR-MVS01-014-freeze-confirmation.md",
+        "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml",
+        "docs/governance/threat-model/GITHUB-AUTOMATION.yml",
+        "docs/governance/work-orders/README.md",
+        "docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md",
+        "docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md",
+        "docs/reviews/automation/QF-RRQ-MVS01-002-controller-r1-reverify.md",
+        "docs/reviews/automation/QF-RRQ-MVS01-003-controller-r2-reverify.md",
+        "docs/reviews/automation/QF-RRQ-MVS01-004-controller-r3-reverify.md",
+        "docs/reviews/automation/QF-RVR-MVS01-020-controller-r3-reverify.md",
+        "docs/reviews/automation/README.md",
+        "scripts/__init__.py",
+        "scripts/ai_controller/__init__.py",
+        "scripts/ai_controller/core.py",
+        "scripts/check-repository-navigation.py",
+        "scripts/check-repository-taxonomy.py",
+        "scripts/qf-ai-controller.py",
+        "scripts/test-github-autodrive-controller.sh",
+        "spec/deferred-tests.json",
+        "tests/automation/__init__.py",
+        "tests/automation/run_acceptance.py",
+        "tests/automation/test_github_autodrive_controller.py"
+      ],
+      "review": {
+        "id": 5058409302,
+        "node_id": "PRR_kwDOT_CKHM8AAAABLYEzVg",
+        "author": "SusumuKojima1967",
+        "state": "APPROVED",
+        "commit_id": "74ce0021f61784067a2327c9281231b70337b643",
+        "current_head_bound": false,
+        "submitted_at": "2026-08-29T14:57:31Z"
+      },
+      "check_summary": {
+        "total_count": 9,
+        "success_count": 8,
+        "failure_count": 1,
+        "failed_check": {
+          "name": "qf-role-appointment-signature",
+          "check_run_id": 99119029644,
+          "check_suite_id": 90137369123,
+          "conclusion": "failure"
+        }
+      }
+    },
+    "8": {
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/8",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "unstable",
+      "base": {
+        "ref": "ops-github-autodrive-controller",
+        "sha": "de0215c74bc02b40883267af5f7dd7c1d8a763b6"
+      },
+      "head": {
+        "ref": "governance-reviewer-appointment-20260830",
+        "sha": "e337c0c212432923cb4e64b788156f9ea8daa163",
+        "tree": "955fbfe2654b33da86eba2fc95547a98ca8a2952"
+      },
+      "changed_file_count": 1,
+      "changed_files_pagination_complete": true,
+      "changed_files": [
+        "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml"
+      ],
+      "appointment_applicability_input": "applicable",
+      "candidate_record_status": "APPOINTED",
+      "effective_status": "PENDING_ACTIVATION",
+      "review": {
+        "id": 5058483549,
+        "node_id": "PRR_kwDOT_CKHM8AAAABLYJVXQ",
+        "author": "SusumuKojima1967",
+        "state": "APPROVED",
+        "commit_id": "e337c0c212432923cb4e64b788156f9ea8daa163",
+        "current_head_bound": true,
+        "submitted_at": "2026-08-29T15:33:25Z",
+        "body_confirms_p3_015_open_deferred": true,
+        "body_authorizes_prohibited_operations": false
+      },
+      "check_summary": {
+        "total_count": 10,
+        "success_count": 8,
+        "failure_count": 2,
+        "failed_checks": [
+          {
+            "name": "qf-role-appointment-signature",
+            "check_run_id": 99121825173,
+            "check_suite_id": 90138436763,
+            "source_run_id": 33259973672,
+            "run_attempt": 2,
+            "conclusion": "failure"
+          },
+          {
+            "name": "qf-role-appointment-signature",
+            "check_run_id": 99121689668,
+            "check_suite_id": 90139999077,
+            "source_run_id": 33260573240,
+            "run_attempt": 1,
+            "conclusion": "failure"
+          }
+        ]
+      }
+    }
+  },
+  "reviewer_independence": {
+    "reviewer": "SusumuKojima1967",
+    "reviewer_user_id": 53677286,
+    "organizer": "KojimaSusumu365",
+    "different_account": true,
+    "repository_permission": "read",
+    "has_write_permission": false,
+    "organizer_allowlist_members": [
+      "KojimaSusumu365"
+    ],
+    "reviewer_in_organizer_allowlist": false,
+    "result": "PASS"
+  },
+  "event_coverage": [
+    {
+      "event": "pull_request",
+      "activity": "opened",
+      "inferred_activity": true,
+      "inference_basis": "first PR #8 head and first pull_request run before synchronize",
+      "pr_number": 8,
+      "head_sha": "c926b447f69d285eb510d996afdd8dd0158271e3",
+      "run_id": 33259955631,
+      "run_number": 12,
+      "run_attempt": 1,
+      "check_suite_id": 90138389774,
+      "check_run_id": 99120075898,
+      "triggering_actor": "KojimaSusumu365",
+      "created_at": "2026-08-29T15:19:53Z",
+      "completed_at": "2026-08-29T15:20:04Z",
+      "conclusion": "failure",
+      "result": "OBSERVED_RED"
+    },
+    {
+      "event": "pull_request",
+      "activity": "synchronize",
+      "inferred_activity": true,
+      "inference_basis": "second PR #8 commit and pull_request run on the new head",
+      "pr_number": 8,
+      "head_sha": "e337c0c212432923cb4e64b788156f9ea8daa163",
+      "run_id": 33259973672,
+      "run_number": 13,
+      "observed_attempts": [1, 2],
+      "attempt_1_job_id": 99120122749,
+      "attempt_2_check_run_id": 99121825173,
+      "check_suite_id": 90138436763,
+      "triggering_actor": "KojimaSusumu365",
+      "created_at": "2026-08-29T15:20:17Z",
+      "updated_at": "2026-08-29T15:34:43Z",
+      "conclusion": "failure",
+      "result": "OBSERVED_RED"
+    },
+    {
+      "event": "pull_request_review",
+      "activity": "submitted",
+      "inferred_activity": true,
+      "inference_basis": "only PR #8 review is submitted at 15:33:25Z; event run was created at 15:33:27Z by the same actor",
+      "pr_number": 8,
+      "head_sha": "e337c0c212432923cb4e64b788156f9ea8daa163",
+      "review_id": 5058483549,
+      "reviewer": "SusumuKojima1967",
+      "review_state": "APPROVED",
+      "review_commit_id": "e337c0c212432923cb4e64b788156f9ea8daa163",
+      "run_id": 33260573240,
+      "run_number": 14,
+      "run_attempt": 1,
+      "check_suite_id": 90139999077,
+      "check_run_id": 99121689668,
+      "triggering_actor": "SusumuKojima1967",
+      "created_at": "2026-08-29T15:33:27Z",
+      "completed_at": "2026-08-29T15:33:35Z",
+      "conclusion": "failure",
+      "result": "OBSERVED_RED"
+    },
+    {
+      "event": "pull_request",
+      "activity": "reopened",
+      "result": "NOT_EXECUTED",
+      "reason": "would mutate PR state"
+    },
+    {
+      "event": "pull_request",
+      "activity": "ready_for_review",
+      "result": "NOT_EXECUTED",
+      "reason": "Draft removal is prohibited"
+    },
+    {
+      "event": "pull_request_review",
+      "activity": "edited",
+      "result": "NOT_EXECUTED",
+      "reason": "would mutate reviewer evidence"
+    },
+    {
+      "event": "pull_request_review",
+      "activity": "dismissed",
+      "result": "NOT_EXECUTED",
+      "reason": "would mutate reviewer evidence and requires review-dismiss authority"
+    }
+  ],
+  "appointment_check_failure": {
+    "workflow": "qf-role-appointment-signature",
+    "workflow_path": ".github/workflows/qf-role-appointment-signature.yml",
+    "workflow_blob_sha_on_pr7": "5ba175922743af7a1257007471fd93b523c938a5",
+    "permissions": {
+      "contents": "read",
+      "pull_requests": "read"
+    },
+    "trusted_checkout_ref": "main",
+    "failed_step": "Gather appointment evidence from API",
+    "skipped_step": "Evaluate appointment in the deterministic Controller",
+    "error": "ENOENT: no such file or directory, open '.github/ai/registries/organizer-allowlist.yml'",
+    "root_cause": "trusted default branch main does not contain the Organizer allowlist or Controller control plane",
+    "fail_closed": true,
+    "current_head_green": false,
+    "sources": [
+      "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/actions/runs/33260573240/job/99121689668",
+      "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/actions/runs/33259973672/job/99120122749",
+      "https://api.github.com/repos/KojimaSusumu365/toi-no-mori-mvs01/contents/.github/ai/registries/organizer-allowlist.yml?ref=main"
+    ]
+  },
+  "regression_and_artifacts": [
+    {
+      "pr": 7,
+      "gate": "Controller 40/40",
+      "run_id": 33259552412,
+      "job_id": 99119029619,
+      "head_sha": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+      "conclusion": "success",
+      "artifact_id": 9716843695,
+      "artifact_digest": "sha256:fb8eb9332de8944de4131c8201292f991818b638f0b1067350964e295c785308",
+      "created_at": "2026-08-29T15:11:18Z",
+      "expires_at": "2026-09-28T15:11:17Z",
+      "expired": false
+    },
+    {
+      "pr": 7,
+      "gate": "Stage 6R-10 90/90",
+      "run_id": 33259552386,
+      "job_id": 99119029627,
+      "head_sha": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+      "conclusion": "success",
+      "artifact_id": 9716884404,
+      "artifact_digest": "sha256:15203184b0eff55f1012e8d050cccd0225a53aefe04c3a14443e182f5be13425",
+      "created_at": "2026-08-29T15:14:27Z",
+      "expires_at": "2026-09-28T15:14:27Z",
+      "expired": false
+    },
+    {
+      "pr": 7,
+      "gate": "Stage 6R-11 90/90",
+      "run_id": 33259552390,
+      "job_id": 99119029539,
+      "head_sha": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+      "conclusion": "success",
+      "artifact_id": 9716884099,
+      "artifact_digest": "sha256:ad54c5f5d6abf826aa1e7c6d06e7dcb7616dfa599d290b72e76a251260c6e8bb",
+      "created_at": "2026-08-29T15:14:26Z",
+      "expires_at": "2026-09-28T15:14:25Z",
+      "expired": false
+    },
+    {
+      "pr": 8,
+      "gate": "Controller 40/40",
+      "run_id": 33259973633,
+      "job_id": 99120122732,
+      "head_sha": "e337c0c212432923cb4e64b788156f9ea8daa163",
+      "conclusion": "success",
+      "artifact_id": 9716961265,
+      "artifact_digest": "sha256:331af8eb08fddafb58254bea8e8a2aab68cd203e8c39c53ea76da9e4546b14e4",
+      "created_at": "2026-08-29T15:20:23Z",
+      "expires_at": "2026-09-28T15:20:23Z",
+      "expired": false
+    },
+    {
+      "pr": 8,
+      "gate": "Stage 6R-10 90/90",
+      "run_id": 33259973625,
+      "job_id": 99120159920,
+      "head_sha": "e337c0c212432923cb4e64b788156f9ea8daa163",
+      "conclusion": "success",
+      "artifact_id": 9717007874,
+      "artifact_digest": "sha256:4a00282aa86227ec096730ec5985c00563e7bf1c23c7d9f85da54feccd7a4518",
+      "created_at": "2026-08-29T15:23:56Z",
+      "expires_at": "2026-09-28T15:23:55Z",
+      "expired": false
+    },
+    {
+      "pr": 8,
+      "gate": "Stage 6R-11 90/90",
+      "run_id": 33259973622,
+      "job_id": 99120155796,
+      "head_sha": "e337c0c212432923cb4e64b788156f9ea8daa163",
+      "conclusion": "success",
+      "artifact_id": 9717009575,
+      "artifact_digest": "sha256:91a2da2cf8fc521b5b8a6784e3dd220ef61f24ca84f6249e3506a527034cada2",
+      "created_at": "2026-08-29T15:24:04Z",
+      "expires_at": "2026-09-28T15:24:03Z",
+      "expired": false
+    }
+  ],
+  "registry_alignment": {
+    "remote_ref": "ops-github-autodrive-controller",
+    "api_and_local_git_blob_match_count": 7,
+    "api_and_local_git_blob_total": 7,
+    "files": [
+      {"name": "finding-ids.yml", "blob_sha": "44f45ce6ac6c9f938357c62724351ade17370cd7"},
+      {"name": "gate-checks.yml", "blob_sha": "234cdbab55ae1dc6757da54eef9783a98c313839"},
+      {"name": "manufacturing-denylist.yml", "blob_sha": "fe6839e225691adfe86a65f65e5b147eab79ee9d"},
+      {"name": "organizer-allowlist.yml", "blob_sha": "eb46624b2cc2a3fe1cc32271bd120f1134690873"},
+      {"name": "required-checks.yml", "blob_sha": "94f1e19e6b5c356390e516d3c641e8990e12c724"},
+      {"name": "stop-conditions.yml", "blob_sha": "6986f3c6a3990732859a8e45d993e0957fbb9b2a"},
+      {"name": "work-order-preconditions.yml", "blob_sha": "98141e1c003521c82398d4891be490b3c835cf0b"}
+    ],
+    "controller_current_head_checks_green_on_pr7_and_pr8": true,
+    "result": "PASS"
+  },
+  "track_c": [
+    {"item": "repository_visibility", "value": "public", "result": "PASS"},
+    {"item": "fork_pr_actions_approval", "value": null, "result": "NOT_MEASURED", "reason": "settings endpoint unsupported and browser session unauthenticated"},
+    {"item": "default_github_token_permission", "value": null, "result": "NOT_MEASURED", "reason": "settings endpoint unsupported"},
+    {"item": "actions_can_approve_pr", "value": null, "result": "NOT_MEASURED", "reason": "settings endpoint unsupported"},
+    {"item": "branch_protection_required_checks", "value": [], "result": "FAIL"},
+    {"item": "default_branch_controller_workflows", "value": false, "result": "FAIL"},
+    {"item": "actions_cost_conditions", "value": null, "result": "NOT_MEASURED", "reason": "billing/settings endpoint not available"},
+    {"item": "effective_artifact_retention_days", "value": 30, "result": "PASS_PARTIAL", "reason": "six existing CI artifacts; AI transport 7-day artifacts not live"},
+    {"item": "action_log_retention_days", "value": null, "result": "NOT_MEASURED"},
+    {"item": "job_b_contents_read_checkout", "static_value": "contents: read", "live_value": null, "result": "NOT_MEASURED"},
+    {"item": "claude_auth_profile", "static_value": "anthropic_api_key plus GITHUB_TOKEN, no id-token permission", "live_value": null, "result": "NOT_MEASURED"},
+    {"item": "qf_github_app_installation_and_permissions", "value": null, "result": "NOT_MEASURED", "reason": "repository installation endpoint unsupported; connector App installation is not QF App evidence"},
+    {"item": "github_app_ruleset_bypass", "repository_rulesets": [], "qf_app_value": null, "result": "NOT_MEASURED"},
+    {"item": "work_order_workflow_sha", "static_value": "github.workflow_sha", "live_value": null, "result": "NOT_MEASURED"},
+    {"item": "pr_label_pull_requests_write_without_issues_write", "static_value": true, "live_value": null, "result": "NOT_MEASURED", "reason": "label mutation prohibited"},
+    {"item": "review_result_durability", "default_branch_path_exists": false, "pr7_directory_entries": [".gitkeep"], "live_publisher_run": false, "result": "FAIL_NOT_MEASURED"},
+    {"item": "registry_hash_and_implementation_alignment", "value": "7/7 blob alignment plus Controller 40/40", "result": "PASS"},
+    {"item": "disposition_append_only_actor_allowlist_content_hash", "live_publisher_run": false, "result": "NOT_MEASURED"}
+  ],
+  "api_limitations": [
+    {"endpoint": "actions/permissions", "status": 400, "error_code": "INVALID_ARGUMENT", "reason": "connector endpoint allowlist"},
+    {"endpoint": "actions/permissions/workflow", "status": 400, "error_code": "INVALID_ARGUMENT", "reason": "connector endpoint allowlist"},
+    {"endpoint": "actions/permissions/fork-pr-contributor-approval", "status": 400, "error_code": "INVALID_ARGUMENT", "reason": "connector endpoint allowlist"},
+    {"endpoint": "installation", "status": 400, "error_code": "INVALID_ARGUMENT", "reason": "connector endpoint allowlist"},
+    {"endpoint": "branches/main/protection", "status": 403, "error": "Resource not accessible by integration"},
+    {"surface": "repository settings browser", "result": "UNAVAILABLE", "reason": "in-app browser session was not signed in and returned 404"}
+  ],
+  "p3_015_assessment": {
+    "finding": "AUTO-IMPL-P3-015",
+    "status": "OPEN_DEFERRED",
+    "close_candidate": false,
+    "observed_activities": [
+      "pull_request/opened",
+      "pull_request/synchronize",
+      "pull_request_review/submitted"
+    ],
+    "missing_activities": [
+      "pull_request/reopened",
+      "pull_request/ready_for_review",
+      "pull_request_review/edited",
+      "pull_request_review/dismissed"
+    ],
+    "other_gaps": [
+      "non-appointment not_applicable result not live-observed",
+      "current-head approval did not produce GREEN because trusted default-branch prerequisite is absent",
+      "dismissal RED transition not live-observed",
+      "branch protection does not require the check",
+      "append-only content-addressed evidence publication not live-observed",
+      "multiple Track C permission and settings values remain NOT_MEASURED"
+    ]
+  },
+  "final_state": {
+    "measurement": "PARTIAL",
+    "authorized_to_enable": false,
+    "pr7": "DRAFT_OPEN_UNMERGED",
+    "pr8": "DRAFT_OPEN_UNMERGED",
+    "reviewer_activation": "VACANT_PENDING_ACTIVATION",
+    "controller": "BOOTSTRAP_DISABLED",
+    "p3_015": "OPEN_DEFERRED",
+    "tc_acc_mvs01_092_step": "NOT_RUN_LEDGER_UNCHANGED",
+    "stage6r12": "NOT_STARTED"
+  }
+}

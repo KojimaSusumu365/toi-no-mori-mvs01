@@ -12,10 +12,16 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[1]
 TAXONOMY = ROOT / "docs/governance/REPOSITORY-TAXONOMY.json"
 ERRORS: list[str] = []
+IGNORED_PARTS = {
+    ".git", ".nuget-packages", ".tools", ".tool-downloads",
+    "artifacts", "bin", "obj", "TestResults", "__pycache__",
+}
 
 required = [
     "README.md",
+    "AGENTS.md",
     "CLAUDE.md",
+    "REVIEW.md",
     "CURRENT_STATE.md",
     "ROADMAP.md",
     "ARCHITECTURE.md",
@@ -24,6 +30,13 @@ required = [
     "docs/governance/AI-COLLABORATION.md",
     "docs/governance/SOURCE-OF-TRUTH.md",
     "docs/governance/REVIEW-PROTOCOL.md",
+    "docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md",
+    "docs/governance/automation/QF-OPS-MVS01-001-v0.5.1.md",
+    "docs/governance/automation/QF-RVR-MVS01-014-freeze-confirmation.md",
+    "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml",
+    "docs/governance/threat-model/GITHUB-AUTOMATION.yml",
+    "docs/reviews/automation/README.md",
+    "docs/evidence/automation/README.md",
     "docs/reviews/stage6r11r/review-request.md",
     "docs/evidence/stage6r10/README.md",
     "docs/evidence/stage6r11/README.md",
@@ -58,7 +71,7 @@ scan_excluded = {
 }
 active_files: list[Path] = []
 for path in ROOT.rglob("*"):
-    if ".git" in path.parts or not path.is_file() or path.suffix.lower() not in scan_suffixes:
+    if IGNORED_PARTS.intersection(path.parts) or not path.is_file() or path.suffix.lower() not in scan_suffixes:
         continue
     relative = path.relative_to(ROOT)
     if relative.parts[:2] in {("docs", "archive"), ("docs", "evidence")}:
@@ -88,7 +101,7 @@ link_pattern = re.compile(
     r"!?(?:\[[^\]]*\])\(([^)\s]+)(?:\s+[\"'][^\"']*[\"'])?\)"
 )
 for path in ROOT.rglob("*.md"):
-    if ".git" in path.parts:
+    if IGNORED_PARTS.intersection(path.parts):
         continue
     relative = path.relative_to(ROOT)
     if relative.parts[:2] == ("docs", "archive"):

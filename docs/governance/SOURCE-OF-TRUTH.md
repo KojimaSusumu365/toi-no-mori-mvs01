@@ -72,7 +72,44 @@ reconstructable after GitHub recalculates the live PR merge ref.
 - PR #4 adds Stage 6R-11R on top of PR #3.
 - PR #5 adds the physical taxonomy on top of PR #4.
 - PR #6 adds final review responses and manufacturing evidence on top of PR #5.
+- PR #7 adds the disabled GitHub auto-drive Controller on top of PR #6.
 - No PR is merged and all remain Draft.
+
+## GitHub auto-drive Controller identity
+
+| Type | Value |
+|---|---|
+| Draft PR | `#7` |
+| implementation commit | `dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d` |
+| implementation tree | `ab04ccd8f4415ad4188917264cc20309dfbd04a9` |
+| superseded implementation | `a673dded7edc5d851fd0ce16ccfc025a86ae6475` — QF-RVR-MVS01-019 review target |
+| implementation parent | `96b6482461b13d01c7da561c611601e9938a5c92` |
+| stacked base | `b6959e86713c89b37a8d0e8009f402512c02e346` |
+| branch | `ops-github-autodrive-controller` |
+| state | `BOOTSTRAP_DISABLED` |
+| review packet | `docs/reviews/automation/QF-RRQ-MVS01-004-controller-r3-reverify.md` |
+| independent REVERIFY | `docs/reviews/automation/QF-RVR-MVS01-020-controller-r3-reverify.md` — `PASS_WITH_FINDINGS`, 21 VERIFIED / 1 OPEN |
+| Organizer disposition | `docs/evidence/automation/dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md` — 21 CLOSED_VERIFIED / 1 OPEN_DEFERRED |
+| appointment direction evidence | `docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md` — nominee `SusumuKojima1967`, pending activation |
+| next measurement packet | `docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md` |
+
+The review and disposition packets are later documentation-only commits. Claude
+reviewed the fixed implementation commit/tree above, not a packet commit or a
+recalculated PR merge ref. QF-RVR-MVS01-020 independently verified 21 Findings;
+the Organizer closed those 21 as `CLOSED_VERIFIED`. P3-015 remains the sole
+`OPEN / DEFERRED` Finding until Step 2.5 live event coverage is measured. This
+Finding disposition is not final Controller acceptance and does not authorize
+Draft removal, merge or Phase A.
+
+The Organizer appointment direction and independent bootstrap signature are
+recorded for `SusumuKojima1967`. GitHub reports repository permission `read` and
+the same account submitted an `APPROVED` Review. The signed comment fixes the
+implementation commit/tree above; its self-declared login contains the typo
+`KojimaSusumu1967`, while GitHub's authenticated author is `SusumuKojima1967`.
+Because PR #7 is mixed-change, Draft and unmerged, the frozen Version 0.5.1
+appointment activation conditions are not complete. The authoritative role
+therefore remains `VACANT / PENDING ACTIVATION`; the threat baseline remains
+`BOOTSTRAP_DISABLED` with `role_appointment.status: VACANT`.
 
 ## Deferred-test source of truth
 

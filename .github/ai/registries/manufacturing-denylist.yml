@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "manufacturing_denylist": [
+    {
+      "id": "DENY-DIR-001",
+      "name": "ai-control-plane",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-001",
+      "kind": "prefix",
+      "path": ".github/ai/"
+    },
+    {
+      "id": "DENY-DIR-002",
+      "name": "workflow-control-plane",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-002",
+      "kind": "prefix",
+      "path": ".github/workflows/"
+    },
+    {
+      "id": "DENY-DIR-003",
+      "name": "governance-control-plane",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-003",
+      "kind": "prefix",
+      "path": "docs/governance/"
+    },
+    {
+      "id": "DENY-DIR-004",
+      "name": "review-evidence-authority",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-004",
+      "kind": "prefix",
+      "path": "docs/evidence/automation/reviews/"
+    },
+    {
+      "id": "DENY-DIR-005",
+      "name": "disposition-evidence-authority",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-005",
+      "kind": "prefix",
+      "path": "docs/evidence/automation/dispositions/"
+    },
+    {
+      "id": "DENY-DIR-006",
+      "name": "controller-library",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-006",
+      "kind": "prefix",
+      "path": "scripts/ai_controller/"
+    },
+    {
+      "id": "DENY-DIR-007",
+      "name": "controller-tests",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-DIR-007",
+      "kind": "prefix",
+      "path": "tests/automation/"
+    },
+    {
+      "id": "DENY-FILE-001",
+      "name": "agent-entry",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-FILE-001",
+      "kind": "file",
+      "path": "AGENTS.md"
+    },
+    {
+      "id": "DENY-FILE-002",
+      "name": "claude-entry",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-FILE-002",
+      "kind": "file",
+      "path": "CLAUDE.md"
+    },
+    {
+      "id": "DENY-FILE-003",
+      "name": "review-entry",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-FILE-003",
+      "kind": "file",
+      "path": "REVIEW.md"
+    },
+    {
+      "id": "DENY-FILE-004",
+      "name": "controller-cli",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-FILE-004",
+      "kind": "file",
+      "path": "scripts/qf-ai-controller.py"
+    },
+    {
+      "id": "DENY-FILE-005",
+      "name": "controller-acceptance-entry",
+      "required": true,
+      "owner": "controller",
+      "implemented_by": "scripts.ai_controller.core.path_is_denied",
+      "evidence_field": "controller.manufacturing_denylist.DENY-FILE-005",
+      "kind": "file",
+      "path": "scripts/test-github-autodrive-controller.sh"
+    }
+  ]
+}

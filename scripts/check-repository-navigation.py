@@ -11,7 +11,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
     "README.md",
+    "AGENTS.md",
     "CLAUDE.md",
+    "REVIEW.md",
     "CURRENT_STATE.md",
     "ARCHITECTURE.md",
     "ROADMAP.md",
@@ -33,6 +35,28 @@ REQUIRED = [
     "docs/governance/AI-COLLABORATION.md",
     "docs/governance/SOURCE-OF-TRUTH.md",
     "docs/governance/REVIEW-PROTOCOL.md",
+    "docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md",
+    "docs/governance/automation/QF-OPS-MVS01-001-v0.5.1.md",
+    "docs/governance/automation/QF-RVR-MVS01-014-freeze-confirmation.md",
+    "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml",
+    "docs/governance/threat-model/GITHUB-AUTOMATION.yml",
+    "docs/reviews/automation/README.md",
+    "docs/reviews/automation/QF-RRQ-MVS01-001-controller-technical-review.md",
+    "docs/evidence/automation/README.md",
+    ".github/ai/registries/gate-checks.yml",
+    ".github/ai/registries/work-order-preconditions.yml",
+    ".github/ai/registries/stop-conditions.yml",
+    ".github/ai/registries/required-checks.yml",
+    ".github/ai/registries/finding-ids.yml",
+    ".github/ai/registries/organizer-allowlist.yml",
+    ".github/ai/schemas/work-order.schema.json",
+    ".github/ai/schemas/manufacturing-result.schema.json",
+    ".github/ai/schemas/review-request.schema.json",
+    ".github/ai/schemas/technical-review.schema.json",
+    ".github/ai/schemas/finding-disposition-record.schema.json",
+    "scripts/qf-ai-controller.py",
+    "scripts/test-github-autodrive-controller.sh",
+    "tests/automation/run_acceptance.py",
     "docs/reviews/README.md",
     "docs/reviews/schema/review-manifest.schema.json",
     "docs/reviews/stage6r11r/review-request.md",
@@ -69,6 +93,11 @@ claude_text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 for link in ("CURRENT_STATE.md", "SOURCE-OF-TRUTH.md", "REVIEW-PROTOCOL.md"):
     if link not in claude_text:
         errors.append(f"CLAUDE.md must link to {link}")
+
+controller_text = (ROOT / "docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md").read_text(encoding="utf-8")
+for invariant in ("BOOTSTRAP IMPLEMENTED — DISABLED", "VACANT", "40 failure-first test cases"):
+    if invariant not in controller_text:
+        errors.append(f"Controller guide missing invariant: {invariant}")
 
 if errors:
     print("Repository navigation contract failed:", *errors, sep="\n- ", file=sys.stderr)

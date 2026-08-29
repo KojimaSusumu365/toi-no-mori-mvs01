@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "stop_conditions": [
+    {
+      "id": "STOP-001",
+      "name": "p0-p1-finding",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.loop_transition",
+      "evidence_field": "controller.stop_conditions.STOP-001"
+    },
+    {
+      "id": "STOP-002",
+      "name": "external-fork",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.route_origin",
+      "evidence_field": "controller.stop_conditions.STOP-002"
+    },
+    {
+      "id": "STOP-003",
+      "name": "work-order-identity",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "controller.stop_conditions.STOP-003"
+    },
+    {
+      "id": "STOP-004",
+      "name": "actor-not-allowed",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "controller.stop_conditions.STOP-004"
+    },
+    {
+      "id": "STOP-005",
+      "name": "scope-or-prohibited-path",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_scope",
+      "evidence_field": "controller.stop_conditions.STOP-005"
+    },
+    {
+      "id": "STOP-006",
+      "name": "required-check-drift",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_required_checks",
+      "evidence_field": "controller.stop_conditions.STOP-006"
+    },
+    {
+      "id": "STOP-007",
+      "name": "registry-drift",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_control_plane",
+      "evidence_field": "controller.stop_conditions.STOP-007"
+    },
+    {
+      "id": "STOP-008",
+      "name": "review-sha-mismatch",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-008"
+    },
+    {
+      "id": "STOP-009",
+      "name": "review-ci-sha-mismatch",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_required_checks",
+      "evidence_field": "controller.stop_conditions.STOP-009"
+    },
+    {
+      "id": "STOP-010",
+      "name": "base-drift",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-010"
+    },
+    {
+      "id": "STOP-011",
+      "name": "claude-failure",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-011"
+    },
+    {
+      "id": "STOP-012",
+      "name": "review-request-echo",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-012"
+    },
+    {
+      "id": "STOP-013",
+      "name": "reverify-prerequisite",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-013"
+    },
+    {
+      "id": "STOP-014",
+      "name": "durable-review-record",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_record",
+      "evidence_field": "controller.stop_conditions.STOP-014"
+    },
+    {
+      "id": "STOP-015",
+      "name": "reviewer-output-boundary",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-015"
+    },
+    {
+      "id": "STOP-016",
+      "name": "deferral-incomplete",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_disposition_record",
+      "evidence_field": "controller.stop_conditions.STOP-016"
+    },
+    {
+      "id": "STOP-017",
+      "name": "dedup-indeterminate",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "controller.stop_conditions.STOP-017"
+    },
+    {
+      "id": "STOP-018",
+      "name": "non-convergent-patch",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.loop_transition",
+      "evidence_field": "controller.stop_conditions.STOP-018"
+    },
+    {
+      "id": "STOP-019",
+      "name": "close-without-new-sha",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_gate",
+      "evidence_field": "controller.stop_conditions.STOP-019"
+    },
+    {
+      "id": "STOP-020",
+      "name": "budget-exceeded",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.loop_transition",
+      "evidence_field": "controller.stop_conditions.STOP-020"
+    },
+    {
+      "id": "STOP-021",
+      "name": "flaky-result",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_required_checks",
+      "evidence_field": "controller.stop_conditions.STOP-021"
+    },
+    {
+      "id": "STOP-022",
+      "name": "ambiguous-work-order",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "controller.stop_conditions.STOP-022"
+    },
+    {
+      "id": "STOP-023",
+      "name": "github-settings-drift",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_threat_baseline",
+      "evidence_field": "controller.stop_conditions.STOP-023"
+    },
+    {
+      "id": "STOP-024",
+      "name": "visibility-drift",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_threat_baseline",
+      "evidence_field": "controller.stop_conditions.STOP-024"
+    },
+    {
+      "id": "STOP-025",
+      "name": "sensitive-or-governance-boundary",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "controller.stop_conditions.STOP-025"
+    },
+    {
+      "id": "STOP-026",
+      "name": "second-human-missing",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_work_order",
+      "evidence_field": "controller.stop_conditions.STOP-026"
+    },
+    {
+      "id": "STOP-027",
+      "name": "appointment-signature",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_appointment",
+      "evidence_field": "controller.stop_conditions.STOP-027"
+    },
+    {
+      "id": "STOP-028",
+      "name": "appointment-revoked",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_appointment",
+      "evidence_field": "controller.stop_conditions.STOP-028"
+    },
+    {
+      "id": "STOP-029",
+      "name": "required-check-applicability",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.appointment_applicability",
+      "evidence_field": "controller.stop_conditions.STOP-029"
+    },
+    {
+      "id": "STOP-030",
+      "name": "review-result-authority",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_review_record",
+      "evidence_field": "controller.stop_conditions.STOP-030"
+    },
+    {
+      "id": "STOP-031",
+      "name": "disposition-record-authority",
+      "required": true,
+      "owner": "loop-controller",
+      "implemented_by": "scripts.ai_controller.core.validate_disposition_record",
+      "evidence_field": "controller.stop_conditions.STOP-031"
+    }
+  ]
+}

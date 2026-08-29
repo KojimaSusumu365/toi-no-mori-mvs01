@@ -1,10 +1,17 @@
 # Current state
 
-更新日: 2026-08-28
+更新日: 2026-08-29
 
 ## 判定
 
 問いの森のStage 6R-11Rは **CLOSED — PASS_WITH_FINDINGS** です。Claude独立レビュー `QF-RVR-MVS01-007` はP0/P1・blocking Findingなし、再検証 `QF-RVR-MVS01-015` はRVR-N17〜N22を全件`VERIFIED`としました。Organizerの受入と合わせ、RVR-N10〜N22はすべて`CLOSED_VERIFIED`であり、未解決Findingはありません。Stage 6R-12はまだ開始していません。
+
+GitHub自動運転Controllerは、QF-OPS-MVS01-001 v0.5.1に基づく独立した
+governance Draftとして実装中です。現在は`BOOTSTRAP_DISABLED`であり、
+Independent Automation Release Reviewerには`SusumuKojima1967`へのOrganizer任命指示と
+独立bootstrap署名が記録されました。ただしPR #7はmixed-change Draftかつunmergedのため、
+凍結仕様上の運用状態は`VACANT / PENDING ACTIVATION`です。したがってAI資格情報を使うrun、
+Controllerの有効化、merge、Stage 6R-12開始は未実施です。
 
 | 項目 | 状態 | 根拠 |
 |---|---|---|
@@ -20,6 +27,8 @@
 | Stage 6R-12 | NOT STARTED | 6R-11R PASS後 |
 | Virtual Town runtime | NOT IMPLEMENTED | Forest–Town境界だけを固定 |
 | VT-X0 | NOT EXECUTED | 実在Question 1件で後続実験 |
+| GitHub auto-drive Controller | BOOTSTRAP IMPLEMENTED / DISABLED | [Controller guide](docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md) |
+| Independent Automation Release Reviewer | VACANT / PENDING ACTIVATION — nominee `SusumuKojima1967` | [appointment evidence](docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md) |
 
 ## Draft PR chain
 
@@ -30,8 +39,25 @@
 | #4 | `stage-gh-org-0-claude-onboarding` → `stage6r11r-closure` | Stage 6R-11R closure implementation and review packet |
 | #5 | `stage6r11r-closure` → `stage-gh-org-1-physical-taxonomy` | Canonical physical taxonomy |
 | #6 | `stage-gh-org-1-physical-taxonomy` → `stage6r11r-final-closure` | Final review responses and manufacturing evidence |
+| #7 | `stage6r11r-final-closure` → `ops-github-autodrive-controller` | Disabled Controller governance bootstrap |
 
-All five stacked PRs remain Draft. No merge or `main` update has been performed.
+All six stacked PRs remain Draft. No merge or `main` update has been performed.
+
+The Controller governance PR #7 is stacked after PR #6 and is not part of the
+Stage 6R-11R closure identity. The R3 fixed implementation target is
+`dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d`, tree
+`ab04ccd8f4415ad4188917264cc20309dfbd04a9`. Claude's independent
+[R3 REVERIFY](docs/reviews/automation/QF-RVR-MVS01-020-controller-r3-reverify.md)
+is `PASS_WITH_FINDINGS / blocking=false`, with 21 Findings `VERIFIED` and only
+P3-015 `OPEN`. The Organizer
+[final Finding disposition](docs/evidence/automation/dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md)
+therefore records `CLOSED_VERIFIED 21 / OPEN_DEFERRED 1`. This is not final
+Controller acceptance: the independent bootstrap signature and Organizer
+appointment direction are now recorded in
+[QF-APT-MVS01-001](docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md),
+but contract-compliant appointment activation and
+[Step 2.5 live measurement](docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md)
+remain pending, so Draft, unmerged and `BOOTSTRAP_DISABLED` are unchanged.
 
 ## Stage 6R-11R identity
 

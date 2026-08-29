@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "document_id": "QF-MEP-MVS01-001-OSA1",
+  "record_type": "repository-owner-signed-in-settings-read-only-attestation",
+  "repository": "KojimaSusumu365/toi-no-mori-mvs01",
+  "collection_window": {
+    "utc_start": "2026-08-29T16:10:35.539Z",
+    "utc_end": "2026-08-29T16:10:39.953Z",
+    "jst_start": "2026-08-30T01:10:35.539+09:00",
+    "jst_end": "2026-08-30T01:10:39.953+09:00"
+  },
+  "session_evidence": {
+    "repository_settings_access": true,
+    "settings_heading": "Settings: KojimaSusumu365/toi-no-mori-mvs01",
+    "signed_in_repository_owner_session": true
+  },
+  "execution_boundary": {
+    "read_only": true,
+    "settings_changed": false,
+    "draft_removed": false,
+    "pull_request_retargeted": false,
+    "pull_request_merged": false,
+    "branch_ref_changed": false,
+    "review_submitted": false
+  },
+  "data_handling": {
+    "secret_values_displayed": false,
+    "secret_values_retrieved": false,
+    "variable_values_extracted": false,
+    "variable_values_recorded": false,
+    "names_and_presence_only": true
+  },
+  "actions": {
+    "observed_at_utc": "2026-08-29T16:10:36.458Z",
+    "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/settings/actions",
+    "permissions": {
+      "effective_selection": "allow_all_actions_and_reusable_workflows",
+      "disable_actions": false,
+      "allow_owner_actions_only": false,
+      "allow_owner_and_selected_non_owner_actions": false,
+      "require_full_length_commit_sha": false
+    },
+    "artifact_and_log_retention_days": 90,
+    "fork_pull_request_workflow_approval": {
+      "effective_selection": "require_approval_for_first_time_contributors",
+      "first_time_contributors_new_to_github_only": false,
+      "all_external_contributors": false
+    },
+    "workflow_permissions": {
+      "effective_selection": "read_repository_contents_and_packages",
+      "read_and_write": false,
+      "allow_actions_to_create_and_approve_pull_requests": false
+    }
+  },
+  "secrets": {
+    "observed_at_utc": "2026-08-29T16:10:37.313Z",
+    "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/settings/secrets/actions",
+    "environment_secrets_empty": true,
+    "repository_secrets_empty": true,
+    "repository_secret_names": [],
+    "required_absence_checks": {
+      "OPENAI_API_KEY": false,
+      "ANTHROPIC_API_KEY": false,
+      "QF_GITHUB_APP_ID": false,
+      "QF_GITHUB_APP_PRIVATE_KEY": false
+    },
+    "values_retrieved": false
+  },
+  "variables": {
+    "observed_at_utc": "2026-08-29T16:10:38.113Z",
+    "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/settings/variables/actions",
+    "environment_variables_empty": true,
+    "repository_variables_empty": true,
+    "repository_variable_names": [],
+    "qf_ai_phase_present": false,
+    "qf_ai_phase_value_read": false,
+    "values_extracted": false
+  },
+  "github_apps": {
+    "observed_at_utc": "2026-08-29T16:10:38.939Z",
+    "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/settings/installations",
+    "visible_installed_app_names": [
+      "ChatGPT Codex Connector",
+      "Claude",
+      "Cursor",
+      "Devin.ai Integration",
+      "Slack"
+    ],
+    "qf_publisher_named_app_observed": false,
+    "qf_app_canonical_identity_specified_by_bma1": false,
+    "unrelated_app_configuration_opened": false,
+    "app_configuration_changed": false,
+    "interpretation": "The visible Installed GitHub Apps list contains no QF publisher-named App. Existing unrelated App repository selections and permissions were not inferred or opened."
+  },
+  "bma1_gap_resolution": {
+    "owner_settings_measurement": "MEASURED_COMPLETE",
+    "qf_ai_phase_variable": "ABSENT",
+    "actions_default_token_permission": "READ_CONTENTS_AND_PACKAGES",
+    "actions_can_create_or_approve_pr": false,
+    "fork_pr_actions_approval": "FIRST_TIME_CONTRIBUTORS",
+    "qf_secret_names_present": false,
+    "qf_github_app_visible": false
+  },
+  "risk_observations": [
+    "Repository Actions policy allows all actions and reusable workflows.",
+    "Repository Actions policy does not require actions to be pinned to a full-length commit SHA."
+  ],
+  "assessment": {
+    "owner_settings_checkpoint": "MEASURED_COMPLETE",
+    "bootstrap_merge_decision": "NO_GO_NOW",
+    "future_classification": "CONDITIONAL_BOOTSTRAP_CANDIDATE",
+    "merge_authorized": false,
+    "draft_removal_authorized": false,
+    "retarget_authorized": false,
+    "phase_a_authorized": false,
+    "stage6r12_authorized": false
+  },
+  "state_preserved": {
+    "pull_requests_draft_open_unmerged": [1, 3, 4, 5, 6, 7],
+    "main_updated": false,
+    "pr_retargeted": false,
+    "secrets_changed": false,
+    "variables_changed": false,
+    "github_apps_changed": false,
+    "rulesets_changed": false,
+    "branch_protection_changed": false,
+    "controller_phase": "BOOTSTRAP_DISABLED",
+    "reviewer_status": "VACANT_PENDING_ACTIVATION",
+    "p3_015": "OPEN_DEFERRED",
+    "phase_a_started": false,
+    "stage6r12": "NOT_STARTED"
+  }
+}

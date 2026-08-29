@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "technical-review.schema.json@3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "schema_version",
+    "role",
+    "review_mode",
+    "review_request_sha256",
+    "work_order_id",
+    "reviewed_commit_sha",
+    "reviewed_tree_sha",
+    "default_branch_sha",
+    "decision",
+    "coverage",
+    "findings",
+    "notes",
+    "blocking",
+    "unverified"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "QF-AI-COLLAB-v5"
+    },
+    "schema_version": {
+      "const": "technical-review.schema.json@3"
+    },
+    "role": {
+      "const": "claude_reviewer"
+    },
+    "review_mode": {
+      "enum": [
+        "INITIAL",
+        "REVERIFY"
+      ]
+    },
+    "review_request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "work_order_id": {
+      "type": "string",
+      "pattern": "^WO-[0-9]{4,}$"
+    },
+    "reviewed_commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "reviewed_tree_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "default_branch_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "decision": {
+      "enum": [
+        "PASS",
+        "PASS_WITH_FINDINGS",
+        "FAIL"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files_read",
+        "checks_confirmed",
+        "review_areas"
+      ],
+      "properties": {
+        "files_read": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checks_confirmed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "review_areas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "severity",
+          "verification_status",
+          "disposition",
+          "path",
+          "evidence",
+          "risk",
+          "required_change",
+          "residual_risk"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^AUTO-IMPL-P[0-3]-[0-9]{3}$"
+          },
+          "severity": {
+            "enum": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          "verification_status": {
+            "enum": [
+              "OPEN",
+              "VERIFIED"
+            ]
+          },
+          "disposition": {
+            "const": "UNDECIDED"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "risk": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required_change": {
+            "type": "string",
+            "minLength": 1
+          },
+          "residual_risk": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "unverified": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
