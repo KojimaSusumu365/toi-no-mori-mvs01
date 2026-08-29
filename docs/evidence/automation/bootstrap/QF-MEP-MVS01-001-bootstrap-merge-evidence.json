@@ -1,0 +1,282 @@
+{
+  "schema_version": "1.0",
+  "document_id": "QF-MEP-MVS01-001-BMA1",
+  "record_type": "bootstrap-merge-readiness-read-only-assessment",
+  "captured_at": "2026-08-29T15:59:48.006Z",
+  "captured_by": {
+    "tool": "GitHub connector and local read-only governance inspection",
+    "authenticated_github_login": "KojimaSusumu365",
+    "github_user_id": 72760450
+  },
+  "organizer_instruction": {
+    "mr1_partial_accepted": true,
+    "read_only": true,
+    "merge_authorized": false,
+    "draft_removal_authorized": false,
+    "pr_retarget_authorized": false
+  },
+  "assessment": {
+    "current_decision": "NO_GO_NOW",
+    "future_classification": "CONDITIONAL_BOOTSTRAP_CANDIDATE",
+    "technical_chain_integrity": "PASS",
+    "governance_merge_readiness": "FAIL",
+    "authorized_to_merge": false,
+    "authorized_to_enable_phase_a": false
+  },
+  "repository": {
+    "full_name": "KojimaSusumu365/toi-no-mori-mvs01",
+    "id": 1341164060,
+    "visibility": "public",
+    "default_branch": "main",
+    "default_branch_sha": "c90dfdb154d99ee480571c8a397e99d88e12dea8",
+    "default_branch_protected": false,
+    "required_status_checks_enforcement": "off",
+    "required_status_contexts": [],
+    "rulesets": [],
+    "default_branch_workflows": [
+      {
+        "path": ".github/workflows/stage6r4c-nonroot-postgresql.yml",
+        "blob_sha": "a9e1cfe7e76ec758950c5b867c3dab51e6de0edd"
+      }
+    ],
+    "controller_on_default_branch": false,
+    "settings_api_limitations": [
+      {"endpoint": "actions/permissions", "result": "NOT_MEASURED", "error_code": "INVALID_ARGUMENT"},
+      {"endpoint": "actions/permissions/workflow", "result": "NOT_MEASURED", "error_code": "INVALID_ARGUMENT"},
+      {"endpoint": "actions/permissions/fork-pr-contributor-approval", "result": "NOT_MEASURED", "error_code": "INVALID_ARGUMENT"},
+      {"endpoint": "installation", "result": "NOT_MEASURED", "error_code": "INVALID_ARGUMENT"},
+      {"endpoint": "branches/main/protection", "result": "PARTIAL", "http_status": 403, "branch_endpoint_protected_value": false}
+    ]
+  },
+  "chain": [
+    {
+      "pr": 1,
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/1",
+      "title": "Draft Baseline: Question Forest Stage 6R-1–11 cumulative implementation",
+      "base_ref": "main",
+      "base_sha": "c90dfdb154d99ee480571c8a397e99d88e12dea8",
+      "head_ref": "stage6r4c-postgresql-green-fix",
+      "head_sha": "4537085c25ed3178214b0693afac7e42ce1b64de",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "commits": 39,
+      "changed_files": 121,
+      "reviews": [],
+      "checks": {"total": 2, "success": 2, "failure": 0, "pending": 0},
+      "check_runs": [
+        {"id": 98288873998, "name": "Native Tokyo-Ishikari DR evidence regression 85/85 gate", "conclusion": "success"},
+        {"id": 98288871317, "name": "Question Forest Minimum Town readiness 90/90 gate", "conclusion": "success"}
+      ]
+    },
+    {
+      "pr": 3,
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/3",
+      "title": "docs: Stage GH-ORG-0 Claude onboarding and repository index",
+      "base_ref": "stage6r4c-postgresql-green-fix",
+      "base_sha": "4537085c25ed3178214b0693afac7e42ce1b64de",
+      "head_ref": "stage-gh-org-0-claude-onboarding",
+      "head_sha": "60c10feb1fed4b4b5000fac4145aa4def591877f",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "commits": 1,
+      "changed_files": 19,
+      "reviews": [],
+      "checks": {"total": 3, "success": 3, "failure": 0, "pending": 0},
+      "check_runs": [
+        {"id": 98730621010, "name": "Human and AI onboarding contract", "conclusion": "success"},
+        {"id": 98730620916, "name": "Question Forest Minimum Town readiness 90/90 gate", "conclusion": "success"},
+        {"id": 98730620646, "name": "Native Tokyo-Ishikari DR evidence regression 85/85 gate", "conclusion": "success"}
+      ]
+    },
+    {
+      "pr": 4,
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/4",
+      "title": "Draft: close Stage 6R-11R evidence and tenant gates",
+      "base_ref": "stage-gh-org-0-claude-onboarding",
+      "base_sha": "60c10feb1fed4b4b5000fac4145aa4def591877f",
+      "head_ref": "stage6r11r-closure",
+      "head_sha": "b85459ff1db304346e159e75833b1c415ce7a575",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "commits": 3,
+      "changed_files": 29,
+      "reviews": [],
+      "checks": {"total": 3, "success": 3, "failure": 0, "pending": 0},
+      "check_runs": [
+        {"id": 98735772284, "name": "Question Forest Minimum Town readiness 90/90 gate", "conclusion": "success"},
+        {"id": 98735772141, "name": "Human and AI onboarding contract", "conclusion": "success"},
+        {"id": 98735772136, "name": "Native Tokyo-Ishikari DR evidence regression 85/85 gate", "conclusion": "success"}
+      ]
+    },
+    {
+      "pr": 5,
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/5",
+      "title": "Draft: apply canonical repository taxonomy",
+      "base_ref": "stage6r11r-closure",
+      "base_sha": "b85459ff1db304346e159e75833b1c415ce7a575",
+      "head_ref": "stage-gh-org-1-physical-taxonomy",
+      "head_sha": "80090e2eb56c4ddf438867572f8f6e8c389813ba",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "commits": 1,
+      "changed_files": 133,
+      "reviews": [],
+      "checks": {"total": 3, "success": 3, "failure": 0, "pending": 0},
+      "check_runs": [
+        {"id": 98748216596, "name": "Question Forest Minimum Town readiness 90/90 gate", "conclusion": "success"},
+        {"id": 98748216295, "name": "Native Tokyo-Ishikari DR evidence regression 85/85 gate", "conclusion": "success"},
+        {"id": 98748216209, "name": "Human and AI onboarding contract", "conclusion": "success"}
+      ]
+    },
+    {
+      "pr": 6,
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/6",
+      "title": "Draft: finalize Stage 6R-11R closure",
+      "base_ref": "stage-gh-org-1-physical-taxonomy",
+      "base_sha": "80090e2eb56c4ddf438867572f8f6e8c389813ba",
+      "head_ref": "stage6r11r-final-closure",
+      "head_sha": "b6959e86713c89b37a8d0e8009f402512c02e346",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "commits": 3,
+      "changed_files": 23,
+      "reviews": [],
+      "checks": {"total": 3, "success": 3, "failure": 0, "pending": 0},
+      "check_runs": [
+        {"id": 98816152375, "name": "Native cumulative and Tokyo-Ishikari DR regression 90/90 gate", "conclusion": "success"},
+        {"id": 98816152101, "name": "Human and AI onboarding contract", "conclusion": "success"},
+        {"id": 98816151862, "name": "Question Forest Minimum Town readiness 90/90 gate", "conclusion": "success"}
+      ]
+    },
+    {
+      "pr": 7,
+      "url": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/pull/7",
+      "title": "Draft: GitHub auto-drive Controller bootstrap",
+      "base_ref": "stage6r11r-final-closure",
+      "base_sha": "b6959e86713c89b37a8d0e8009f402512c02e346",
+      "head_ref": "ops-github-autodrive-controller",
+      "head_sha": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "mergeable_state": "unstable",
+      "commits": 12,
+      "changed_files": 70,
+      "reviews": [
+        {
+          "id": 5058409302,
+          "author": "SusumuKojima1967",
+          "state": "APPROVED",
+          "commit_id": "74ce0021f61784067a2327c9281231b70337b643",
+          "current_head_bound": false,
+          "submitted_at": "2026-08-29T14:57:31Z"
+        }
+      ],
+      "checks": {"total": 9, "success": 8, "failure": 1, "pending": 0},
+      "failed_check": {
+        "id": 99119029644,
+        "suite_id": 90137369123,
+        "name": "qf-role-appointment-signature",
+        "conclusion": "failure",
+        "reason": "trusted main lacks .github/ai/registries/organizer-allowlist.yml"
+      }
+    }
+  ],
+  "chain_links": [
+    {"from": "main", "from_sha": "c90dfdb154d99ee480571c8a397e99d88e12dea8", "to_pr": 1, "exact_base_match": true},
+    {"from_pr": 1, "head_sha": "4537085c25ed3178214b0693afac7e42ce1b64de", "to_pr": 3, "exact_base_match": true},
+    {"from_pr": 3, "head_sha": "60c10feb1fed4b4b5000fac4145aa4def591877f", "to_pr": 4, "exact_base_match": true},
+    {"from_pr": 4, "head_sha": "b85459ff1db304346e159e75833b1c415ce7a575", "to_pr": 5, "exact_base_match": true},
+    {"from_pr": 5, "head_sha": "80090e2eb56c4ddf438867572f8f6e8c389813ba", "to_pr": 6, "exact_base_match": true},
+    {"from_pr": 6, "head_sha": "b6959e86713c89b37a8d0e8009f402512c02e346", "to_pr": 7, "exact_base_match": true}
+  ],
+  "controller_identity": {
+    "fixed_implementation_sha": "dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d",
+    "fixed_implementation_tree": "ab04ccd8f4415ad4188917264cc20309dfbd04a9",
+    "current_pr7_head": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+    "commits_after_fixed_implementation": 3,
+    "frozen_spec_blob_at_fixed_implementation": "537de88c1e67a7b5e534c2834665ced10e898fe8",
+    "frozen_spec_blob_at_current_head": "537de88c1e67a7b5e534c2834665ced10e898fe8",
+    "frozen_spec_unchanged": true,
+    "automation_phase_static": "BOOTSTRAP_DISABLED",
+    "role_appointment_status": "VACANT",
+    "role_nominee": "SusumuKojima1967",
+    "p3_015": "OPEN_DEFERRED"
+  },
+  "pr7_post_review_delta": {
+    "reviewed_commit": "74ce0021f61784067a2327c9281231b70337b643",
+    "current_head": "de0215c74bc02b40883267af5f7dd7c1d8a763b6",
+    "ahead_by": 1,
+    "implementation_or_workflow_changed": false,
+    "files": [
+      "CURRENT_STATE.md",
+      "docs/evidence/automation/README.md",
+      "docs/evidence/automation/appointments/QF-APT-MVS01-001-independent-automation-release-reviewer.md",
+      "docs/evidence/automation/appointments/README.md",
+      "docs/governance/SOURCE-OF-TRUTH.md",
+      "docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml",
+      "docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md"
+    ]
+  },
+  "external_state": {
+    "rulesets_live": [],
+    "branch_protection_live": false,
+    "qf_ai_phase_variable": "NOT_MEASURED",
+    "actions_default_token_permission": "NOT_MEASURED",
+    "actions_can_approve_pr": "NOT_MEASURED",
+    "fork_pr_actions_approval": "NOT_MEASURED",
+    "qf_secret_names_present": "NOT_MEASURED",
+    "qf_github_app_installed": "NOT_MEASURED",
+    "candidate_threat_baseline_claims_app_installed": false,
+    "interpretation": "no settings were changed by this assessment; live absence of variables, secrets and the QF App still requires signed-in owner evidence"
+  },
+  "blocking_conditions": [
+    "all PRs are Draft",
+    "PR #3 through #7 are not based on main and require future sequential retargeting",
+    "PR #7 current-head role check is failure",
+    "PR #7 review is not bound to current head",
+    "Step 2.5 is PARTIAL and P3-015 remains OPEN_DEFERRED",
+    "reviewer activation remains VACANT_PENDING_ACTIVATION",
+    "QF_AI_PHASE, secret names and QF App live absence are NOT_MEASURED",
+    "MR1 and BMA1 are not yet durable repository evidence"
+  ],
+  "conditional_go_requirements": [
+    "signed-in Repository Owner read-only settings attestation",
+    "explicit one-time bounded bootstrap sequencing decision",
+    "Phase A, secrets/App/rules and Stage 6R-12 remain unauthorized",
+    "durable publication of MR1, BMA1 and settings evidence",
+    "Independent Reviewer and Organizer confirmation of the actual merge head SHA/tree",
+    "sequential retarget, fresh diff and fresh checks after each predecessor merge",
+    "merge-commit history preservation or complete re-verification of rewritten SHAs",
+    "final pre-PR7 confirmation of BOOTSTRAP_DISABLED, VACANT and P3-015 OPEN_DEFERRED"
+  ],
+  "state_preserved": {
+    "pull_requests_draft_open_unmerged": [1, 3, 4, 5, 6, 7],
+    "main_updated": false,
+    "pr_retargeted": false,
+    "reviews_changed": false,
+    "branch_refs_changed": false,
+    "secrets_changed": false,
+    "github_app_changed": false,
+    "rulesets_changed": false,
+    "branch_protection_changed": false,
+    "phase_a_started": false,
+    "stage6r12": "NOT_STARTED"
+  }
+}

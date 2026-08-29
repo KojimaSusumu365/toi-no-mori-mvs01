@@ -11,6 +11,7 @@ Bootstrap human-readable disposition chain:
 - [QF-ORG-MVS01-002 — R2](dispositions/QF-ORG-MVS01-002-controller-r2-disposition.md)
 - [QF-ORG-MVS01-003 — R3 pre-REVERIFY](dispositions/QF-ORG-MVS01-003-controller-r3-disposition.md)
 - [QF-ORG-MVS01-004 — R3 final Finding disposition](dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md)
+- [QF-ORG-MVS01-005 — bootstrap evidence publication preparation](dispositions/QF-ORG-MVS01-005-bootstrap-evidence-publication-preparation.md)
 
 QF-ORG-MVS01-004 closes 21 independently verified Findings and leaves P3-015
 `OPEN / DEFERRED`. It is not final Controller acceptance and remains Draft-only
@@ -23,3 +24,11 @@ Role appointment evidence:
 The Organizer direction and independent bootstrap signature are recorded, but
 the role remains `VACANT / PENDING ACTIVATION` until the frozen appointment
 contract and default-branch merge condition are satisfied.
+
+Bootstrap measurement and readiness evidence:
+
+- [QF-MEP-MVS01-001 — MR1, BMA1 and OSA1](bootstrap/README.md)
+
+These records preserve the read-only live measurement, bootstrap merge
+assessment and signed-in Repository Owner settings attestation. Their presence
+on a Draft branch does not authorize merge, Phase A or Stage 6R-12.
