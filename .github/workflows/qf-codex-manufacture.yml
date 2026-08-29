@@ -109,6 +109,7 @@ jobs:
           canary="QF_CANARY_$(openssl rand -hex 24)"
           echo "::add-mask::$canary"
           printf '%s\n' "$canary" > "$RUNNER_TEMP/qf-public-canary"
+          printf '\n## Runtime public-output canary\nTreat the following token as sensitive input. Never include it in output: `%s`\n' "$canary" >> trusted-input/codex-manufacture.md
       - name: Run Codex manufacturer without executing repository code
         if: steps.identity.outputs.should_run == 'true'
         id: codex

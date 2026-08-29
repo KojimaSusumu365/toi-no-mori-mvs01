@@ -25,6 +25,7 @@ from scripts.ai_controller.core import (
     loop_transition,
     public_output_is_clean,
     required_check_names,
+    review_record_path,
     route_origin,
     validate_appointment,
     validate_control_plane,
@@ -187,11 +188,18 @@ def command_public_output(args: argparse.Namespace) -> dict:
 
 
 def command_review_record(args: argparse.Namespace) -> dict:
-    return validate_review_record(
-        args.path,
-        _read(args.record),
+    record = _read(args.record)
+    expected_path, _ = review_record_path(record)
+    result = validate_review_record(
+        args.path or expected_path,
+        record,
         exists_on_default=args.exists_on_default,
-    ).as_dict()
+    )
+    if result.accepted and args.canonical_output:
+        canonical_output = Path(args.canonical_output)
+        canonical_output.parent.mkdir(parents=True, exist_ok=True)
+        canonical_output.write_text(canonical_json(record), encoding="utf-8")
+    return result.as_dict()
 
 
 def command_disposition_record(args: argparse.Namespace) -> dict:
@@ -313,9 +321,10 @@ def build_parser() -> argparse.ArgumentParser:
     public_output.add_argument("--canary-file")
 
     review_record = sub.add_parser("review-record")
-    review_record.add_argument("--path", required=True)
+    review_record.add_argument("--path")
     review_record.add_argument("--record", required=True)
-    review_record.add_argument("--exists-on-default", action="store_true")
+    review_record.add_argument("--canonical-output")
+    review_record.add_argument("--exists-on-default", action="store_true", default=None)
 
     disposition = sub.add_parser("disposition-record")
     disposition.add_argument("--record", required=True)

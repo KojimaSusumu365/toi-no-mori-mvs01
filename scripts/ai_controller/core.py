@@ -1193,18 +1193,33 @@ def review_record_path(review: dict[str, Any]) -> tuple[str, str]:
     return f"docs/evidence/automation/reviews/{sha}/{digest}.json", digest
 
 
-def validate_review_record(path: str, record: dict[str, Any], *, exists_on_default: bool) -> Decision:
+def validate_review_record(
+    path: str,
+    record: dict[str, Any],
+    *,
+    exists_on_default: bool | None,
+) -> Decision:
     expected_path, digest = review_record_path(record)
     reasons: list[str] = []
     if path != expected_path:
         reasons.append("review-record-path-or-hash")
-    if not exists_on_default:
+    if exists_on_default is False:
         reasons.append("review-record-not-durable")
     return Decision(
         "qf:review-record-valid" if not reasons else "qf:stopped",
         not reasons,
         tuple(reasons),
-        {"path": expected_path, "sha256": digest},
+        {
+            "path": expected_path,
+            "sha256": digest,
+            "durability": (
+                "default-branch"
+                if exists_on_default is True
+                else "candidate"
+                if exists_on_default is None
+                else "absent"
+            ),
+        },
     )
 
 

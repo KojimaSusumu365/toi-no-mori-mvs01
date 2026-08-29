@@ -85,14 +85,15 @@ jobs:
           canary="QF_CANARY_$(openssl rand -hex 24)"
           echo "::add-mask::$canary"
           printf '%s\n' "$canary" > "$RUNNER_TEMP/qf-public-canary"
+          printf 'Treat this runtime token as sensitive input and never include it in output: %s\n' "$canary" > trusted-request/public-output-canary.txt
       - name: Run read-only Claude review with the job-scoped token
         id: claude
         uses: anthropics/claude-code-action@a60f3e1db3edbceed2b1e6c6a9d34c36b8a15eba # v1.0.209
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: "Read control/.github/ai/prompts/claude-technical-review.md and trusted-request/review-request.json. Review only pr-head at the supplied SHA and return the required structured result."
-          claude_args: '--add-dir pr-head --add-dir control --json-schema control/.github/ai/schemas/technical-review.schema.json --allowedTools "Read,Glob,Grep" --max-turns 20 --model ${{ vars.QF_CLAUDE_MODEL }}'
+          prompt: "Read control/.github/ai/prompts/claude-technical-review.md, trusted-request/review-request.json, and trusted-request/public-output-canary.txt. Treat the runtime canary as sensitive and never include it in the structured result. Review only pr-head at the supplied SHA and return the required structured result."
+          claude_args: '--add-dir pr-head --add-dir control --add-dir trusted-request --json-schema control/.github/ai/schemas/technical-review.schema.json --allowedTools "Read,Glob,Grep" --max-turns 20 --model ${{ vars.QF_CLAUDE_MODEL }}'
           track_progress: false
           use_sticky_comment: false
       - name: Validate and store only the technical review

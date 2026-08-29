@@ -51,16 +51,21 @@ jobs:
         if: steps.decision.outputs.should_publish == 'true'
         run: |
           mkdir -p canonical
+          python3 control/scripts/qf-ai-controller.py \
+            --output canonical/review-record-decision.json \
+            review-record \
+            --record transport/technical-review.json \
+            --canonical-output canonical/technical-review.json >/dev/null
           read -r reviewed_sha digest < <(python3 - <<'PY'
-          import hashlib,json,pathlib
-          gate=json.load(open('transport/review-gate.json'))
-          if gate.get('protocol')!='QF-AI-COLLAB-v5' or gate.get('accepted') is not True:
-              raise SystemExit('Review Gate did not accept the result')
-          value=json.load(open('transport/technical-review.json'))
-          canonical=json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False)
-          digest=hashlib.sha256(canonical.encode()).hexdigest()
-          pathlib.Path('canonical/technical-review.json').write_text(canonical,encoding='utf-8')
-          print(value['reviewed_commit_sha'],digest)
+          import json
+          decision=json.load(open('canonical/review-record-decision.json'))
+          if decision.get('state')!='qf:review-record-valid' or decision.get('accepted') is not True:
+              raise SystemExit('Controller rejected Review Result content address')
+          path=decision['evidence']['path']
+          parts=path.split('/')
+          if len(parts)!=6 or parts[:4]!=['docs','evidence','automation','reviews']:
+              raise SystemExit('Controller returned an invalid Review Result path')
+          print(parts[4],decision['evidence']['sha256'])
           PY
           )
           printf 'reviewed_sha=%s\ndigest=%s\n' "$reviewed_sha" "$digest" >> "$GITHUB_OUTPUT"

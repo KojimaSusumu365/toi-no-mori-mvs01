@@ -13,6 +13,8 @@ if str(REPO_ROOT) not in sys.path:
 import copy
 import json
 import re
+import subprocess
+import tempfile
 import unittest
 from datetime import date, datetime, timedelta, timezone
 
@@ -155,6 +157,28 @@ def baseline() -> dict:
 class GitHubAutodriveControllerTests(unittest.TestCase):
     @auto_case("AUTO-T01")
     def test_t01_control_plane_denylist(self):
+        self.assertEqual(
+            {
+                ".github/ai/",
+                ".github/workflows/",
+                "docs/governance/",
+                "docs/evidence/automation/reviews/",
+                "docs/evidence/automation/dispositions/",
+                "scripts/ai_controller/",
+                "tests/automation/",
+            },
+            set(CONTROL_PLANE_DENYLIST),
+        )
+        self.assertEqual(
+            {
+                "AGENTS.md",
+                "CLAUDE.md",
+                "REVIEW.md",
+                "scripts/qf-ai-controller.py",
+                "scripts/test-github-autodrive-controller.sh",
+            },
+            CONTROL_PLANE_DENY_FILES,
+        )
         executed = set()
         for prefix in CONTROL_PLANE_DENYLIST:
             denied_path = f"{prefix}x"
@@ -276,6 +300,11 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
     @auto_case("AUTO-T16")
     def test_t16_public_output_hygiene(self):
         self.assertTrue(public_output_is_clean({"result": "ok"}, ["CANARY_SECRET"])); self.assertFalse(public_output_is_clean({"result": "CANARY_SECRET"}, ["CANARY_SECRET"]))
+        codex = (ROOT / ".github/workflows/qf-codex-manufacture.yml").read_text(encoding="utf-8")
+        claude = (ROOT / ".github/workflows/qf-claude-technical-review.yml").read_text(encoding="utf-8")
+        self.assertIn('>> trusted-input/codex-manufacture.md', codex)
+        self.assertIn('trusted-request/public-output-canary.txt', claude)
+        self.assertIn('--add-dir trusted-request', claude)
 
     @auto_case("AUTO-T17")
     def test_t17_untrusted_actor(self):
@@ -385,15 +414,39 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
         review = valid_review(); review["findings"]=[{"id":"AUTO-IMPL-P2-001"}]
         record={"decided_by":"outsider","review_artifact_sha256":content_hash(review),"supersedes_record_sha256":"f"*64,"decisions":[{"finding_id":"AUTO-IMPL-P2-001","disposition":"ACCEPTED_PLAN"}]}
         self.assertFalse(validate_disposition_record(record, review_record=review, existing_record_hashes=[]).accepted)
+        deferred=json.loads((ROOT/"spec/deferred-tests.json").read_text(encoding="utf-8"))["tests"]
+        disposition=[item for item in deferred if item["testId"]=="TC-ACC-MVS01-093-DISPOSITION"]
+        self.assertEqual(1,len(disposition)); self.assertIn("AUTO-IMPL-P1-005",disposition[0]["requirementIds"])
+        self.assertTrue(all(disposition[0].get(field) for field in ("owner","due","reasonCode")))
 
     @auto_case("AUTO-T36")
     def test_t36_review_result_durability(self):
         review=valid_review(); path,digest=review_record_path(review)
         result=validate_review_record(path,review,exists_on_default=True)
         self.assertTrue(result.accepted); self.assertEqual(digest,result.evidence["sha256"])
+        self.assertEqual("default-branch",result.evidence["durability"])
+        candidate=validate_review_record(path,review,exists_on_default=None)
+        self.assertTrue(candidate.accepted); self.assertEqual("candidate",candidate.evidence["durability"])
+        self.assertFalse(validate_review_record(path,review,exists_on_default=False).accepted)
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/"technical-review.json"
+            canonical=Path(directory)/"canonical.json"
+            decision=Path(directory)/"decision.json"
+            source.write_text(json.dumps(review),encoding="utf-8")
+            completed=subprocess.run(
+                [sys.executable,str(ROOT/"scripts/qf-ai-controller.py"),"--output",str(decision),"review-record","--record",str(source),"--canonical-output",str(canonical)],
+                cwd=ROOT,capture_output=True,text=True,check=False,
+            )
+            self.assertEqual(0,completed.returncode,completed.stderr)
+            cli_result=json.loads(decision.read_text(encoding="utf-8"))
+            self.assertEqual(path,cli_result["evidence"]["path"])
+            self.assertEqual(canonical_json(review),canonical.read_text(encoding="utf-8"))
         publisher=(ROOT/".github/workflows/qf-review-result-publish.yml").read_text(encoding="utf-8")
         self.assertLess(publisher.index("Canonicalize and verify"),publisher.index("Mint publisher-only token"))
         self.assertIn("canonical/technical-review.json",publisher)
+        self.assertIn("review-record \\",publisher)
+        self.assertIn("--canonical-output canonical/technical-review.json",publisher)
+        self.assertNotIn("import hashlib",publisher)
         self.assertIn("state == 'qf:organizer-hold'",publisher)
         self.assertGreaterEqual(publisher.count("if: steps.decision.outputs.should_publish == 'true'"),4)
 
@@ -411,6 +464,9 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
         self.assertEqual("not_applicable",appointment_applicability(files,api_success=True,pagination_complete=True).state)
         workflow=(ROOT/".github/workflows/qf-role-appointment-signature.yml").read_text(encoding="utf-8")
         self.assertNotIn("paths-ignore:",workflow); self.assertIn("getCollaboratorPermissionLevel",workflow); self.assertIn("pull_request_review:",workflow)
+        self.assertIn("QF_AI_PHASE: ${{ vars.QF_AI_PHASE }}",workflow)
+        self.assertIn('${QF_AI_PHASE:-BOOTSTRAP_DISABLED}',workflow)
+        self.assertNotIn("preflight --expected-phase A",workflow)
         self.assertIn("qf-role-appointment-signature", required_check_names())
         registry=load_registry("required-checks.yml")
         provider_workflows={item["workflow_name"] for item in registry["required_checks"]}

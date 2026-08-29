@@ -65,7 +65,10 @@ jobs:
             fs.mkdirSync('artifacts/automation',{recursive:true});
             fs.writeFileSync('artifacts/automation/appointment-input.json',JSON.stringify(input,null,2)+'\n');
       - name: Evaluate appointment in the deterministic Controller
+        env:
+          QF_AI_PHASE: ${{ vars.QF_AI_PHASE }}
         run: |
           set -euo pipefail
-          python3 scripts/qf-ai-controller.py preflight --expected-phase A >/dev/null
+          expected_phase="${QF_AI_PHASE:-BOOTSTRAP_DISABLED}"
+          python3 scripts/qf-ai-controller.py preflight --expected-phase "$expected_phase" >/dev/null
           python3 scripts/qf-ai-controller.py --output artifacts/automation/appointment-decision.json appointment --file artifacts/automation/appointment-input.json

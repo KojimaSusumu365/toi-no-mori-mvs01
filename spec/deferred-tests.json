@@ -51,6 +51,18 @@
       "reason": "Event sufficiency depends on live GitHub branch-protection and check-run observations and may not be asserted from static workflow text.",
       "owner": "Independent Automation Release Reviewer",
       "due": "Step 2.5, before Phase A enablement"
+    },
+    {
+      "testId": "TC-ACC-MVS01-093-DISPOSITION",
+      "requirementIds": [
+        "AUTO-IMPL-P1-005"
+      ],
+      "description": "Exercise construction, Controller validation, content-addressed publication, supersession, and Organizer authority checks for a Finding Disposition Record.",
+      "status": "not-run",
+      "reasonCode": "PHASE_A_DISPOSITION_TRANSPORT_NOT_ENABLED",
+      "reason": "R2 exposes the deterministic disposition-record command, but the Organizer-owned publication workflow remains disabled until the bounded Phase A human-return transport is independently reviewed.",
+      "owner": "Organizer",
+      "due": "Before Phase A enablement"
     }
   ]
 }
