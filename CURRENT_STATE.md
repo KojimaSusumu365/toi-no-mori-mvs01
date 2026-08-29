@@ -44,11 +44,15 @@ All six stacked PRs remain Draft. No merge or `main` update has been performed.
 The Controller governance PR #7 is stacked after PR #6 and is not part of the
 Stage 6R-11R closure identity. The R3 fixed implementation target is
 `dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d`, tree
-`ab04ccd8f4415ad4188917264cc20309dfbd04a9`; the
-[R3 REVERIFY packet](docs/reviews/automation/QF-RRQ-MVS01-004-controller-r3-reverify.md)
-is a later documentation-only seal. No Controller Finding is CLOSED. The five
-R3 fixes await independent REVERIFY, and P3-015 remains OPEN / DEFERRED pending
-Step 2.5 live measurement.
+`ab04ccd8f4415ad4188917264cc20309dfbd04a9`. Claude's independent
+[R3 REVERIFY](docs/reviews/automation/QF-RVR-MVS01-020-controller-r3-reverify.md)
+is `PASS_WITH_FINDINGS / blocking=false`, with 21 Findings `VERIFIED` and only
+P3-015 `OPEN`. The Organizer
+[final Finding disposition](docs/evidence/automation/dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md)
+therefore records `CLOSED_VERIFIED 21 / OPEN_DEFERRED 1`. This is not final
+Controller acceptance: the independent human signature and
+[Step 2.5 live measurement](docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md)
+remain pending, so Draft, unmerged and `BOOTSTRAP_DISABLED` are unchanged.
 
 ## Stage 6R-11R identity
 

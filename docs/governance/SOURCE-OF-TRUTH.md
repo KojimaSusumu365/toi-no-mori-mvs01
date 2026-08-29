@@ -88,11 +88,17 @@ reconstructable after GitHub recalculates the live PR merge ref.
 | branch | `ops-github-autodrive-controller` |
 | state | `BOOTSTRAP_DISABLED` |
 | review packet | `docs/reviews/automation/QF-RRQ-MVS01-004-controller-r3-reverify.md` |
-| Organizer disposition | `docs/evidence/automation/dispositions/QF-ORG-MVS01-003-controller-r3-disposition.md` |
+| independent REVERIFY | `docs/reviews/automation/QF-RVR-MVS01-020-controller-r3-reverify.md` — `PASS_WITH_FINDINGS`, 21 VERIFIED / 1 OPEN |
+| Organizer disposition | `docs/evidence/automation/dispositions/QF-ORG-MVS01-004-controller-r3-final-disposition.md` — 21 CLOSED_VERIFIED / 1 OPEN_DEFERRED |
+| next measurement packet | `docs/reviews/automation/QF-MEP-MVS01-001-controller-step2.5-measurement.md` |
 
-The packet is a later documentation-only commit. Claude must review the fixed
-implementation commit/tree above, not the packet commit or a recalculated PR
-merge ref.
+The review and disposition packets are later documentation-only commits. Claude
+reviewed the fixed implementation commit/tree above, not a packet commit or a
+recalculated PR merge ref. QF-RVR-MVS01-020 independently verified 21 Findings;
+the Organizer closed those 21 as `CLOSED_VERIFIED`. P3-015 remains the sole
+`OPEN / DEFERRED` Finding until Step 2.5 live event coverage is measured. This
+Finding disposition is not final Controller acceptance and does not authorize
+Draft removal, merge or Phase A.
 
 ## Deferred-test source of truth
 
