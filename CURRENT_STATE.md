@@ -42,12 +42,12 @@ Independent Automation Release Reviewerは`VACANT`です。したがってAI資�
 All six stacked PRs remain Draft. No merge or `main` update has been performed.
 
 The Controller governance PR #7 is stacked after PR #6 and is not part of the
-Stage 6R-11R closure identity. The R2 fixed implementation target is
-`a673dded7edc5d851fd0ce16ccfc025a86ae6475`, tree
-`4bb4ee8a0db5025ca06c96f45cbd27f8c54a1015`; the
-[R2 REVERIFY packet](docs/reviews/automation/QF-RRQ-MVS01-003-controller-r2-reverify.md)
-is a later documentation-only seal. No Controller Finding is CLOSED. The four
-R2 fixes await independent REVERIFY, and P3-015 remains OPEN / DEFERRED pending
+Stage 6R-11R closure identity. The R3 fixed implementation target is
+`dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d`, tree
+`ab04ccd8f4415ad4188917264cc20309dfbd04a9`; the
+[R3 REVERIFY packet](docs/reviews/automation/QF-RRQ-MVS01-004-controller-r3-reverify.md)
+is a later documentation-only seal. No Controller Finding is CLOSED. The five
+R3 fixes await independent REVERIFY, and P3-015 remains OPEN / DEFERRED pending
 Step 2.5 live measurement.
 
 ## Stage 6R-11R identity
