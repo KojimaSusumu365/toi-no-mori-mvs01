@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "role": "INDEPENDENT_AUTOMATION_RELEASE_REVIEWER",
-  "status": "VACANT",
+  "status": "APPOINTED",
   "nominee": "SusumuKojima1967",
-  "appointed_at": null,
+  "appointed_at": "2026-08-29T15:05:38Z",
   "appointment_directed_at": "2026-08-29T15:05:38Z",
-  "appointment_pr": 7,
+  "appointment_pr": null,
   "approved_commit_sha": "dcfc9e03cd82da07d9da3ad841fb13f9c9ed850d",
   "organizer": "KojimaSusumu365",
   "responsibility_scope": [
@@ -31,5 +31,5 @@
     "implementation_tree": "ab04ccd8f4415ad4188917264cc20309dfbd04a9",
     "finding": "AUTO-IMPL-P3-015 OPEN_DEFERRED"
   },
-  "note": "Organizer appointment direction and bootstrap signature are recorded in QF-APT-MVS01-001. Activation remains pending because PR #7 is Draft, unmerged and contains mixed governance changes; Version 0.5.1 makes the appointment effective only after a contract-compliant role_appointment PR is merged to the default branch. Phase A, governance merge and AI-credential run remain prohibited while VACANT."
+  "note": "Organizer direction, nominee identity and bootstrap evidence are fixed. This candidate APPOINTED record becomes effective only after the dedicated role_appointment PR satisfies current-head APPROVED, qf-role-appointment-signature GREEN and default-branch merge. Until then Phase A, governance merge and AI-credential run remain prohibited."
 }
