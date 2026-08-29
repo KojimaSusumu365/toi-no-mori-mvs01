@@ -3,6 +3,18 @@
   "stage": "6R-11R",
   "tests": [
     {
+      "testId": "TC-PERF-MVS01-002-PG",
+      "requirementIds": [
+        "RV-040"
+      ],
+      "description": "Run the 100,000-row PostgreSQL performance acceptance test in a production-like environment.",
+      "status": "not-run",
+      "reasonCode": "PRODUCTION_LIKE_PERFORMANCE_ENVIRONMENT_UNAVAILABLE",
+      "reason": "The SQL plan guard exists, but the 100,000-row production-like performance execution has not been run and is not counted in the 90-test native acceptance total.",
+      "owner": "Performance Owner",
+      "due": "Before pilot Gate G3 or before the public dataset reaches 100,000 rows, whichever comes first"
+    },
+    {
       "testId": "TC-ACC-MVS01-087-OIDC",
       "requirementIds": [
         "RVR-N06",

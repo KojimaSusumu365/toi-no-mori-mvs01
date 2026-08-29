@@ -27,7 +27,7 @@ The original increment planned 22 tests. Twenty-one planned IDs have native beha
 | `TC-ACC-MVS01-080-API` | `TC-ACC-MVS01-080-API` | GREEN | same behavioural contract |
 | `TC-ACC-MVS01-081-DOM` | `TC-ACC-MVS01-081-DOM` | GREEN | same behavioural contract |
 | `TC-ACC-MVS01-081-API` | `TC-ACC-MVS01-081-API` | GREEN | same behavioural contract |
-| `TC-PERF-MVS01-002-PG` | — | not-run | Owner: Performance Engineer. A production-like 100,000-row baseline is not yet available. Due: before pilot Gate G3 or before the public dataset reaches 100,000 rows, whichever comes first. |
+| `TC-PERF-MVS01-002-PG` | — | not-run | Owner: Performance Owner. A production-like 100,000-row execution has not run. Due: before pilot Gate G3 or before the public dataset reaches 100,000 rows, whichever comes first. Source: `spec/deferred-tests.json`. |
 
 ## Approved supplemental test
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create fail-closed evidence for the Stage 6R-10 native 85-test gate."""
+"""Create fail-closed evidence for the Stage 6R-10 native full-regression gate."""
 
 from __future__ import annotations
 
@@ -32,9 +32,11 @@ SUITES = (
     SuiteContract("api", "API", "# ToiNoMori.Api specification tests", 41),
     SuiteContract("mobile", "Mobile", "# ToiNoMori mobile web specification tests", 7),
     SuiteContract("oidc", "OIDC E2E", "# ToiNoMori OIDC browser protocol E2E tests", 8),
+    SuiteContract("townReadiness", "Town readiness", "# ToiNoMori town-readiness specification tests", 5),
     SuiteContract("postgresql", "PostgreSQL", "# ToiNoMori PostgreSQL integration tests", 12),
     SuiteContract("dr", "DR", "# ToiNoMori disaster-recovery specification tests", 5),
 )
+TOTAL_EXPECTED = sum(suite.expected for suite in SUITES)
 
 
 def parse_suites(log_text: str) -> dict[str, dict[str, object]]:
@@ -79,6 +81,30 @@ def parse_suites(log_text: str) -> dict[str, dict[str, object]]:
     return results
 
 
+def suite_totals(suites: dict[str, dict[str, object]]) -> dict[str, object]:
+    expected = sum(int(suites[suite.key]["expected"]) for suite in SUITES)
+    passed = sum(int(suites[suite.key]["passed"] or 0) for suite in SUITES)
+    failed = sum(int(suites[suite.key]["failed"] or 0) for suite in SUITES)
+    executed_total = sum(int(suites[suite.key]["total"] or 0) for suite in SUITES)
+    registered_suites_complete = all(
+        suites[suite.key]["total"] is not None for suite in SUITES
+    )
+    return {
+        "registeredSuiteCount": len(SUITES),
+        "expectedTotal": expected,
+        "passedTotal": passed,
+        "failedTotal": failed,
+        "executedTotal": executed_total,
+        "registeredSuitesComplete": registered_suites_complete,
+        "totalsMatch": (
+            registered_suites_complete
+            and passed == expected
+            and failed == 0
+            and executed_total == expected
+        ),
+    }
+
+
 def acceptance_status(
     *,
     gate_exit_code: int,
@@ -88,17 +114,16 @@ def acceptance_status(
     test_ids_unique: bool,
     build_clean: bool,
 ) -> tuple[bool, dict[str, bool]]:
+    totals = suite_totals(suites)
     all_suites_green = all(suites[suite.key]["status"] == "passed" for suite in SUITES)
     checks = {
         "nonRootRunner": uid != 0,
         "nativeExecution": execution_mode == "native",
         "testIdsUnique": test_ids_unique,
         "buildClean": build_clean,
-        **{
-            f"{suite.key}{suite.expected}Of{suite.expected}": suites[suite.key]["status"] == "passed"
-            for suite in SUITES
-        },
-        "nativeTotal85Of85": sum(suite.expected for suite in SUITES) == 85 and all_suites_green,
+        "registeredSuitesComplete": bool(totals["registeredSuitesComplete"]),
+        "totalsMatch": bool(totals["totalsMatch"]),
+        "allSuitesGreen": all_suites_green,
         "gateExitCodeZero": gate_exit_code == 0,
     }
     return all(checks.values()), checks
@@ -122,13 +147,13 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
         build_clean=build_clean,
     )
     return {
-        "schemaVersion": "1.0",
+        "schemaVersion": "1.1",
         "stage": "6R-10",
         "gate": "tokyo-ishikari-dr-switch-recovery-evidence",
         "status": "accepted" if accepted else "rejected",
         "isSimulated": args.execution_mode != "native",
         "executionMode": args.execution_mode,
-        "measurementScope": "native local dual-cluster DR role drill; not a physical Sakura Cloud region failover",
+        "measurementScope": "native local cumulative regression including Town readiness and a dual-cluster DR role drill; not a physical Sakura Cloud region failover",
         "startedAtUtc": args.started_at,
         "finishedAtUtc": args.finished_at,
         "source": {
@@ -152,6 +177,7 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
             "postgresql": args.postgresql_version,
         },
         "suites": suites,
+        "totals": suite_totals(suites),
         "gateExitCode": args.gate_exit_code,
         "acceptance": checks,
         "log": {
@@ -182,7 +208,8 @@ def write_summary(path: Path, evidence: dict[str, object]) -> None:
         lines.append(f"| {suite.label} | {passed}/{total} ({result['status']}) |")
     lines.extend(
         [
-            f"| Native合計 | 85/85={checks['nativeTotal85Of85']} |",
+            f"| Native合計 | {evidence['totals']['passedTotal']}/{evidence['totals']['expectedTotal']} (totalsMatch={checks['totalsMatch']}) |",
+            f"| 登録スイート欠落なし | {checks['registeredSuitesComplete']} |",
             f"| 試験ID一意性 | {checks['testIdsUnique']} |",
             f"| Build警告0・エラー0 | {checks['buildClean']} |",
             f"| 非root runner | {checks['nonRootRunner']} |",

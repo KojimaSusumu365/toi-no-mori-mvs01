@@ -1,6 +1,6 @@
 # Stage 6R-11R closure ledger
 
-Status: **IMPLEMENTATION GREEN — AWAITING CLAUDE REVIEW AND OWNER ACCEPTANCE**
+Status: **CLOSED — PASS_WITH_FINDINGS**
 
 Review target: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
 Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/stage6r11r-github-acceptance.md)
@@ -14,7 +14,9 @@ Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/
 - [x] tested commit, branch head, base commit, relationship, workflow, Run and attempt are typed evidence fields.
 - [x] Exact implementation HEAD Run, Job, artifact and digest are recorded.
 - [x] Stage 6R-11 is 90/90 GREEN for the review target.
-- [x] Stage 6R-10 is 85/85 GREEN for the review target.
+- [x] Historical Stage 6R-10 is 85/85 GREEN for the review target.
+- [x] Final response Stage 6R-10 is 90/90 GREEN with all seven executed suites recorded.
+- [x] Final response Stage 6R-11 is 90/90 GREEN with reconstructable merge-ref identity.
 - [x] Repository navigation is GREEN for the review target.
 
 ## B. Forest–Town boundary
@@ -52,10 +54,25 @@ Acceptance evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/
 - [x] deferred `087-OIDC` has owner/reason/due.
 - [x] duplicate modern IDs and deferred/executable collision are rejected by CI.
 
-## Remaining external actions
+## E. Independent review and response
 
-1. Claude reviews `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` and records Findings.
-2. Codex responds to any new Finding ID and reruns affected gates if code changes.
-3. Repository owner records final acceptance.
+- [x] Claude review `QF-RVR-MVS01-007` recorded `PASS_WITH_FINDINGS`.
+- [x] P0/P1 and blocking Findings are zero.
+- [x] RVR-N10 through RVR-N16 are reviewer-side `CLOSED_VERIFIED`.
+- [x] RVR-N17 through RVR-N22 have `ACCEPTED` implementation responses.
+- [x] Claude re-verification `QF-RVR-MVS01-015` independently marks RVR-N17 through RVR-N22 `VERIFIED` and raises no new Finding.
+- [x] Owner acceptance plus reviewer verification closes RVR-N17 through RVR-N22 as `CLOSED_VERIFIED`.
+- [x] PR #5 taxonomy Runs are recorded in the source ledger.
+- [x] performance not-run owner/reason/due has one machine-readable source.
+- [x] RLS table coverage is derived rather than hard-coded.
+- [x] affected GitHub gates rerun on response commit `497d786f`.
+- [x] repository owner acceptance is recorded from the Organizer's explicit final-Closure request.
 
-This ledger is not a PASS declaration. An implementing AI cannot change final acceptance to `ACCEPTED`.
+## Closure decision
+
+Stage 6R-11R remains closed as `PASS_WITH_FINDINGS`, preserving the historical
+review decision. RVR-N10 through N22 are `CLOSED_VERIFIED`; no open Finding, new
+Finding, P0/P1 or blocking Finding remains.
+
+Merge, Draft removal, branch deletion, deployment, Virtual Town implementation and
+Stage 6R-12 start remain outside this Closure.

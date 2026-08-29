@@ -219,9 +219,10 @@ def tc_perf() -> tuple[bool, str]:
 
 
 Contract = tuple[str, str, list[str], Callable[[], tuple[bool, str]]]
-CONTRACTS: list[Contract] = [
-    ("TC-PERF-MVS01-002-PG", "Performance", ["RV-040"], tc_perf),
-]
+# The executable 100,000-row measurement is governed by spec/deferred-tests.json.
+# Keeping it out of this static failure-first registry prevents a deferred test
+# from being double-declared or accidentally counted as a native acceptance pass.
+CONTRACTS: list[Contract] = []
 
 
 def run() -> list[Result]:

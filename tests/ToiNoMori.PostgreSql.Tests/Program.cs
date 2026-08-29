@@ -46,20 +46,31 @@ var tests = new List<SpecTest>
 
         await using (var catalog = new NpgsqlCommand(
             """
-            SELECT count(*)
+            SELECT count(*) AS tenant_table_count,
+                   count(*) FILTER (
+                     WHERE table_class.relrowsecurity
+                       AND table_class.relforcerowsecurity) AS protected_table_count
             FROM pg_class AS table_class
             JOIN pg_namespace AS table_namespace
               ON table_namespace.oid = table_class.relnamespace
+            JOIN pg_attribute AS tenant_column
+              ON tenant_column.attrelid = table_class.oid
+             AND tenant_column.attname = 'tenant_id'
+             AND NOT tenant_column.attisdropped
             WHERE table_namespace.nspname = current_schema()
-              AND table_class.relname = ANY (
-                  ARRAY['questions', 'question_revisions', 'idempotency_records', 'audit_events'])
-              AND table_class.relrowsecurity
-              AND table_class.relforcerowsecurity;
+              AND table_class.relkind IN ('r', 'p');
             """,
             connection))
         {
-            var protectedTableCount = (long)(await catalog.ExecuteScalarAsync() ?? 0L);
-            SpecAssert.Equal(4L, protectedTableCount, "All four tenant business tables must enable and force RLS.");
+            await using var reader = await catalog.ExecuteReaderAsync();
+            SpecAssert.True(await reader.ReadAsync(), "The tenant-table catalog query must return one row.");
+            var tenantTableCount = reader.GetInt64(0);
+            var protectedTableCount = reader.GetInt64(1);
+            SpecAssert.True(tenantTableCount >= 4L, "The current schema must expose the known tenant business tables.");
+            SpecAssert.Equal(
+                tenantTableCount,
+                protectedTableCount,
+                "Every current or future table with a tenant_id column must enable and force RLS.");
         }
 
         await using (var roleBoundary = new NpgsqlCommand(
@@ -72,9 +83,12 @@ var tests = new List<SpecTest>
                    FROM pg_class AS table_class
                    JOIN pg_namespace AS table_namespace
                      ON table_namespace.oid = table_class.relnamespace
+                   JOIN pg_attribute AS tenant_column
+                     ON tenant_column.attrelid = table_class.oid
+                    AND tenant_column.attname = 'tenant_id'
+                    AND NOT tenant_column.attisdropped
                    WHERE table_namespace.nspname = current_schema()
-                     AND table_class.relname = ANY (
-                       ARRAY['questions', 'question_revisions', 'idempotency_records', 'audit_events'])
+                     AND table_class.relkind IN ('r', 'p')
                      AND table_class.relowner = role.oid)
             FROM pg_roles AS role
             WHERE role.rolname = current_user;
@@ -118,14 +132,17 @@ var tests = new List<SpecTest>
         await using (var migrationOwnership = new NpgsqlCommand(
             """
             SELECT current_user <> @application_role
-               AND count(*) = 4
+               AND count(*) >= 4
                AND bool_and(pg_get_userbyid(table_class.relowner) = current_user)
             FROM pg_class AS table_class
             JOIN pg_namespace AS table_namespace
               ON table_namespace.oid = table_class.relnamespace
+            JOIN pg_attribute AS tenant_column
+              ON tenant_column.attrelid = table_class.oid
+             AND tenant_column.attname = 'tenant_id'
+             AND NOT tenant_column.attisdropped
             WHERE table_namespace.nspname = current_schema()
-              AND table_class.relname = ANY (
-                  ARRAY['questions', 'question_revisions', 'idempotency_records', 'audit_events']);
+              AND table_class.relkind IN ('r', 'p');
             """,
             migrationConnection))
         {

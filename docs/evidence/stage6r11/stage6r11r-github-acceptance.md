@@ -1,7 +1,7 @@
 # Stage 6R-11R GitHub acceptance evidence
 
 Captured at: 2026-08-28T02:22:00Z  
-Acceptance state: **IMPLEMENTATION GREEN — EXTERNAL REVIEW PENDING**
+Acceptance state: **ACCEPTED — STAGE 6R-11R PASS_WITH_FINDINGS**
 
 ## Source identity
 
@@ -48,10 +48,61 @@ The Stage 6R-11 workflow verified that the implementation HEAD is an ancestor of
 
 | Test ID | State | Reason / owner / due |
 |---|---|---|
-| `TC-PERF-MVS01-002-PG` | not-run | Production-equivalent load environment is not available / Performance Owner / before production readiness |
+| `TC-PERF-MVS01-002-PG` | not-run | Production-like 100,000-row execution has not run / Performance Owner / before pilot Gate G3 or before the public dataset reaches 100,000 rows, whichever comes first |
 | `TC-ACC-MVS01-087-OIDC` | not-run | Cross-audience Town client does not exist before VT-1 / System Architect / VT-1 start |
 
 These are governance declarations, not hidden passes inside the 90/90 total.
+The authoritative values are machine-enforced by `spec/deferred-tests.json`.
+
+## Taxonomy overlay Runs
+
+The following successful Runs evaluate taxonomy commit
+`80090e2eb56c4ddf438867572f8f6e8c389813ba` and close the overlay-ledger gap
+identified as RVR-N18.
+
+| Purpose | Run / attempt | Job | Result | Artifact |
+|---|---|---|---|---|
+| Stage 6R-10 historical evidence writer | `33139913725 / 1` | `98748216295` | 85/85 success | `9673573611`, `sha256:02922ab03a11eec9dab41141fff03dc7b996f53542b9762a3a0d7330f61ee155` |
+| Repository navigation, taxonomy and links | `33139913729 / 1` | `98748216209` | success | none |
+| Stage 6R-11 Town readiness | `33139913757 / 1` | `98748216596` | 90/90 success | `9673576028`, `sha256:16c7a9e3f6b52674eaec601a5ac70f41a173c7af59ab01743ff85f6dcccc3ea8` |
+
+GitHub reported all three jobs completed successfully and both artifacts identified
+the exact overlay head. Artifact expiry does not invalidate the recorded Run, Job,
+commit and digest identity.
+
+## Final Closure Runs
+
+The final response commit is
+`497d786fe687069c004b89b86b2b9345faeb9726`, tree
+`ba3711b6597013df8b268dc764098e7ed68681e6`. PR #6 evaluated merge ref
+`51e02a0488fbfdfaef3e26c05cc421e999e6d41d`, whose parents are the PR #5 base
+`80090e2eb56c4ddf438867572f8f6e8c389813ba` and the response head.
+
+| Purpose | Run / attempt | Job | Result | Artifact |
+|---|---|---|---|---|
+| Repository navigation, taxonomy and links | `33152117524 / 1` | `98786286113` | success | none |
+| Stage 6R-10 cumulative and DR | `33152117623 / 1` | `98786286856` | 90/90 success | `9678180236`, `sha256:44a0d252b572123c68afc43d4f7cad85083d0951815fa9638066f483d80a6261` |
+| Stage 6R-11 Town readiness | `33152117552 / 1` | `98786286664` | 90/90 success | `9678188675`, `sha256:3a04014251c64cf3ee5c69660c21697cdce45fd8848a08bfa95b44d477fd0b1e` |
+
+Direct artifact inspection confirmed both native records contain seven suites,
+`expectedTotal = passedTotal = executedTotal = 90`, `failedTotal = 0`, complete
+suite registration, matching totals, unique Test IDs, clean builds and non-root
+execution. The Stage 6R-11 record additionally contains the tested tree, both
+merge-ref parents and `authoritativeHeadIncluded = true`.
+
+## Claude response re-verification
+
+Claude independently inspected the git objects for response commit
+`497d786fe687069c004b89b86b2b9345faeb9726`, confirmed its tree and parent, the
+PR #6 merge-ref parents, ancestry and tree equality, and executed both Stage
+6R-10 and Stage 6R-11 contract checkers successfully. Review document
+[`QF-RVR-MVS01-015`](../../reviews/stage6r11r/claude-reverification.md) marks
+RVR-N17 through RVR-N22 `VERIFIED`, raises no new Finding, and leaves the
+Organizer's existing Closure decision unchanged.
+
+Claude did not independently access the GitHub Actions API or the specific Run
+artifacts in that session. The Run, Job, artifact and digest identities above
+remain the separate Codex GitHub API and direct-artifact verification record.
 
 ## Superseded run
 
@@ -59,4 +110,7 @@ Run `33135291006` on implementation commit `756d7449769e5e27b891a28ba34d2212ed9b
 
 ## Limits of this evidence
 
-This record proves the implementation and registered regressions were green for the typed source identity above. It does not constitute Claude verification, repository-owner acceptance, merge approval, production deployment, or Stage 6R-12 authorization.
+This record proves the implementation and registered regressions were green for
+the typed identities above. Claude review and repository-owner acceptance are
+separately recorded in the Stage 6R-11R review packet. It does not constitute merge
+approval, production deployment or Stage 6R-12 authorization.

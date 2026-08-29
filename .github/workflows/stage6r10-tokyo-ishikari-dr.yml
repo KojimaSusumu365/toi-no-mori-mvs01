@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   tokyo-ishikari-dr-regression:
-    name: Native Tokyo-Ishikari DR evidence regression 85/85 gate
+    name: Native cumulative and Tokyo-Ishikari DR regression 90/90 gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
