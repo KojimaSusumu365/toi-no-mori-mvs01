@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KojimaSusumu365/toi-no-mori-mvs01/docs/reviews/schema/review-manifest.schema.json",
+  "title": "Question Forest external review manifest",
+  "type": "object",
+  "required": [
+    "stage",
+    "status",
+    "repository",
+    "base_branch",
+    "review_target",
+    "reviewer",
+    "findings",
+    "final_acceptance"
+  ],
+  "properties": {
+    "stage": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "IN_REVIEW",
+        "RESPONSE_PENDING",
+        "ACCEPTANCE_PENDING",
+        "CLOSED"
+      ]
+    },
+    "repository": {
+      "type": "string"
+    },
+    "base_branch": {
+      "type": "string"
+    },
+    "review_target": {
+      "type": "object",
+      "required": [
+        "commit_sha",
+        "tree_sha",
+        "pull_request"
+      ],
+      "properties": {
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "pull_request": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "findings": {
+      "type": "array"
+    },
+    "final_acceptance": {
+      "enum": [
+        "NOT_READY",
+        "ACCEPTED",
+        "REJECTED",
+        "DEFERRED"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

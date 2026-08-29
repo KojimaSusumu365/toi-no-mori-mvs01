@@ -1,0 +1,42 @@
+{
+  "stage": "6R-11R",
+  "status": "DRAFT",
+  "repository": "KojimaSusumu365/toi-no-mori-mvs01",
+  "base_branch": "stage6r4c-postgresql-green-fix",
+  "review_target": {
+    "commit_sha": "4537085c25ed3178214b0693afac7e42ce1b64de",
+    "tree_sha": "4402dd93d1a50fe58e96d0fa0242e30cdcc6450e",
+    "pull_request": 1,
+    "pull_request_merge_ref_commit": "3a3ff47d7972ad5fee7e9c5062e2267539c52429"
+  },
+  "reviewer": "Claude",
+  "evidence": {
+    "workflow_name": "Stage 6R-11 Question Forest Minimum Town Readiness",
+    "run_id": 33002851599,
+    "run_attempt": 1,
+    "job_id": 98288871317,
+    "gate_name": "Question Forest Minimum Town readiness 90/90 gate",
+    "conclusion": "success",
+    "identity_relationship": "pull_request_merge_ref"
+  },
+  "findings": [
+    {
+      "id": "RVR-N10",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "RVR-N11",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "RVR-N12",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "RVR-N13",
+      "status": "REVIEW_REQUIRED"
+    }
+  ],
+  "final_acceptance": "NOT_READY",
+  "updated_at": "2026-08-28T00:00:00Z"
+}
