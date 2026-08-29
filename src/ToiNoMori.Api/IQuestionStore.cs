@@ -81,5 +81,7 @@ public interface IQuestionStore
 
     Task<IReadOnlyList<AuditRecord>> ReadAuditAsync(
         Guid tenantId,
+        Guid? targetId,
+        int limit,
         CancellationToken cancellationToken);
 }

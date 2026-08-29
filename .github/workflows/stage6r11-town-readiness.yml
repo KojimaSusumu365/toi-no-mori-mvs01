@@ -1,0 +1,94 @@
+name: Stage 6R-11 Question Forest Minimum Town Readiness
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage6r11-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  question-forest-town-readiness:
+    name: Question Forest Minimum Town readiness 90/90 gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CI: "true"
+      MVS01_TOOL_DOWNLOAD_DIR: ${{ github.workspace }}/.tool-downloads
+      MVS01_CI_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/stage6r11
+    steps:
+      - name: Checkout without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify CI contracts
+        run: |
+          ./scripts/test-stage6r4c-ci-contract.sh
+          ./scripts/test-stage6r5-ci-contract.sh
+          ./scripts/test-stage6r6-ci-contract.sh
+          ./scripts/test-stage6r7-ci-contract.sh
+          ./scripts/test-stage6r8-ci-contract.sh
+          ./scripts/test-stage6r9-ci-contract.sh
+          ./scripts/test-stage6r10-ci-contract.sh
+          bash ./scripts/test-stage6r11-ci-contract.sh
+
+      - name: Restore checksum-verified tool downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tool-downloads
+          key: stage6r11-tool-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/install-local-toolchain.sh') }}
+
+      - name: Restore locked NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .nuget-packages
+          key: stage6r11-nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Install pinned local toolchain
+        run: ./scripts/install-local-toolchain.sh
+
+      - name: Assert non-root runner and toolchain
+        run: |
+          test "$(id -u)" -ne 0
+          ./scripts/verify-toolchain.sh
+
+      - name: Run mandatory Question Forest Town-readiness gate
+        id: full_gate
+        run: |
+          set +e
+          bash ./scripts/ci/run-stage6r11-town-readiness-ci.sh
+          gate_exit_code=$?
+          set -e
+          echo "exit_code=$gate_exit_code" >> "$GITHUB_OUTPUT"
+
+      - name: Add evidence to job summary
+        if: always()
+        run: |
+          if [[ -f artifacts/stage6r11/stage6r11-full-regression-summary.md ]]; then
+            cat artifacts/stage6r11/stage6r11-full-regression-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Stage 6R-11 evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload immutable CI evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stage6r11-town-readiness-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/stage6r11
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce Question Forest Town-readiness acceptance
+        if: always()
+        env:
+          FULL_GATE_EXIT_CODE: ${{ steps.full_gate.outputs.exit_code }}
+        run: test "$FULL_GATE_EXIT_CODE" = "0"

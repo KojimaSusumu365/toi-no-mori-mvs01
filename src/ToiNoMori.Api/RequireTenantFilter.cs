@@ -14,6 +14,7 @@ public sealed class RequireTenantFilter(TenantResolver resolver) : IEndpointFilt
         }
         catch (TenantResolutionException exception)
         {
+            SecurityAuditContext.MarkReason(context.HttpContext, exception.Code);
             return Results.Problem(
                 statusCode: StatusCodes.Status403Forbidden,
                 title: "Tenant context could not be established.",

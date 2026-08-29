@@ -25,7 +25,7 @@ class SuiteContract:
 
 
 SUITES = (
-    SuiteContract("api", "# ToiNoMori.Api specification tests", 36),
+    SuiteContract("api", "# ToiNoMori.Api specification tests", 37),
     SuiteContract("postgresql", "# ToiNoMori PostgreSQL integration tests", 10),
 )
 
@@ -84,7 +84,7 @@ def acceptance_status(
     checks = {
         "nonRootRunner": uid != 0,
         "nativeExecution": execution_mode == "native",
-        "api36Of36": suites["api"]["status"] == "passed",
+        "api37Of37": suites["api"]["status"] == "passed",
         "postgresql10Of10": suites["postgresql"]["status"] == "passed",
         "gateExitCodeZero": gate_exit_code == 0,
     }

@@ -7,22 +7,41 @@ cd "$SCRIPT_DIR/.."
 
 "$SCRIPT_DIR/build.sh"
 
-dotnet run \
+SUITE_FAILURE=0
+
+if ! dotnet run \
   --project tests/ToiNoMori.Domain.Tests/ToiNoMori.Domain.Tests.csproj \
   --configuration Release \
-  --no-build
+  --no-build; then
+  SUITE_FAILURE=1
+fi
 
-dotnet run \
+if ! dotnet run \
   --project tests/ToiNoMori.Api.Tests/ToiNoMori.Api.Tests.csproj \
   --configuration Release \
-  --no-build
+  --no-build; then
+  SUITE_FAILURE=1
+fi
 
-dotnet run \
+if ! dotnet run \
   --project tests/ToiNoMori.Mobile.Tests/ToiNoMori.Mobile.Tests.csproj \
   --configuration Release \
-  --no-build
+  --no-build; then
+  SUITE_FAILURE=1
+fi
 
-dotnet run \
+if ! dotnet run \
   --project tests/ToiNoMori.OidcE2e.Tests/ToiNoMori.OidcE2e.Tests.csproj \
   --configuration Release \
-  --no-build
+  --no-build; then
+  SUITE_FAILURE=1
+fi
+
+if ! dotnet run \
+  --project tests/ToiNoMori.TownReadiness.Tests/ToiNoMori.TownReadiness.Tests.csproj \
+  --configuration Release \
+  --no-build; then
+  SUITE_FAILURE=1
+fi
+
+exit "$SUITE_FAILURE"

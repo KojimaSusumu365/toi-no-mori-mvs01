@@ -50,15 +50,27 @@ public static class ApiEndpointMappings
             .RequireAuthorization("Reviewer")
             .AddEndpointFilter<RequireCsrfFilter>();
 
-        app.MapGet("/api/admin/audit", async (
+        app.MapGet("/api/ops/audit", (
+            int? limit,
             HttpContext httpContext,
             IQuestionStore store,
             CancellationToken cancellationToken) =>
-            await ExecuteAsync(async () => Results.Ok(await store.ReadAuditAsync(
-                TenantResolver.Current(httpContext),
-                cancellationToken))))
-            .RequireAuthorization("Reviewer")
+            ReadAudit(null, limit, httpContext, store, cancellationToken))
+            .RequireAuthorization("Auditor")
             .AddEndpointFilter<RequireTenantFilter>();
+
+        app.MapGet("/api/ops/audit/questions/{id:guid}", (
+            Guid id,
+            int? limit,
+            HttpContext httpContext,
+            IQuestionStore store,
+            CancellationToken cancellationToken) =>
+            ReadAudit(id, limit, httpContext, store, cancellationToken))
+            .RequireAuthorization("Auditor")
+            .AddEndpointFilter<RequireTenantFilter>();
+
+        app.MapGet("/api/platform/security-events", ReadPlatformSecurityEvents)
+            .RequireAuthorization("PlatformAuditor");
 
         var publicApi = app.MapGroup("/api/public/questions")
             .RequireRateLimiting("public");
@@ -88,6 +100,85 @@ public static class ApiEndpointMappings
         }));
     }
 
+    private static Task<IResult> ReadAudit(
+        Guid? targetId,
+        int? limit,
+        HttpContext httpContext,
+        IQuestionStore store,
+        CancellationToken cancellationToken)
+    {
+        var boundedLimit = limit ?? 50;
+        if (boundedLimit is < 1 or > 200)
+        {
+            return Task.FromResult<IResult>(Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["limit"] = ["limit must be between 1 and 200."]
+            }));
+        }
+
+        return ExecuteAsync(async () => Results.Ok(
+            (await store.ReadAuditAsync(
+                TenantResolver.Current(httpContext),
+                targetId,
+                boundedLimit,
+                cancellationToken))
+            .Select(AuditRecordResponse.From)
+            .ToArray()));
+    }
+
+    private static Task<IResult> ReadPlatformSecurityEvents(
+        string? from,
+        string? to,
+        int? limit,
+        IPlatformSecurityEventReader reader,
+        CancellationToken cancellationToken)
+    {
+        var boundedLimit = limit ?? 50;
+        if (!DateTimeOffset.TryParseExact(
+                from,
+                "O",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var fromInclusive)
+            || !DateTimeOffset.TryParseExact(
+                to,
+                "O",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var toExclusive)
+            || fromInclusive >= toExclusive
+            || toExclusive - fromInclusive > TimeSpan.FromDays(31)
+            || boundedLimit is < 1 or > 200)
+        {
+            return Task.FromResult<IResult>(Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["period"] = ["from/to must be round-trip UTC timestamps spanning at most 31 days."],
+                ["limit"] = ["limit must be between 1 and 200."]
+            }));
+        }
+
+        return ReadPlatformSecurityEventsAsync(
+            reader,
+            fromInclusive.ToUniversalTime(),
+            toExclusive.ToUniversalTime(),
+            boundedLimit,
+            cancellationToken);
+    }
+
+    private static Task<IResult> ReadPlatformSecurityEventsAsync(
+        IPlatformSecurityEventReader reader,
+        DateTimeOffset fromInclusive,
+        DateTimeOffset toExclusive,
+        int limit,
+        CancellationToken cancellationToken) => ExecuteAsync(async () => Results.Ok(
+        (await reader.ReadAsync(
+            fromInclusive,
+            toExclusive,
+            limit,
+            cancellationToken))
+        .Select(PlatformSecurityEventResponse.From)
+        .ToArray()));
+
     private static Task<IResult> FindAdministrativeQuestion(
         Guid id,
         HttpContext httpContext,
@@ -106,7 +197,7 @@ public static class ApiEndpointMappings
         }
 
         httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-        return Results.Ok(QuestionResponse.From(result));
+        return AdministrativeQuestionResult(httpContext, result);
     });
 
     private static Task<IResult> SearchAdministrativeQuestions(
@@ -133,7 +224,9 @@ public static class ApiEndpointMappings
                 parsedStatus,
                 limit ?? 50,
                 cancellationToken);
-            return Results.Ok(results.Select(QuestionResponse.From).ToArray());
+            return httpContext.User.IsInRole("Reviewer")
+                ? Results.Ok(results.Select(ReviewerQuestionResponse.From).ToArray())
+                : Results.Ok(results.Select(EditorQuestionResponse.From).ToArray());
         });
     }
 
@@ -154,10 +247,12 @@ public static class ApiEndpointMappings
                 TenantResolver.Current(httpContext),
                 content!,
                 Subject(httpContext.User),
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-            return Results.Created($"/api/admin/questions/{result.Id}", QuestionResponse.From(result));
+            return Results.Created(
+                $"/api/admin/questions/{result.Id}",
+                AdministrativeQuestionResponse(httpContext, result));
         });
     }
 
@@ -189,10 +284,10 @@ public static class ApiEndpointMappings
                 content!,
                 version,
                 Subject(httpContext.User),
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-            return Results.Ok(QuestionResponse.From(result));
+            return AdministrativeQuestionResult(httpContext, result);
         });
     }
 
@@ -200,13 +295,17 @@ public static class ApiEndpointMappings
         Guid id,
         HttpContext httpContext,
         IQuestionStore store,
-        CancellationToken cancellationToken) => ExecuteAsync(async () => Results.Ok(QuestionResponse.From(
-            await store.SubmitAsync(
+        CancellationToken cancellationToken) => ExecuteAsync(async () =>
+        {
+            var result = await store.SubmitAsync(
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
-                httpContext.TraceIdentifier,
-                cancellationToken))));
+                CorrelationContext.CorrelationId(httpContext),
+                cancellationToken);
+            httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
+            return AdministrativeQuestionResult(httpContext, result);
+        });
 
     private static Task<IResult> ReturnQuestion(
         Guid id,
@@ -223,14 +322,18 @@ public static class ApiEndpointMappings
             }));
         }
 
-        return ExecuteAsync(async () => Results.Ok(QuestionResponse.From(
-            await store.ReturnForChangesAsync(
+        return ExecuteAsync(async () =>
+        {
+            var result = await store.ReturnForChangesAsync(
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
                 reason!,
-                httpContext.TraceIdentifier,
-                cancellationToken))));
+                CorrelationContext.CorrelationId(httpContext),
+                cancellationToken);
+            httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
+            return AdministrativeQuestionResult(httpContext, result);
+        });
     }
 
     private static Task<IResult> ApproveQuestion(
@@ -273,10 +376,10 @@ public static class ApiEndpointMappings
                 Subject(httpContext.User),
                 expectedVersion,
                 idempotencyKey,
-                httpContext.TraceIdentifier,
+                CorrelationContext.CorrelationId(httpContext),
                 cancellationToken);
             httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
-            return Results.Ok(QuestionResponse.From(result));
+            return AdministrativeQuestionResult(httpContext, result);
         });
     }
 
@@ -295,15 +398,27 @@ public static class ApiEndpointMappings
             }));
         }
 
-        return ExecuteAsync(async () => Results.Ok(QuestionResponse.From(
-            await store.WithdrawAsync(
+        return ExecuteAsync(async () =>
+        {
+            var result = await store.WithdrawAsync(
                 TenantResolver.Current(httpContext),
                 id,
                 Subject(httpContext.User),
                 reason!,
-                httpContext.TraceIdentifier,
-                cancellationToken))));
+                CorrelationContext.CorrelationId(httpContext),
+                cancellationToken);
+            httpContext.Response.Headers.ETag = QuoteVersion(result.Version);
+            return AdministrativeQuestionResult(httpContext, result);
+        });
     }
+
+    private static IResult AdministrativeQuestionResult(HttpContext httpContext, QuestionSnapshot value) =>
+        Results.Ok(AdministrativeQuestionResponse(httpContext, value));
+
+    private static object AdministrativeQuestionResponse(HttpContext httpContext, QuestionSnapshot value) =>
+        httpContext.User.IsInRole("Reviewer")
+            ? ReviewerQuestionResponse.From(value)
+            : EditorQuestionResponse.From(value);
 
     private static async Task<IResult> ExecuteAsync(Func<Task<IResult>> action)
     {

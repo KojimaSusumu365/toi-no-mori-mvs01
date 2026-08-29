@@ -247,6 +247,20 @@ public sealed class InMemoryQuestionStore(TimeProvider timeProvider) : IQuestion
         }
     }
 
+    public IReadOnlyList<AuditRecord> ReadAudit(Guid tenantId, Guid? targetId, int limit)
+    {
+        lock (_gate)
+        {
+            return _audit
+                .Where(record => record.TenantId == tenantId)
+                .Where(record => targetId is null || record.TargetId == targetId)
+                .OrderByDescending(record => record.OccurredAt)
+                .ThenByDescending(record => record.Id)
+                .Take(Math.Clamp(limit, 1, 200))
+                .ToArray();
+        }
+    }
+
     private Question GetRequired(Guid tenantId, Guid id) =>
         _questions.TryGetValue(id, out var question) && question.TenantId == tenantId
         ? question
@@ -360,5 +374,7 @@ public sealed class InMemoryQuestionStore(TimeProvider timeProvider) : IQuestion
 
     Task<IReadOnlyList<AuditRecord>> IQuestionStore.ReadAuditAsync(
         Guid tenantId,
-        CancellationToken cancellationToken) => Task.FromResult(ReadAudit(tenantId));
+        Guid? targetId,
+        int limit,
+        CancellationToken cancellationToken) => Task.FromResult(ReadAudit(tenantId, targetId, limit));
 }

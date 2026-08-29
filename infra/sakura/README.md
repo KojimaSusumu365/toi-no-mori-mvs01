@@ -17,12 +17,13 @@
 
 1. OIDC providerへ機密Web clientを登録し、Authorization Code + PKCE、MFAを必須にする。
 2. redirect URIを外部公開originの`/signin-oidc`、post-logout URIを`/signout-callback-oidc`へ完全一致で登録する。
-3. `sub`、`amr=mfa`、`role=Editor|Reviewer`を発行・mappingする。
+3. `sub`、`amr=mfa`、`role=Editor|Reviewer|Auditor|PlatformAuditor`を発行・mappingする。tenant AuditorとPlatformAuditorを同じgroupへ割り当てない。
 4. API 2台から同じData Protection key ringを読める非公開共有領域を用意する。
 5. key ring保護用PFXとpasswordを秘密管理基盤から注入し、API実行主体以外には読ませない。
 6. `application-config.example.env`の非秘密値だけをdeployment設定へ移す。
-7. DB接続文字列はapplication用`ConnectionStrings__PostgreSql`とmigration用`ConnectionStrings__PostgreSqlMigrator`を別secretとして注入する。usernameを共用しない。
-8. Load BalancerでTLS終端する場合、既知proxyだけを信頼するforwarded headers設定を実装・検証してから公開する。
+7. DB接続文字列はapplication、migration、platform audit writer、platform audit readerの4種類を別secretとして注入する。usernameを共用しない。
+8. `Audit__PartitionHashKey`は32byte以上のrotation可能な秘密として注入し、DB、repository、ログへ値を残さない。
+9. Load BalancerでTLS終端する場合、既知proxyだけを信頼するforwarded headers設定を実装・検証してから公開する。
 
 ## Stage 6R-4 PostgreSQLロール境界
 
@@ -32,6 +33,13 @@
 - `schema_migrations`、DDL、`TRUNCATE`、`REFERENCES`、`TRIGGER`はapplicationロールへ与えない。
 - Production起動時にcatalog診断が一項目でも不一致なら起動を拒否する。診断を無効化する設定は設けない。
 - `compose.postgres.yml`と`infra/postgres/init-roles.sh`はローカル検証用であり、本番passwordを`.env`やrepositoryへ保存しない。
+
+## Stage 6R-6 Platform Security監査境界
+
+- `platform_security_events`はtenant業務表と分離し、tenant ID、subject、生IP、claim、本文、token、Cookieを保存しない。
+- platform audit writerはINSERTだけ、readerはSELECTだけ、application roleは全権限なしとする。
+- IdPの`PlatformAuditor`だけが期間必須APIを使用し、tenant `Auditor`には403を返す。
+- 429は不可逆partition hash・正規化action・UTC 1分窓で抑制し、監査書込み障害で元の429を変更しない。
 
 Stage 4は設定契約とローカルBFF/UIまでを実装している。実IdP、Load Balancer、共有key ring、secret注入はまだ構築していない。設計判断は`../../docs/adr-0004-mobile-bff-oidc.md`を正とする。
 

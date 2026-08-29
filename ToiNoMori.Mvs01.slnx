@@ -10,5 +10,6 @@
     <Project Path="tests/ToiNoMori.Mobile.Tests/ToiNoMori.Mobile.Tests.csproj" />
     <Project Path="tests/ToiNoMori.OidcE2e.Tests/ToiNoMori.OidcE2e.Tests.csproj" />
     <Project Path="tests/ToiNoMori.PostgreSql.Tests/ToiNoMori.PostgreSql.Tests.csproj" />
+    <Project Path="tests/ToiNoMori.TownReadiness.Tests/ToiNoMori.TownReadiness.Tests.csproj" />
   </Folder>
 </Solution>

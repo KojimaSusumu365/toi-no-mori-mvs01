@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Npgsql;
+using NpgsqlTypes;
 using ToiNoMori.Domain;
 
 namespace ToiNoMori.Api.Persistence;
@@ -8,9 +9,15 @@ public sealed class PostgreSqlQuestionStore(
     PostgreSqlApplicationDataSource applicationDataSource,
     PostgreSqlMigrator migrator,
     PostgreSqlRoleBoundaryValidator roleBoundaryValidator,
-    TimeProvider timeProvider) : IQuestionStore
+    TimeProvider timeProvider,
+    ILogger<PostgreSqlQuestionStore> logger) : IQuestionStore
 {
     private static readonly JsonSerializerOptions SnapshotJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly Action<ILogger, string, string, string, string, Exception?> DatabaseFailureLog =
+        LoggerMessage.Define<string, string, string, string>(
+            LogLevel.Error,
+            new EventId(6001, "PostgreSqlPersistenceFailure"),
+            "PostgreSQL persistence failure. Category={Category}; SqlState={SqlState}; Table={Table}; Constraint={Constraint}.");
     private readonly NpgsqlDataSource dataSource = applicationDataSource.Value;
 
     public Task InitializeAsync(CancellationToken cancellationToken) => TranslateAvailabilityAsync(async () =>
@@ -383,6 +390,8 @@ public sealed class PostgreSqlQuestionStore(
 
     public Task<IReadOnlyList<AuditRecord>> ReadAuditAsync(
         Guid tenantId,
+        Guid? targetId,
+        int limit,
         CancellationToken cancellationToken) =>
         TranslateAvailabilityAsync<IReadOnlyList<AuditRecord>>(async () =>
         {
@@ -394,11 +403,16 @@ public sealed class PostgreSqlQuestionStore(
                 SELECT id, tenant_id, actor_subject, target_id, action, result, correlation_id, occurred_at
                 FROM audit_events
                 WHERE tenant_id = @tenant_id
-                ORDER BY sequence_id;
+                  AND (@target_id IS NULL OR target_id = @target_id)
+                ORDER BY occurred_at DESC, sequence_id DESC
+                LIMIT @limit;
                 """,
                 connection,
                 transaction);
-            command.Parameters.AddWithValue("tenant_id", tenantId);
+            command.Parameters.Add("tenant_id", NpgsqlDbType.Uuid).Value = tenantId;
+            command.Parameters.Add("target_id", NpgsqlDbType.Uuid).Value =
+                targetId is { } value ? value : DBNull.Value;
+            command.Parameters.Add("limit", NpgsqlDbType.Integer).Value = Math.Clamp(limit, 1, 200);
             var results = new List<AuditRecord>();
             await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {
@@ -570,7 +584,10 @@ public sealed class PostgreSqlQuestionStore(
         command.Parameters.AddWithValue("published_at", (object?)snapshot.PublishedAt ?? DBNull.Value);
         command.Parameters.AddWithValue("review_reason", (object?)snapshot.ReviewReason ?? DBNull.Value);
         command.Parameters.AddWithValue("withdrawal_reason", (object?)snapshot.WithdrawalReason ?? DBNull.Value);
-        command.Parameters.AddWithValue("approved_version", (object?)snapshot.ApprovedVersion ?? DBNull.Value);
+        command.Parameters.AddWithValue(
+            "approved_version",
+            NpgsqlDbType.Integer,
+            (object?)snapshot.ApprovedVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("approved_by", (object?)snapshot.ApprovedBy ?? DBNull.Value);
     }
 
@@ -776,7 +793,7 @@ public sealed class PostgreSqlQuestionStore(
         .Replace("%", "\\%", StringComparison.Ordinal)
         .Replace("_", "\\_", StringComparison.Ordinal);
 
-    private static async Task<T> TranslateAvailabilityAsync<T>(Func<Task<T>> action)
+    private async Task<T> TranslateAvailabilityAsync<T>(Func<Task<T>> action)
     {
         try
         {
@@ -784,11 +801,12 @@ public sealed class PostgreSqlQuestionStore(
         }
         catch (Exception exception) when (IsAvailabilityFailure(exception))
         {
+            LogAvailabilityFailure(exception);
             throw new StoreUnavailableException(exception);
         }
     }
 
-    private static async Task TranslateAvailabilityAsync(Func<Task> action)
+    private async Task TranslateAvailabilityAsync(Func<Task> action)
     {
         try
         {
@@ -796,8 +814,21 @@ public sealed class PostgreSqlQuestionStore(
         }
         catch (Exception exception) when (IsAvailabilityFailure(exception))
         {
+            LogAvailabilityFailure(exception);
             throw new StoreUnavailableException(exception);
         }
+    }
+
+    private void LogAvailabilityFailure(Exception exception)
+    {
+        var postgresException = exception as PostgresException;
+        DatabaseFailureLog(
+            logger,
+            exception is TimeoutException ? "timeout" : "provider",
+            postgresException?.SqlState ?? "not-available",
+            postgresException?.TableName ?? "not-available",
+            postgresException?.ConstraintName ?? "not-available",
+            null);
     }
 
     private static bool IsAvailabilityFailure(Exception exception) =>

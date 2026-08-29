@@ -41,6 +41,8 @@ internal sealed class OidcE2eFixture : IAsyncDisposable
     public HttpClient Browser { get; }
     public Uri ApplicationBaseAddress { get; }
     public TestOidcProvider IdentityProvider => _identityProvider;
+    public InMemoryQuestionStore Store =>
+        _application.Services.GetRequiredService<InMemoryQuestionStore>();
 
     public IEnumerable<Cookie> Cookies => _browserHandler.CookieContainer.GetAllCookies().Cast<Cookie>();
 

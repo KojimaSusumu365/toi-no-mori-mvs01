@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -146,6 +147,9 @@ var tests = new List<SpecTest>
             "Persistence:Provider=PostgreSql",
             "ConnectionStrings:PostgreSql=Host=db.invalid;Database=app;Username=app;SSL Mode=VerifyFull",
             "ConnectionStrings:PostgreSqlMigrator=Host=db.invalid;Database=app;Username=migrator;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditWriter=Host=db.invalid;Database=app;Username=platform_writer;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditReader=Host=db.invalid;Database=app;Username=platform_reader;SSL Mode=VerifyFull",
+            "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
             "Authentication:Mode=Disabled"
         ]);
         var exception = SpecAssert.Throws<InvalidOperationException>(
@@ -164,6 +168,9 @@ var tests = new List<SpecTest>
             "Persistence:Provider=PostgreSql",
             "ConnectionStrings:PostgreSql=Host=db.invalid;Database=app;Username=app;SSL Mode=VerifyFull",
             "ConnectionStrings:PostgreSqlMigrator=Host=db.invalid;Database=app;Username=migrator;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditWriter=Host=db.invalid;Database=app;Username=platform_writer;SSL Mode=VerifyFull",
+            "ConnectionStrings:PostgreSqlPlatformAuditReader=Host=db.invalid;Database=app;Username=platform_reader;SSL Mode=VerifyFull",
+            "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
             "Authentication:Mode=Oidc",
             "Authentication:Oidc:Authority=https://identity.example",
             "Authentication:Oidc:ClientId=toi-no-mori-test",
@@ -617,14 +624,14 @@ var tests = new List<SpecTest>
         using var owner = fixture.AuthenticatedClient("list-owner", "Editor");
         using var other = fixture.AuthenticatedClient("list-other", "Editor");
         var mine = await CreateDraftAsync(owner, "my managed list");
-        _ = await CreateDraftAsync(other, "other managed list");
+        var theirs = await CreateDraftAsync(other, "other managed list");
 
         using var response = await owner.GetAsync("/api/admin/questions?limit=100");
         var questions = await ReadQuestionsAsync(response);
         SpecAssert.Equal(HttpStatusCode.OK, response.StatusCode, "An Editor may list their managed questions.");
         SpecAssert.True(questions.Any(question => question.Id == mine.Id), "The Editor list must contain their own draft.");
-        SpecAssert.True(
-            questions.All(question => question.OwnerSubject == "list-owner"),
+        SpecAssert.False(
+            questions.Any(question => question.Id == theirs.Id),
             "The Editor list must not disclose another owner's question.");
     }),
     new("TC-ACC-MVS01-050", "REQ-MVS01-UI-002", "Reviewer一覧でレビュー待ちを取得", async () =>
@@ -703,11 +710,94 @@ var tests = new List<SpecTest>
         var corrected = await ReadQuestionAsync(correctedResponse);
         SpecAssert.True(corrected.ReviewReason is null, "Saving a correction must clear the handled review reason.");
     }),
+    new("TC-ACC-MVS01-081-API", "ADR-0008-D4", "role別DTOで理由の可視性を分離", async () =>
+    {
+        using var editor = fixture.AuthenticatedClient("dto-editor", "Editor");
+        var created = await CreateDraftAsync(editor, "role dto");
+        using var submitted = await editor.PostAsync($"/api/admin/questions/{created.Id}/submit", null);
+        SpecAssert.Equal(HttpStatusCode.OK, submitted.StatusCode, "The role-DTO precondition must submit.");
+
+        using var reviewer = fixture.AuthenticatedClient("dto-reviewer", "Reviewer");
+        using var approved = await ApproveAsync(
+            reviewer,
+            created.Id,
+            $"dto-{created.Id}",
+            expectedVersion: created.Version + 1);
+        SpecAssert.Equal(HttpStatusCode.OK, approved.StatusCode, "The role-DTO precondition must publish.");
+
+        using (var anonymous = fixture.AnonymousClient())
+        using (var publicResponse = await anonymous.GetAsync($"/api/public/questions/{created.Id}"))
+        {
+            var publicJson = await publicResponse.Content.ReadFromJsonAsync<JsonElement>();
+            SpecAssert.Equal(HttpStatusCode.OK, publicResponse.StatusCode, "Published content must remain public.");
+            SpecAssert.False(publicJson.TryGetProperty("reviewReason", out _), "Public DTO must omit the review reason.");
+            SpecAssert.False(publicJson.TryGetProperty("withdrawalReason", out _), "Public DTO must omit the withdrawal reason.");
+            SpecAssert.False(publicJson.TryGetProperty("ownerSubject", out _), "Public DTO must omit the owner subject.");
+        }
+
+        const string withdrawalReason = "公開根拠の有効期限終了";
+        using var withdrawn = await reviewer.PostAsJsonAsync(
+            $"/api/admin/questions/{created.Id}/withdraw",
+            new ReviewReasonRequest(withdrawalReason));
+        SpecAssert.Equal(HttpStatusCode.OK, withdrawn.StatusCode, "Reviewer must withdraw the published question.");
+
+        using (var editorDetail = await editor.GetAsync($"/api/admin/questions/{created.Id}"))
+        {
+            var editorJson = await editorDetail.Content.ReadFromJsonAsync<JsonElement>();
+            SpecAssert.Equal(HttpStatusCode.OK, editorDetail.StatusCode, "The owner Editor may read the withdrawn question.");
+            SpecAssert.True(editorJson.TryGetProperty("reviewReason", out _), "Editor DTO must carry its allowlisted review-reason field.");
+            SpecAssert.False(editorJson.TryGetProperty("withdrawalReason", out _), "Editor DTO must not disclose the withdrawal reason.");
+            SpecAssert.False(editorJson.TryGetProperty("ownerSubject", out _), "Editor DTO must not expose the redundant owner subject.");
+        }
+
+        using (var reviewerDetail = await reviewer.GetAsync($"/api/admin/questions/{created.Id}"))
+        {
+            var reviewerJson = await reviewerDetail.Content.ReadFromJsonAsync<JsonElement>();
+            SpecAssert.Equal(HttpStatusCode.OK, reviewerDetail.StatusCode, "Reviewer may read the withdrawn question.");
+            SpecAssert.Equal("dto-editor", reviewerJson.GetProperty("ownerSubject").GetString(), "Reviewer DTO must identify the owner for self-approval checks.");
+            SpecAssert.Equal(withdrawalReason, reviewerJson.GetProperty("withdrawalReason").GetString(), "Reviewer DTO must expose the withdrawal reason.");
+        }
+    }),
     new("TC-ACC-MVS01-054", "REQ-MVS01-UI-002", "未定義の管理一覧状態を400で拒否", async () =>
     {
         using var reviewer = fixture.AuthenticatedClient("filter-reviewer", "Reviewer");
         using var response = await reviewer.GetAsync("/api/admin/questions?status=UNKNOWN");
         SpecAssert.Equal(HttpStatusCode.BadRequest, response.StatusCode, "An unknown status filter must be rejected.");
+    }),
+    new("TC-ACC-MVS01-072-API", "ADR-0009-D7", "tenant監査をAuditor専用の上限付きAPIで取得", async () =>
+    {
+        using var editor = fixture.AuthenticatedClient("audit-owner", "Editor");
+        var created = await CreateDraftAsync(editor, "auditor boundary");
+
+        using var reviewer = fixture.AuthenticatedClient("audit-reviewer", "Reviewer");
+        using var reviewerResponse = await reviewer.GetAsync("/api/ops/audit?limit=50");
+        SpecAssert.Equal(HttpStatusCode.Forbidden, reviewerResponse.StatusCode, "Reviewer membership alone must not read tenant audit records.");
+
+        using var auditor = fixture.AuthenticatedClient("tenant-auditor", "Auditor");
+        using var auditResponse = await auditor.GetAsync($"/api/ops/audit/questions/{created.Id}?limit=50");
+        SpecAssert.Equal(HttpStatusCode.OK, auditResponse.StatusCode, "Auditor must read bounded audit metadata for the current tenant.");
+        var audit = await auditResponse.Content.ReadFromJsonAsync<JsonElement>();
+        SpecAssert.True(
+            audit.ValueKind == JsonValueKind.Array
+            && audit.EnumerateArray().Any(record => record.GetProperty("targetId").GetGuid() == created.Id),
+            "The question audit route must return the requested target metadata.");
+
+        using var otherTenantAuditor = fixture.AuthenticatedClient(
+            "other-tenant-auditor",
+            "Auditor",
+            externalOrganizationId: "org-other");
+        using var otherTenantResponse = await otherTenantAuditor.GetAsync($"/api/ops/audit/questions/{created.Id}?limit=50");
+        var otherTenantAudit = await otherTenantResponse.Content.ReadFromJsonAsync<JsonElement>();
+        SpecAssert.Equal(HttpStatusCode.OK, otherTenantResponse.StatusCode, "A mapped Auditor may query only their own tenant boundary.");
+        SpecAssert.Equal(0, otherTenantAudit.GetArrayLength(), "Another tenant must not observe the target audit metadata.");
+
+        using var zeroLimit = await auditor.GetAsync("/api/ops/audit?limit=0");
+        using var excessiveLimit = await auditor.GetAsync("/api/ops/audit?limit=201");
+        SpecAssert.Equal(HttpStatusCode.BadRequest, zeroLimit.StatusCode, "Audit limit must be positive.");
+        SpecAssert.Equal(HttpStatusCode.BadRequest, excessiveLimit.StatusCode, "Audit limit must not exceed 200.");
+
+        using var retiredRoute = await auditor.GetAsync("/api/admin/audit");
+        SpecAssert.Equal(HttpStatusCode.NotFound, retiredRoute.StatusCode, "The unbounded legacy audit route must be removed.");
     }),
     new("TC-ACC-MVS01-059", "REQ-MVS01-SEC-006", "過大な審査理由をAPI境界で拒否", async () =>
     {
@@ -736,6 +826,103 @@ var tests = new List<SpecTest>
         }
 
         SpecAssert.True(rejected, "The fixed-window limiter must eventually return 429.");
+    }),
+    new("TC-ACC-MVS01-070-API", "ADR-0009-D5,ADR-0009-D6", "相関IDと要求IDを分離して安全に伝播", async () =>
+    {
+        using var client = fixture.AnonymousClient();
+        using var firstRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/public/questions/{Guid.NewGuid()}");
+        firstRequest.Headers.Add("X-Correlation-ID", "client-flow-123");
+        using var first = await client.SendAsync(firstRequest);
+        using var secondRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/public/questions/{Guid.NewGuid()}");
+        secondRequest.Headers.Add("X-Correlation-ID", "client-flow-123");
+        using var second = await client.SendAsync(secondRequest);
+
+        var firstCorrelation = Header(first, "X-Correlation-ID");
+        var firstRequestId = Header(first, "X-Request-ID");
+        var secondRequestId = Header(second, "X-Request-ID");
+        SpecAssert.Equal("client-flow-123", firstCorrelation, "A safe caller correlation ID must be preserved.");
+        SpecAssert.True(firstRequestId.Length is > 0 and <= 64, "Every response must expose one bounded request ID.");
+        SpecAssert.False(firstRequestId == firstCorrelation, "Request ID and correlation ID must remain different concepts.");
+        SpecAssert.False(firstRequestId == secondRequestId, "Every request must receive a fresh request ID.");
+    }),
+    new("TC-ACC-MVS01-071-API", "ADR-0009-D1,ADR-0010-D2", "拒否監査をPlatformAuditor専用経路へ集約し429を抑制", async () =>
+    {
+        await using var auditFixture = await ApiFixture.StartAsync(
+            configuration:
+            [
+                "PublicRateLimit:PermitLimit=1",
+                "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+            ]);
+        using var anonymous = auditFixture.AnonymousClient();
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            using var response = await anonymous.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
+        }
+
+        using var tenantAuditor = auditFixture.AuthenticatedClient("tenant-auditor-denied", "Auditor");
+        using var tenantResponse = await tenantAuditor.GetAsync(
+            $"/api/platform/security-events?from={Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(-5).ToString("O"))}&to={Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(1).ToString("O"))}&limit=50");
+        SpecAssert.Equal(HttpStatusCode.Forbidden, tenantResponse.StatusCode, "Tenant Auditor must not read platform security events.");
+
+        using var platformAuditor = auditFixture.AuthenticatedClient(
+            "platform-auditor",
+            "PlatformAuditor",
+            externalOrganizationId: null,
+            verifiedIssuer: null);
+        using var tenantAuditDenied = await platformAuditor.GetAsync("/api/ops/audit?limit=50");
+        SpecAssert.Equal(HttpStatusCode.Forbidden, tenantAuditDenied.StatusCode, "PlatformAuditor must not inherit tenant Auditor access.");
+        using var missingPeriod = await platformAuditor.GetAsync("/api/platform/security-events?limit=50");
+        SpecAssert.Equal(HttpStatusCode.BadRequest, missingPeriod.StatusCode, "Platform audit queries must require an explicit period.");
+
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(-5).ToString("O"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(1).ToString("O"));
+        var wire = string.Empty;
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+            using var platformResponse = await platformAuditor.GetAsync(
+                $"/api/platform/security-events?from={from}&to={to}&limit=50");
+            SpecAssert.Equal(HttpStatusCode.OK, platformResponse.StatusCode, "PlatformAuditor must read only the bounded platform audit projection.");
+            wire = await platformResponse.Content.ReadAsStringAsync();
+            if (wire.Contains("access.rate_limited", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            await Task.Delay(20);
+        }
+        SpecAssert.True(wire.Contains("access.rate_limited", StringComparison.Ordinal), "The first 429 in the minute window must be recorded.");
+        SpecAssert.False(wire.Contains("partitionHash", StringComparison.OrdinalIgnoreCase), "The partition hash must not be exposed by the API.");
+
+        var metrics = auditFixture.AuditMetrics.Snapshot();
+        SpecAssert.True(metrics.SecurityAuditSuppressedTotal >= 1, "Repeated 429 events must increment security_audit_suppressed_total.");
+    }),
+    new("TC-ACC-MVS01-080-API", "ADR-0009-D8", "監査sink障害と遅延でも元の拒否応答を維持", async () =>
+    {
+        await using var failureFixture = await ApiFixture.StartAsync(
+            configuration:
+            [
+                "PublicRateLimit:PermitLimit=1",
+                "Audit:WriteTimeoutMilliseconds=50",
+                "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+            ],
+            configureServices: services => services.AddSingleton<IAuditSink, DelayedFailingAuditSink>());
+        using var client = failureFixture.AnonymousClient();
+        using var permitted = await client.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
+
+        var stopwatch = Stopwatch.StartNew();
+        using var rejected = await client.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
+        stopwatch.Stop();
+        SpecAssert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode, "Audit failure must not replace the original 429 response.");
+        SpecAssert.True(stopwatch.Elapsed < TimeSpan.FromMilliseconds(500), "Audit I/O must not delay the rejection response path.");
+
+        var observedFailure = await WaitUntilAsync(
+            () => failureFixture.AuditMetrics.Snapshot().AuditWriteFailuresTotal >= 1,
+            TimeSpan.FromSeconds(2));
+        SpecAssert.True(observedFailure, "Audit failures must increment audit_write_failures_total for fallback monitoring.");
     })
 };
 
@@ -751,6 +938,27 @@ static WebApplicationOptions ProductionOptions(string[] args) => new()
 
 static QuestionContentRequest ValidContent(string suffix) =>
     new($"question {suffix}", $"body {suffix}", ["cloud", "library"]);
+
+static string Header(HttpResponseMessage response, string name) =>
+    response.Headers.TryGetValues(name, out var values)
+        ? values.Single()
+        : throw new TestFailureException($"Response header was missing: {name}");
+
+static async Task<bool> WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
+{
+    var started = Stopwatch.StartNew();
+    while (started.Elapsed < timeout)
+    {
+        if (predicate())
+        {
+            return true;
+        }
+
+        await Task.Delay(20);
+    }
+
+    return predicate();
+}
 
 static async Task<QuestionResponse> CreateDraftAsync(HttpClient client, string suffix)
 {
@@ -839,6 +1047,20 @@ static async Task<QuestionResponse> PublishAsync(
     return await ReadQuestionAsync(approved);
 }
 
+file sealed record QuestionResponse(
+    Guid Id,
+    string Title,
+    string Body,
+    IReadOnlyList<string> Tags,
+    QuestionStatus Status,
+    int Version,
+    string? OwnerSubject,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? PublishedAt,
+    string? ReviewReason,
+    string? WithdrawalReason);
+
 file sealed class TemporaryDataProtectionMaterial : IDisposable
 {
     private TemporaryDataProtectionMaterial(
@@ -894,5 +1116,16 @@ file sealed class TemporaryDataProtectionMaterial : IDisposable
         {
             Directory.Delete(RootPath, recursive: true);
         }
+    }
+}
+
+file sealed class DelayedFailingAuditSink : IAuditSink
+{
+    public async Task<AuditOutcomeRecorded> WriteAsync(
+        AccessDenialAuditEnvelope envelope,
+        CancellationToken cancellationToken)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        throw new InvalidOperationException("test-only audit sink failure");
     }
 }

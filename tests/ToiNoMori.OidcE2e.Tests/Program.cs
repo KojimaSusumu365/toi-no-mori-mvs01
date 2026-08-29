@@ -6,6 +6,7 @@ using ToiNoMori.Testing;
 
 string[] oidcTags = ["oidc"];
 string[] stage6Tags = ["oidc", "stage6"];
+string[] stage6r9Tags = ["oidc", "tenant"];
 var tests = new List<SpecTest>
 {
     new("TC-ACC-MVS01-043", "REQ-MVS01-IAM-004", "署名付きOIDC code+PKCEを実HTTPSで往復", async () =>
@@ -153,6 +154,78 @@ var tests = new List<SpecTest>
         using var published = await anonymousBrowser.GetAsync($"/api/public/questions/{questionId}");
         SpecAssert.Equal(HttpStatusCode.OK, published.StatusCode, "The approved question must be visible without a session.");
         SpecAssert.Equal(2, fixture.IdentityProvider.AuthorizationRequestCount, "Two distinct OIDC browser logins must be used.");
+    }),
+    new("TC-ACC-MVS01-077-OIDC", "ADR-0007-D2,ADR-0008-D1", "実OIDC tenant mappingとdual-role自己承認拒否", async () =>
+    {
+        await using var fixture = await OidcE2eFixture.StartAsync(TestIdentityProfile.EditorReviewerWithMfa);
+        using var ownerLogin = await fixture.LoginAsync();
+        SpecAssert.Equal(HttpStatusCode.OK, ownerLogin.StatusCode, "The mapped dual-role OIDC identity must sign in.");
+        var ownerCsrf = await fixture.ReadCsrfTokenAsync();
+
+        using var createRequest = new HttpRequestMessage(HttpMethod.Post, "/api/admin/questions")
+        {
+            Content = JsonContent.Create(new
+            {
+                title = "OIDC tenant mapping boundary",
+                body = "A mapped dual-role subject must still fail self approval.",
+                tags = stage6r9Tags
+            })
+        };
+        createRequest.Headers.Add("X-CSRF-Token", ownerCsrf);
+        using var createdResponse = await fixture.Browser.SendAsync(createRequest);
+        SpecAssert.Equal(HttpStatusCode.Created, createdResponse.StatusCode, "The mapped internal tenant must permit creation.");
+        var created = await createdResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var questionId = created.GetProperty("id").GetGuid();
+        var stored = fixture.Store.FindAdministrative(
+            ToiNoMori.Domain.TenantIds.Mvs01,
+            questionId,
+            "dual-role-owner-e2e",
+            isReviewer: false);
+        SpecAssert.NotNull(stored, "The signed external organization must map to the configured internal tenant UUID.");
+
+        using var submitRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/admin/questions/{questionId}/submit");
+        submitRequest.Headers.Add("X-CSRF-Token", ownerCsrf);
+        using var submitted = await fixture.Browser.SendAsync(submitRequest);
+        SpecAssert.Equal(HttpStatusCode.OK, submitted.StatusCode, "The mapped owner must submit before the self-approval check.");
+
+        using var ownerDetail = await fixture.Browser.GetAsync($"/api/admin/questions/{questionId}");
+        var reviewedEtag = ownerDetail.Headers.ETag?.Tag;
+        SpecAssert.Equal(HttpStatusCode.OK, ownerDetail.StatusCode, "The dual-role owner may review the mapped detail.");
+        SpecAssert.NotNull(reviewedEtag, "The self-approval request must use the reviewed detail If-Match value.");
+
+        using var selfApproval = new HttpRequestMessage(HttpMethod.Post, $"/api/admin/questions/{questionId}/approve")
+        {
+            Content = JsonContent.Create(new { })
+        };
+        selfApproval.Headers.Add("X-CSRF-Token", ownerCsrf);
+        selfApproval.Headers.Add("Idempotency-Key", $"oidc-self-{questionId}");
+        selfApproval.Headers.TryAddWithoutValidation("If-Match", reviewedEtag);
+        using var selfApprovalResponse = await fixture.Browser.SendAsync(selfApproval);
+        SpecAssert.Equal(HttpStatusCode.Forbidden, selfApprovalResponse.StatusCode, "Reviewer role must not bypass the self approval boundary.");
+
+        using var reviewerBrowser = fixture.CreateBrowser();
+        using var reviewerLogin = await fixture.LoginAsync(reviewerBrowser, TestIdentityProfile.ReviewerWithMfa);
+        SpecAssert.Equal(HttpStatusCode.OK, reviewerLogin.StatusCode, "A distinct mapped Reviewer must sign in.");
+        var reviewerCsrf = await OidcE2eFixture.ReadCsrfTokenAsync(reviewerBrowser);
+        using var reviewerDetail = await reviewerBrowser.GetAsync($"/api/admin/questions/{questionId}");
+        SpecAssert.Equal(HttpStatusCode.OK, reviewerDetail.StatusCode, "The same tenant mapping must make the question visible to a distinct Reviewer.");
+        using var approval = new HttpRequestMessage(HttpMethod.Post, $"/api/admin/questions/{questionId}/approve")
+        {
+            Content = JsonContent.Create(new { })
+        };
+        approval.Headers.Add("X-CSRF-Token", reviewerCsrf);
+        approval.Headers.Add("Idempotency-Key", $"oidc-distinct-{questionId}");
+        approval.Headers.TryAddWithoutValidation("If-Match", reviewerDetail.Headers.ETag?.Tag);
+        using var approved = await reviewerBrowser.SendAsync(approval);
+        SpecAssert.Equal(HttpStatusCode.OK, approved.StatusCode, "A distinct mapped Reviewer may approve the question.");
+
+        using var unmappedBrowser = fixture.CreateBrowser();
+        using var unmappedLogin = await fixture.LoginAsync(
+            unmappedBrowser,
+            TestIdentityProfile.UnmappedOrganizationEditorWithMfa);
+        SpecAssert.Equal("failed", GetQueryValue(unmappedLogin.RequestMessage?.RequestUri, "authentication"), "An unmapped signed organization must fail during OIDC tenant mapping.");
+        using var unmappedSession = await unmappedBrowser.GetAsync("/bff/session");
+        SpecAssert.Equal(HttpStatusCode.Unauthorized, unmappedSession.StatusCode, "An unmapped organization must not receive a BFF session.");
     })
 };
 

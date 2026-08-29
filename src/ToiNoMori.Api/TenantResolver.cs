@@ -6,6 +6,7 @@ public sealed class TenantResolver
 {
     public const string ExternalOrganizationClaimType = "external_organization_id";
     public const string VerifiedIssuerClaimType = "verified_issuer";
+    public const string InternalTenantClaimType = "internal_tenant_id";
     public const string HttpContextItemName = "internal_tenant_id";
 
     private readonly Dictionary<(string Issuer, string ExternalOrganizationId), Guid> _organizations;
@@ -34,31 +35,63 @@ public sealed class TenantResolver
 
     public Guid Resolve(ClaimsPrincipal principal)
     {
+        var internalTenantClaims = principal.FindAll(InternalTenantClaimType).ToArray();
         var organizationClaims = principal.FindAll(ExternalOrganizationClaimType).ToArray();
-        if (organizationClaims.Length == 0
-            || organizationClaims.All(claim => string.IsNullOrWhiteSpace(claim.Value)))
+        var issuerClaims = principal.FindAll(VerifiedIssuerClaimType).ToArray();
+
+        if (internalTenantClaims.Length > 0)
+        {
+            if (internalTenantClaims.Length != 1
+                || organizationClaims.Length != 0
+                || issuerClaims.Length != 0
+                || !Guid.TryParse(internalTenantClaims[0].Value, out var internalTenantId)
+                || internalTenantId == Guid.Empty)
+            {
+                throw InvalidOrUnmapped();
+            }
+
+            return internalTenantId;
+        }
+
+        if (issuerClaims.Length != 1)
+        {
+            throw InvalidOrUnmapped();
+        }
+
+        return ResolveExternal(
+            issuerClaims[0].Value,
+            organizationClaims.Select(claim => claim.Value));
+    }
+
+    public Guid ResolveExternal(
+        string verifiedIssuer,
+        IEnumerable<string> externalOrganizationIds)
+    {
+        var organizationIds = externalOrganizationIds.ToArray();
+        if (organizationIds.Length == 0
+            || organizationIds.All(string.IsNullOrWhiteSpace))
         {
             throw new TenantResolutionException(
                 "tenant.claim_missing",
                 "A verified organization claim is required.");
         }
 
-        var issuerClaims = principal.FindAll(VerifiedIssuerClaimType).ToArray();
-        if (organizationClaims.Length != 1
-            || issuerClaims.Length != 1
-            || string.IsNullOrWhiteSpace(organizationClaims[0].Value)
-            || string.IsNullOrWhiteSpace(issuerClaims[0].Value)
+        if (organizationIds.Length != 1
+            || string.IsNullOrWhiteSpace(organizationIds[0])
+            || string.IsNullOrWhiteSpace(verifiedIssuer)
             || !_organizations.TryGetValue(
-                (issuerClaims[0].Value, organizationClaims[0].Value),
+                (verifiedIssuer, organizationIds[0]),
                 out var tenantId))
         {
-            throw new TenantResolutionException(
-                "tenant.claim_invalid_or_unmapped",
-                "The verified organization claim is not registered.");
+            throw InvalidOrUnmapped();
         }
 
         return tenantId;
     }
+
+    private static TenantResolutionException InvalidOrUnmapped() => new(
+        "tenant.claim_invalid_or_unmapped",
+        "The verified organization claim is not registered.");
 
     public static Guid Current(HttpContext context) =>
         context.Items.TryGetValue(HttpContextItemName, out var value) && value is Guid tenantId

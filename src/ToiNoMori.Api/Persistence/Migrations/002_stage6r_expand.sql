@@ -101,6 +101,12 @@ CREATE TABLE question_revisions (
         DEFERRABLE INITIALLY DEFERRED
 );
 
+-- Build this index before the backfill. The deferred same-tenant FK creates
+-- pending trigger events for inserted revisions, and PostgreSQL rejects an
+-- index build on that table until those events have been resolved at commit.
+CREATE INDEX ix_revisions_tenant_question_version
+    ON question_revisions (tenant_id, question_id, version DESC);
+
 INSERT INTO question_revisions (
     tenant_id, id, question_id, version, title, body, tags, status,
     owner_subject, created_at, recorded_at, published_at, review_reason,
@@ -130,9 +136,6 @@ CREATE INDEX ix_questions_tenant_publication
 
 CREATE INDEX ix_questions_tenant_owner_updated
     ON questions (tenant_id, owner_subject, updated_at DESC, id);
-
-CREATE INDEX ix_revisions_tenant_question_version
-    ON question_revisions (tenant_id, question_id, version DESC);
 
 CREATE INDEX ix_audit_events_tenant_sequence
     ON audit_events (tenant_id, sequence_id);

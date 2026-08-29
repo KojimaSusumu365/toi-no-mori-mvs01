@@ -98,3 +98,7 @@ Stage 3では東京DBが常時同期された書込み系ではない。監視�
 - オブジェクトストレージupload/CRR試験は実アカウントがないため未実施である。
 - ローカルDR試験のRPO/RTOは手順の測定可能性を示すだけで、ネットワーク、プロビジョニング、承認時間を含む実クラウド値ではない。
 - 本番化前に石狩の通常時HA、東京の復旧容量、バックアップ保持期間、データ分類、鍵保管、年4回以上の復旧訓練を正式承認する。
+
+## Stage 6R-10補足
+
+二つの独立PostgreSQL process/data directoryによるnative DR gateを追加する。旧primary停止、最新migration・tenant複合FK・platform監査の復元、異subject二者承認、切替時系列、canonical evidenceのSHA-256をTC-078で検査する。この結果は手順とデータ境界の実行証拠であり、Object Storage CRR、GSLB、物理的な石狩・東京リージョンの訓練結果へ読み替えない。
