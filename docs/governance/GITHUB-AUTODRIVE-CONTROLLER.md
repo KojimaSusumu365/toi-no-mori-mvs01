@@ -24,7 +24,7 @@ not completed Step 2.5 measurement.
 - deterministic Work Order, scope, origin, CI, review, loop, evidence,
   disposition and role-appointment decisions in `scripts/ai_controller/`;
 - provider-separated workflow definitions with full-SHA Action pins;
-- `AUTO-T01` through `AUTO-T38` as 39 failure-first test cases;
+- `AUTO-T01` through `AUTO-T39` as 40 failure-first test cases;
 - a content-addressed evidence layout and a threat baseline;
 - a Draft-only dry-run path that uses no AI or write credential.
 
@@ -34,9 +34,14 @@ treated as Control Plane and are denied to normal manufacturing patches.
 ## Enablement gates
 
 1. Merge the prerequisite PR chain through the accepted Stage 6R-11R head.
-2. Appoint a different human as Independent Automation Release Reviewer.
+2. Appoint a different human as Independent Automation Release Reviewer. For
+   the initial bootstrap, the trusted default branch does not yet contain the
+   appointment Required Check, so `TC-ACC-MVS01-094-BOOTSTRAP`
+   requires the independent human signature to be recorded against the fixed
+   Controller implementation SHA before merge. Later appointments must pass the
+   deterministic Required Check.
 3. Run Step 2.5 measurements and replace every `NOT_MEASURED` value.
-4. Have Codex execute all 39 tests on a fixed implementation SHA.
+4. Have Codex execute all 40 tests on a fixed implementation SHA.
 5. Have Claude technically review that same SHA.
 6. Obtain the independent human signature and Organizer acceptance.
 7. Merge this governance PR manually.
@@ -44,3 +49,11 @@ treated as Control Plane and are denied to normal manufacturing patches.
 
 Until all gates pass, `QF_AI_PHASE` must remain unset and every privileged route
 must fail closed or return a credential-free no-op.
+
+## Frozen-version compatibility backlog
+
+`QF-OPS-MVS01-001 Version 0.5.1` remains byte-for-byte frozen and therefore
+still states `AUTO-T01` through `AUTO-T38` / 39 cases. `AUTO-T39` was added as
+the P3 implementation correction `AUTO-IMPL-P3-013`; the implemented and
+operational acceptance count is 40. Reconcile this wording in the next
+non-frozen specification revision without amending Version 0.5.1.

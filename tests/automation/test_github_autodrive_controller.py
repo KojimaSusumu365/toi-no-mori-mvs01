@@ -150,6 +150,25 @@ def valid_review(request: dict | None = None) -> dict:
     }
 
 
+def valid_finding(
+    identifier: str = "AUTO-IMPL-P2-001",
+    *,
+    severity: str = "P2",
+    verification_status: str = "OPEN",
+) -> dict:
+    return {
+        "id": identifier,
+        "severity": severity,
+        "verification_status": verification_status,
+        "disposition": "UNDECIDED",
+        "path": "scripts/ai_controller/core.py",
+        "evidence": "deterministic evidence",
+        "risk": "bounded risk",
+        "required_change": "apply the bounded correction",
+        "residual_risk": "",
+    }
+
+
 def baseline() -> dict:
     return json.loads((ROOT / "docs/governance/threat-model/GITHUB-AUTOMATION.yml").read_text(encoding="utf-8"))
 
@@ -355,6 +374,29 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
 
     @auto_case("AUTO-T26")
     def test_t26_review_schema_contract(self):
+        green = validate_review_gate(
+            valid_request(),
+            valid_review(),
+            current_head_sha=HEAD,
+            actual_tree_sha=TREE,
+            required_checks_green=True,
+        )
+        self.assertTrue(green.accepted)
+        self.assertEqual("qf:review-green", green.state)
+
+        p2_review = valid_review()
+        p2_review["decision"] = "PASS_WITH_FINDINGS"
+        p2_review["findings"] = [valid_finding()]
+        with_findings = validate_review_gate(
+            valid_request(),
+            p2_review,
+            current_head_sha=HEAD,
+            actual_tree_sha=TREE,
+            required_checks_green=True,
+        )
+        self.assertTrue(with_findings.accepted)
+        self.assertEqual("qf:changes-requested", with_findings.state)
+
         review = valid_review(); review["schema_version"] = "technical-review.schema.json@2"; review["decision"] = "MAYBE"
         self.assertFalse(validate_review_gate(valid_request(), review, current_head_sha=HEAD, actual_tree_sha=TREE, required_checks_green=True).accepted)
         duplicate = valid_review(); duplicate["decision"] = "PASS_WITH_FINDINGS"; duplicate["findings"] = [
@@ -390,6 +432,15 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
     def test_t31_gate_registry_regression(self):
         executed = {identifier:{"result":"GREEN","evidence":"ok"} for identifier in GATE_IDS[:-1]}
         self.assertFalse(check_registry_execution("gate-checks.yml", GATE_IDS, executed)["accepted"])
+        executed = {identifier:{"result":"GREEN","evidence":"ok"} for identifier in GATE_IDS}
+        executed["REV-GATE-001"]["evidence"] = 0
+        executed["REV-GATE-012"]["evidence"] = []
+        executed["REV-GATE-017"]["evidence"] = []
+        self.assertTrue(check_registry_execution("gate-checks.yml", GATE_IDS, executed)["accepted"])
+        del executed["REV-GATE-001"]["evidence"]
+        alignment = check_registry_execution("gate-checks.yml", GATE_IDS, executed)
+        self.assertFalse(alignment["accepted"])
+        self.assertEqual(["REV-GATE-001"], alignment["missing_evidence"])
 
     @auto_case("AUTO-T32")
     def test_t32_precondition_registry_regression(self):
@@ -398,6 +449,39 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
 
     @auto_case("AUTO-T33")
     def test_t33_review_mode_integrity(self):
+        reverify_request = valid_request("REVERIFY")
+        reverify_request["eligible_finding_ids"] = ["AUTO-IMPL-P1-018"]
+        reverify_request["fix_candidates"] = [{
+            "finding_id": "AUTO-IMPL-P1-018",
+            "candidate_sha": HEAD,
+            "record_sha256": HASH,
+        }]
+        reverify_review = valid_review(reverify_request)
+        reverify_review["decision"] = "PASS_WITH_FINDINGS"
+        reverify_review["findings"] = [valid_finding(
+            "AUTO-IMPL-P1-018",
+            severity="P1",
+            verification_status="VERIFIED",
+        )]
+        gate = validate_review_gate(
+            reverify_request,
+            reverify_review,
+            current_head_sha=HEAD,
+            actual_tree_sha=TREE,
+            required_checks_green=True,
+        )
+        self.assertTrue(gate.accepted)
+        self.assertEqual("qf:changes-requested", gate.state)
+        transition = loop_transition(
+            reverify_review,
+            phase="A",
+            iteration=0,
+            max_iterations=0,
+        )
+        self.assertTrue(transition.accepted)
+        self.assertEqual("qf:changes-requested", transition.state)
+        self.assertNotIn("STOP-001", transition.reasons)
+
         request = valid_request("REVERIFY"); review = valid_review(request); review["review_mode"] = "INITIAL"; review["findings"]=[{"id":"AUTO-IMPL-P2-002","severity":"P2","verification_status":"VERIFIED","disposition":"UNDECIDED"}]
         self.assertFalse(validate_review_gate(request, review, current_head_sha=HEAD, actual_tree_sha=TREE, required_checks_green=True).accepted)
 
@@ -467,6 +551,18 @@ class GitHubAutodriveControllerTests(unittest.TestCase):
         self.assertIn("QF_AI_PHASE: ${{ vars.QF_AI_PHASE }}",workflow)
         self.assertIn('${QF_AI_PHASE:-BOOTSTRAP_DISABLED}',workflow)
         self.assertNotIn("preflight --expected-phase A",workflow)
+        before_appointment, appointment = workflow.split("if (paths.includes(target)) {", 1)
+        self.assertNotIn("organizer-allowlist.yml", before_appointment)
+        self.assertIn("organizer-allowlist.yml", appointment)
+        deferred=json.loads((ROOT/"spec/deferred-tests.json").read_text(encoding="utf-8"))["tests"]
+        bootstrap=[item for item in deferred if item["testId"]=="TC-ACC-MVS01-094-BOOTSTRAP"]
+        self.assertEqual(1,len(bootstrap)); self.assertIn("AUTO-IMPL-P3-021",bootstrap[0]["requirementIds"])
+        self.assertTrue(all(bootstrap[0].get(field) for field in ("owner","due","reasonCode")))
+        loop=(ROOT/".github/workflows/qf-ai-loop-controller.yml").read_text(encoding="utf-8")
+        self.assertIn('gate.accepted!==true',loop)
+        self.assertIn("labels:['qf:stopped']",loop)
+        self.assertIn('if ! python3 scripts/qf-ai-controller.py --output trusted-gate/loop-transition.json loop',loop)
+        self.assertLess(loop.index('gate.accepted!==true'),loop.index("const transition=JSON.parse"))
         self.assertIn("qf-role-appointment-signature", required_check_names())
         registry=load_registry("required-checks.yml")
         provider_workflows={item["workflow_name"] for item in registry["required_checks"]}

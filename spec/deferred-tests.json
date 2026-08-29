@@ -63,6 +63,18 @@
       "reason": "R2 exposes the deterministic disposition-record command, but the Organizer-owned publication workflow remains disabled until the bounded Phase A human-return transport is independently reviewed.",
       "owner": "Organizer",
       "due": "Before Phase A enablement"
+    },
+    {
+      "testId": "TC-ACC-MVS01-094-BOOTSTRAP",
+      "requirementIds": [
+        "AUTO-IMPL-P3-021"
+      ],
+      "description": "Verify the initial Independent Automation Release Reviewer appointment by a human signature anchored to the fixed Controller implementation SHA while the trusted default branch does not yet contain the appointment Required Check.",
+      "status": "not-run",
+      "reasonCode": "PREMERGE_APPOINTMENT_CHECK_UNAVAILABLE",
+      "reason": "The first governance PR cannot execute the Controller-backed appointment Required Check from the default branch before that Controller is merged. The bootstrap appointment therefore requires a recorded independent human signature; later appointments must use the deterministic Required Check.",
+      "owner": "Organizer",
+      "due": "Before the initial governance PR is merged"
     }
   ]
 }

@@ -34,13 +34,15 @@ jobs:
             if (!files.length) return core.setFailed('indeterminate empty file list');
             const target='docs/governance/role-appointments/INDEPENDENT-AUTOMATION-RELEASE-REVIEWER.yml';
             const paths=files.flatMap(f=>[f.filename,f.previous_filename].filter(Boolean));
-            const allowlist=JSON.parse(fs.readFileSync('.github/ai/registries/organizer-allowlist.yml','utf8')).organizers.map(x=>x.github_login);
             let record={organizer:'',nominee:''};
             let reviews=[];
             let permission='none';
+            let nomineeInOrganizerAllowlist=false;
             if (paths.includes(target)) {
+              const allowlist=JSON.parse(fs.readFileSync('.github/ai/registries/organizer-allowlist.yml','utf8')).organizers.map(x=>x.github_login);
               reviews=await github.paginate(github.rest.pulls.listReviews,{owner:context.repo.owner,repo:context.repo.repo,pull_number:Number(prNumber),per_page:100});
               record=JSON.parse(Buffer.from((await github.rest.repos.getContent({owner:context.repo.owner,repo:context.repo.repo,path:target,ref:pr.head.sha})).data.content,'base64').toString('utf8'));
+              nomineeInOrganizerAllowlist=allowlist.includes(record.nominee);
               if (record.nominee) {
                 try {
                   permission=(await github.rest.repos.getCollaboratorPermissionLevel({owner:context.repo.owner,repo:context.repo.repo,username:record.nominee})).data.permission;
@@ -60,7 +62,7 @@ jobs:
               head_sha:pr.head.sha,
               latest_review:nominee?{user:nominee.user.login,state:nominee.state,commit_id:nominee.commit_id}:null,
               nominee_has_write:['admin','maintain','write'].includes(permission),
-              nominee_in_organizer_allowlist:allowlist.includes(record.nominee),
+              nominee_in_organizer_allowlist:nomineeInOrganizerAllowlist,
             };
             fs.mkdirSync('artifacts/automation',{recursive:true});
             fs.writeFileSync('artifacts/automation/appointment-input.json',JSON.stringify(input,null,2)+'\n');

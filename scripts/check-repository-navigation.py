@@ -95,7 +95,7 @@ for link in ("CURRENT_STATE.md", "SOURCE-OF-TRUTH.md", "REVIEW-PROTOCOL.md"):
         errors.append(f"CLAUDE.md must link to {link}")
 
 controller_text = (ROOT / "docs/governance/GITHUB-AUTODRIVE-CONTROLLER.md").read_text(encoding="utf-8")
-for invariant in ("BOOTSTRAP IMPLEMENTED — DISABLED", "VACANT", "39 failure-first test cases"):
+for invariant in ("BOOTSTRAP IMPLEMENTED — DISABLED", "VACANT", "40 failure-first test cases"):
     if invariant not in controller_text:
         errors.append(f"Controller guide missing invariant: {invariant}")
 

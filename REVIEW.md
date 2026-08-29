@@ -9,5 +9,5 @@ Claude is read-only. It may report `OPEN` or `VERIFIED`, but it must not output
 a Stage or alter the review mode selected by the deterministic Review Request.
 
 The implementation review must cover the six registries, five schemas, workflow
-permissions, 39 AUTO-T test cases, durable evidence rules, threat baseline and
+permissions, 40 AUTO-T test cases, durable evidence rules, threat baseline and
 all explicitly unverified external GitHub settings.

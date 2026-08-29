@@ -548,7 +548,9 @@ def check_registry_execution(
     executed_ids = set(executed)
     duplicate_free = len(executed) == len(executed_ids)
     missing_evidence = sorted(
-        item for item in expected if item in executed and not executed[item].get("evidence")
+        item
+        for item in expected
+        if item in executed and "evidence" not in executed[item]
     )
     accepted = (
         expected == implemented == executed_ids
@@ -1108,12 +1110,16 @@ def validate_review_gate(
     )
     values["REV-GATE-015"] = (all(item.get("verification_status") != "CLOSED" for item in findings), "CLOSED forbidden")
     values["REV-GATE-016"] = (all(item.get("disposition") == "UNDECIDED" for item in findings), "UNDECIDED only")
-    p0p1 = [
+    unresolved_p0p1 = [
         item for item in findings
         if isinstance(item.get("severity"), str)
         and item.get("severity") in {"P0", "P1"}
+        and item.get("verification_status") != "VERIFIED"
     ]
-    values["REV-GATE-017"] = (not p0p1 or review.get("blocking") is True, [item.get("id") for item in p0p1])
+    values["REV-GATE-017"] = (
+        not unresolved_p0p1 or review.get("blocking") is True,
+        [item.get("id") for item in unresolved_p0p1],
+    )
     values["REV-GATE-018"] = (request.get("head_sha") == current_head_sha == reviewed_sha, current_head_sha)
     default_branch_matches = (
         expected_default_branch_sha is None
@@ -1137,11 +1143,7 @@ def validate_review_gate(
     if not alignment["accepted"]:
         executed["REV-GATE-020"] = {"result": "RED", "evidence": alignment}
     reasons = tuple(identifier for identifier in GATE_IDS if executed[identifier]["result"] != "GREEN")
-    blocking = any(
-        isinstance(item.get("severity"), str)
-        and item.get("severity") in {"P0", "P1"}
-        for item in findings
-    )
+    blocking = bool(unresolved_p0p1)
     if reasons:
         state = "qf:stopped"
     elif blocking or findings:
@@ -1172,7 +1174,11 @@ def loop_transition(
         reasons.append("STOP-020")
     if patch_hash and previous_patch_hash and patch_hash == previous_patch_hash:
         reasons.append("STOP-018")
-    if any(item.get("severity") in {"P0", "P1"} for item in findings):
+    if any(
+        item.get("severity") in {"P0", "P1"}
+        and item.get("verification_status") != "VERIFIED"
+        for item in findings
+    ):
         reasons.append("STOP-001")
     if reasons:
         return Decision("qf:stopped", False, tuple(reasons), {"iteration": iteration})
