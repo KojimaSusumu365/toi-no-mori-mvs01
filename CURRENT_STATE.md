@@ -42,7 +42,7 @@ All three remain Draft. No merge or `main` update has been performed.
 | Stage 6R-11 artifact | `9671907000` / `sha256:fd4bd48943a0d9c6fb4f3fb20622856503f2f2783070da2070f3cd85878a1955` |
 | Stage 6R-10 artifact | `9671915364` / `sha256:9016ac324d339ece6e10027e78acacb5b459d74593030b12d98563070f9ce13e` |
 
-Full record: [Stage 6R-11R GitHub acceptance evidence](docs/evidence/stage6r11r-github-acceptance.md).
+Full record: [Stage 6R-11R GitHub acceptance evidence](docs/evidence/stage6r11/stage6r11r-github-acceptance.md).
 
 ## 次の完了条件
 
@@ -51,3 +51,7 @@ Full record: [Stage 6R-11R GitHub acceptance evidence](docs/evidence/stage6r11r-
 3. blocking Findingがない状態を確認する。
 4. repository ownerがfinal acceptanceを記録する。
 5. その後にのみStage 6R-12を別PRで開始する。
+
+## Repository taxonomy overlay
+
+This Draft-only overlay classifies ADR/UML/DR design, Stage documents, Manifests and Evidence into stable directories. It changes paths and navigation contracts, not the fixed Stage 6R-11R implementation target or its recorded acceptance Runs. Stage 6R-12 contains only a NOT STARTED placeholder.

@@ -1,50 +1,49 @@
 # Claude collaboration guide
 
-このリポジトリでClaudeが最初に読む正本です。目的は「問いの森」の独立レビューであり、Claudeが無断で実装やmergeを進めることではありません。
+This is the first authoritative document for Claude in this repository. Claude is asked to perform an independent review, not to merge or silently redesign the system.
 
-## 読む順序
+## Reading order
 
 1. [CURRENT_STATE.md](CURRENT_STATE.md)
 2. [ARCHITECTURE.md](ARCHITECTURE.md)
-3. [docs/governance/SOURCE-OF-TRUTH.md](docs/governance/SOURCE-OF-TRUTH.md)
-4. [docs/governance/REVIEW-PROTOCOL.md](docs/governance/REVIEW-PROTOCOL.md)
-5. [docs/reviews/stage6r11r/review-request.md](docs/reviews/stage6r11r/review-request.md)
-6. 対象実装・テスト・既存evidence
+3. [Documentation index](docs/INDEX.md)
+4. [Source of truth](docs/governance/SOURCE-OF-TRUTH.md)
+5. [Review protocol](docs/governance/REVIEW-PROTOCOL.md)
+6. [Stage 6R-11R review request](docs/reviews/stage6r11r/review-request.md)
+7. Target implementation, tests and [typed evidence](docs/evidence/stage6r11/stage6r11r-github-acceptance.md)
 
-全体の文書地図は [docs/INDEX.md](docs/INDEX.md) にあります。
+## Fixed implementation review target
 
-## 現在のreview target
+- Repository: KojimaSusumu365/toi-no-mori-mvs01
+- Implementation commit: 61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1
+- Implementation tree: 23de94ef1e6ded9e2122b11880b7cb80ff8378ae
+- Draft implementation PR: #4
+- Stage 6R-11R: implementation GREEN, independent review pending
+- Stage 6R-12: NOT STARTED
 
-- Repository: `KojimaSusumu365/toi-no-mori-mvs01`
-- 累積baseline branch: `stage6r4c-postgresql-green-fix`
-- Commit HEAD: `4537085c25ed3178214b0693afac7e42ce1b64de`
-- Git tree object: `4402dd93d1a50fe58e96d0fa0242e30cdcc6450e`
-- Draft PR: #1
-- Review stage: Stage 6R-11R
-- Stage 6R-12: 未着手
+The physical-taxonomy branch relocates documents without changing this implementation target. Do not substitute the taxonomy commit, tree object, PR merge ref or workflow checkout SHA for the fixed implementation commit.
 
-Commit、tree、PR merge ref、workflow runは別の識別子です。相互に置き換えないでください。
+## Invariant boundaries
 
-## 不変境界
+- Question Forest is upstream; Virtual Town is downstream.
+- Forest and Town do not share a database.
+- Question is a Forest Entity; Town Aggregate Root is Task.
+- Town never persists the Question body or title.
+- The existing UUID is an opaque reference.
+- Forest 404 does not distinguish absent from withdrawn.
+- 429, 503, timeout and DNS failure do not mean withdrawal.
+- Humans retain final judgment, approval and responsibility.
 
-- Question Forestが上流、Virtual Townが下流
-- ForestとTownはDBを共有しない
-- QuestionはForestのEntity、TownのAggregate RootはTask
-- TownはQuestion本文を永続保存しない
-- 既存UUIDをOpaque Referenceとして扱う
-- Forestの404は不存在とwithdrawnを区別しない
-- 429、503、timeout、DNS障害は失効を意味しない
-- 人間が最終判断・承認・責任を持つ
-- mainへ直接pushしない。必ずDraft PRとGREEN確認を経る
+See the frozen [Forest–Town contract](docs/architecture/contracts/forest-town-boundary-v1.md).
 
-## Claudeへ依頼する作業
+## Requested review behavior
 
-- review target SHAを固定して読む
-- 仕様・実装・試験・証跡の不整合をFindingとして提出する
-- 推測と確認済み事実を分離する
-- 既存Findingの再確認時も、根拠ファイルとSHAを示す
-- [review protocol](docs/governance/REVIEW-PROTOCOL.md) の形式を使う
+- Fix the target SHA before reading.
+- Separate confirmed facts, inference and questions.
+- Report inconsistencies as Findings with path and target SHA.
+- Re-verify existing Findings independently.
+- Use the [review protocol](docs/governance/REVIEW-PROTOCOL.md).
 
-## Claudeが行わない作業
+## Prohibited without explicit user authorization
 
-ユーザーの明示承認なしに、mainへのpush、PR merge、Draft解除、branch削除、RLSや監査境界の変更、Findingの自己CLOSEを行わないでください。
+Do not push to main, merge a PR, remove Draft status, delete a branch, weaken RLS/audit boundaries, self-close a Finding, start Stage 6R-12 or deploy a real environment.

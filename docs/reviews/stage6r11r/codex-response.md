@@ -3,7 +3,7 @@
 Status: **READY_FOR_CLAUDE_REVERIFICATION**
 
 Target implementation commit: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
-Evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11r-github-acceptance.md)
+Evidence: [stage6r11r-github-acceptance.md](../../evidence/stage6r11/stage6r11r-github-acceptance.md)
 
 This is the implementation response to the previously identified RVR-N10 through RVR-N13. It is not an independent verification or closure declaration.
 
