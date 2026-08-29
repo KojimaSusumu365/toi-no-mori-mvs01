@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from collections import defaultdict
@@ -14,7 +15,8 @@ ID = r"TC-(?:ACC|PERF)-MVS01-[0-9]{3}(?:-[A-Z]+)?"
 CS_DECLARATION = re.compile(rf'new\("({ID})"')
 PY_DECLARATION = re.compile(rf'^\s*\("({ID})"', re.MULTILINE)
 SHELL_DECLARATION = re.compile(rf'^# TEST-ID: ({ID})$', re.MULTILINE)
-NEW_ID = re.compile(r"TC-(?:ACC-MVS01-(?:06[3-9]|07[0-9]|08[01])-[A-Z]+|PERF-MVS01-002-PG)")
+NEW_ID = re.compile(r"TC-(?:ACC|PERF)-MVS01-[0-9]{3}-[A-Z]+")
+DEFERRED_TESTS = Path("spec/deferred-tests.json")
 
 
 def executable_files(root: Path) -> list[Path]:
@@ -48,6 +50,19 @@ def collect(root: Path) -> tuple[dict[str, list[tuple[str, Path]]], dict[str, li
             by_suite[suite(path, root)].append((test_id, path))
             if NEW_ID.fullmatch(test_id):
                 new_global[test_id].append(path)
+
+    deferred_path = root / DEFERRED_TESTS
+    deferred = json.loads(deferred_path.read_text(encoding="utf-8"))
+    for entry in deferred.get("tests", []):
+        test_id = str(entry.get("testId", ""))
+        if not NEW_ID.fullmatch(test_id):
+            raise ValueError(f"Deferred test ID is invalid or not layer-qualified: {test_id}")
+        if entry.get("status") != "not-run":
+            raise ValueError(f"Deferred test must have status=not-run: {test_id}")
+        for field in ("reasonCode", "reason", "owner", "due"):
+            if not str(entry.get(field, "")).strip():
+                raise ValueError(f"Deferred test {test_id} is missing {field}")
+        new_global[test_id].append(deferred_path)
     return by_suite, new_global
 
 

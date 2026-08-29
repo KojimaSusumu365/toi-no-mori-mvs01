@@ -10,20 +10,32 @@
 
 会話に書かれたSHAや件数がGitHubと衝突する場合、GitHubの型付き識別子を採用し、不一致をFindingとして残します。
 
-## 識別子を混同しない
+## Stage 6R-11R review target
 
-| 型 | 現在値 | 用途 |
+| 型 | 値 | 用途 |
 |---|---|---|
-| commit | `4537085c25ed3178214b0693afac7e42ce1b64de` | 現在のbranch HEAD |
-| tree | `4402dd93d1a50fe58e96d0fa0242e30cdcc6450e` | commitが参照するtree |
-| parent commit | `07815c1a9b22c437c72a991fe120a1f8be61bc9e` | functional codeを含む親 |
-| PR merge ref commit | `3a3ff47d7972ad5fee7e9c5062e2267539c52429` | PR #1のbaseとの仮想merge |
-| workflow run | `33002851599` | Stage 6R-11実行 |
-| run attempt | `1` | retry単位 |
-| job | `98288871317` | 90/90 gate job |
-| test id | 例: `TC-ACC-MVS01-067-PG` | 個別受入test |
+| implementation commit | `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` | Claudeがreviewする固定実装HEAD |
+| implementation tree | `23de94ef1e6ded9e2122b11880b7cb80ff8378ae` | 上記commitが参照するtree object |
+| base commit | `60c10feb1fed4b4b5000fac4145aa4def591877f` | stacked PR #4のbase |
+| evaluated PR merge ref | `83857ee48d4f5317dddf0023a8821a67e3e62980` | workflowがcheckoutしたbase+headの仮想merge |
+| relationship | `pull_request_merge_ref` | headがmerge refのancestorであることをworkflowが検証 |
+| workflow run | `33135504039` attempt 1 | Stage 6R-11実行 |
+| job | `98734412669` | 90/90 gate job |
+| artifact | `9671907000` | immutable evidence artifact |
+| artifact digest | `sha256:fd4bd48943a0d9c6fb4f3fb20622856503f2f2783070da2070f3cd85878a1955` | artifact integrity |
 
-`4402dd93d1a50fe58e96d0fa0242e30cdcc6450e` はtree objectです。「branch HEAD commit」と記載してはいけません。
+`23de94ef1e6ded9e2122b11880b7cb80ff8378ae` はtree objectです。branch HEAD commitと記載してはいけません。  
+`83857ee48d4f5317dddf0023a8821a67e3e62980` はPR merge refです。implementation HEADと記載してはいけません。
+
+Review packetをsealする後続documentation commitは、target実装を変更しません。Claudeのreview対象は常に `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1` です。
+
+## Baseline chain
+
+- `main@c90dfdb154d99ee480571c8a397e99d88e12dea8` remains unchanged.
+- PR #1 is the cumulative Stage 6R-1〜11 baseline.
+- PR #3 adds repository navigation on top of PR #1.
+- PR #4 adds Stage 6R-11R on top of PR #3.
+- No PR is merged and all remain Draft.
 
 ## 必須台帳項目
 
@@ -50,4 +62,4 @@
 - `different_verified_commit`: 別commitだが関係を証明済み
 - `unknown`: 証明できない。受入根拠にしない
 
-PR eventではAPIの `head_sha` だけからcheckout対象を断定しません。merge refとworkflow checkout設定も記録します。
+PR eventではAPIの `head_sha` だけからcheckout対象を断定しません。merge ref、workflow checkout設定、ancestor検査を同じ証跡に残します。

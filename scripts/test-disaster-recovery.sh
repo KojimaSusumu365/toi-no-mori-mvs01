@@ -185,6 +185,8 @@ start_api() {
         ASPNETCORE_ENVIRONMENT=Testing \
         ASPNETCORE_URLS="http://127.0.0.1:$port" \
         Persistence__Provider=PostgreSql \
+        PublicRead__Mode=single_tenant \
+        PublicRead__TenantIds__0=7b48e239-07ef-4b34-a1fb-7f4fc7ff1673 \
         ConnectionStrings__PostgreSql="$application_connection_string" \
         ConnectionStrings__PostgreSqlMigrator="$migration_connection_string" \
         ConnectionStrings__PostgreSqlPlatformAuditWriter="$platform_writer_connection_string" \

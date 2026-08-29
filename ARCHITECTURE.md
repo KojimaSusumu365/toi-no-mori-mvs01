@@ -31,3 +31,7 @@ Townが永続化できるのは最低限の参照情報、解決日時、解決�
 ## 未実装を実装済みに見せない
 
 Town runtime、Experience Ledger、Citizen Compute、実環境Sakura failover、実Entra ID、実スマートフォンE2Eは、この文書だけで完成扱いにしません。
+
+## Frozen integration contract
+
+The reviewable Forest–Town rules, storage allowlist, error mapping, and tenant Architecture Gate are fixed in [docs/forest-town-boundary-v1.md](docs/forest-town-boundary-v1.md).

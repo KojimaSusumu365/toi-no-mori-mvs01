@@ -1,9 +1,18 @@
 # Claude findings — Stage 6R-11R
 
-Status: AWAITING_REVIEW
+Status: **AWAITING_REVIEW**
 
-このファイルはClaudeの独立review結果で置き換えるためのplaceholderです。空であることはPASSを意味しません。
+Review target: `61b55e03d1c3df7355eb3cf15aa1f1fcad7870e1`  
+Review request: [review-request.md](review-request.md)
 
-Review target: `4537085c25ed3178214b0693afac7e42ce1b64de`
+This placeholder is intentionally not a PASS. Claude should replace the section below with an independent review of the fixed target SHA. A review of another SHA is stale.
 
-Findingは [REVIEW-PROTOCOL.md](../../governance/REVIEW-PROTOCOL.md) の形式で記録してください。
+## Findings
+
+AWAITING CLAUDE INPUT.
+
+Use the Finding format in [REVIEW-PROTOCOL.md](../../governance/REVIEW-PROTOCOL.md), and finish with one explicit disposition:
+
+- no blocking Finding for owner acceptance;
+- blocking Finding(s) remain;
+- policy decision required.

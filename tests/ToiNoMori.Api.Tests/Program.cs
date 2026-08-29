@@ -389,7 +389,7 @@ var tests = new List<SpecTest>
             changedFingerprint.StatusCode,
             "Reusing an idempotency key for a different approval version must return 409.");
     }),
-    new("TC-ACC-MVS01-065-API", "ADR-0007-D2", "外部組織claimを内部tenantへ許可表変換", async () =>
+    new("TC-ACC-MVS01-065-API", "ADR-0007-D2,RVR-N13", "外部組織claimを内部tenantへ許可表変換", async () =>
     {
         using var missingClaim = fixture.AuthenticatedClient(
             "missing-tenant-user",
@@ -480,6 +480,28 @@ var tests = new List<SpecTest>
             HttpStatusCode.NotFound,
             hiddenFromDefaultPublic.StatusCode,
             "Anonymous public routing must remain pinned to the server-configured MVS-01 tenant.");
+        SpecAssert.Equal(
+            TenantIds.Mvs01,
+            fixture.PublicReadTenantId,
+            "The anonymous Public Read tenant must come from the validated single-tenant configuration.");
+
+        var multiTenantMode = SpecAssert.Throws<InvalidOperationException>(
+            () => _ = AppHost.Build(TestingOptions(["PublicRead:Mode=multi_tenant"])),
+            "Public Read must fail closed when a multi-tenant mode is configured without an approved architecture.");
+        SpecAssert.True(
+            multiTenantMode.Message.Contains("Architecture Gate", StringComparison.Ordinal),
+            "The startup failure must identify the tenant-context Architecture Gate.");
+
+        SpecAssert.Throws<InvalidOperationException>(
+            () => _ = AppHost.Build(TestingOptions(
+            [
+                "PublicRead:TenantIds:1=a46f716d-6f13-4e98-a7e0-a04228ba0a90"
+            ])),
+            "Public Read must fail closed when two effective tenant UUIDs are configured.");
+
+        SpecAssert.Throws<InvalidOperationException>(
+            () => _ = AppHost.Build(TestingOptions(["PublicRead:TenantIds:0=not-a-uuid"])),
+            "Public Read must fail closed when the configured tenant is not a UUID.");
     }),
     new("TC-ACC-MVS01-069-API", "RV-021", "他tenantと他所有者を同一404へ正規化", async () =>
     {
@@ -858,6 +880,11 @@ var tests = new List<SpecTest>
                 "Audit:PartitionHashKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
             ]);
         using var anonymous = auditFixture.AnonymousClient();
+        using var unauthenticatedDenied = await anonymous.GetAsync("/api/admin/questions");
+        SpecAssert.Equal(
+            HttpStatusCode.Unauthorized,
+            unauthenticatedDenied.StatusCode,
+            "The rejected unauthenticated path must remain a 401 while its audit row is recorded.");
         for (var attempt = 0; attempt < 8; attempt++)
         {
             using var response = await anonymous.GetAsync($"/api/public/questions/{Guid.NewGuid()}");
@@ -887,7 +914,9 @@ var tests = new List<SpecTest>
                 $"/api/platform/security-events?from={from}&to={to}&limit=50");
             SpecAssert.Equal(HttpStatusCode.OK, platformResponse.StatusCode, "PlatformAuditor must read only the bounded platform audit projection.");
             wire = await platformResponse.Content.ReadAsStringAsync();
-            if (wire.Contains("access.rate_limited", StringComparison.Ordinal))
+            if (wire.Contains("access.rate_limited", StringComparison.Ordinal)
+                && wire.Contains("access.unauthenticated", StringComparison.Ordinal)
+                && wire.Contains("access.forbidden", StringComparison.Ordinal))
             {
                 break;
             }
@@ -895,6 +924,8 @@ var tests = new List<SpecTest>
             await Task.Delay(20);
         }
         SpecAssert.True(wire.Contains("access.rate_limited", StringComparison.Ordinal), "The first 429 in the minute window must be recorded.");
+        SpecAssert.True(wire.Contains("access.unauthenticated", StringComparison.Ordinal), "The outer audit envelope must record a short-circuited 401 path.");
+        SpecAssert.True(wire.Contains("access.forbidden", StringComparison.Ordinal), "The outer audit envelope must record a short-circuited 403 path.");
         SpecAssert.False(wire.Contains("partitionHash", StringComparison.OrdinalIgnoreCase), "The partition hash must not be exposed by the API.");
 
         var metrics = auditFixture.AuditMetrics.Snapshot();
@@ -927,6 +958,14 @@ var tests = new List<SpecTest>
 };
 
 return await SpecTestRunner.RunAsync("ToiNoMori.Api specification tests", tests);
+
+static WebApplicationOptions TestingOptions(string[] args) => new()
+{
+    Args = args,
+    EnvironmentName = "Testing",
+    ApplicationName = typeof(AppHost).Assembly.FullName,
+    ContentRootPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "ToiNoMori.Api")
+};
 
 static WebApplicationOptions ProductionOptions(string[] args) => new()
 {

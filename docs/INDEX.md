@@ -25,3 +25,11 @@
 - `docs/evidence/` は実行証跡。設計文書と混ぜない
 - `docs/reviews/` はAI間の依頼・所見・応答・最終受入
 - `src/`、`tests/`、`scripts/` の既存pathはこの整理Stageで変更しない
+
+## Stage 6R-11R closure
+
+- [Closure ledger](stage6r11r-closure.md)
+- [Exact GitHub acceptance evidence](evidence/stage6r11r-github-acceptance.md)
+- [Forest–Town boundary contract](forest-town-boundary-v1.md)
+- [Planned-to-actual Test ID mapping](stage6r11r-test-id-mapping.md)
+- [Deferred test registry](../spec/deferred-tests.json)

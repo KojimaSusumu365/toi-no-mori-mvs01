@@ -80,6 +80,30 @@ def parse_suites(log_text: str) -> dict[str, dict[str, object]]:
     return results
 
 
+def suite_totals(suites: dict[str, dict[str, object]]) -> dict[str, object]:
+    expected = sum(int(suites[suite.key]["expected"]) for suite in SUITES)
+    passed = sum(int(suites[suite.key]["passed"] or 0) for suite in SUITES)
+    failed = sum(int(suites[suite.key]["failed"] or 0) for suite in SUITES)
+    executed_total = sum(int(suites[suite.key]["total"] or 0) for suite in SUITES)
+    registered_suites_complete = all(
+        suites[suite.key]["total"] is not None for suite in SUITES
+    )
+    return {
+        "registeredSuiteCount": len(SUITES),
+        "expectedTotal": expected,
+        "passedTotal": passed,
+        "failedTotal": failed,
+        "executedTotal": executed_total,
+        "registeredSuitesComplete": registered_suites_complete,
+        "totalsMatch": (
+            registered_suites_complete
+            and passed == expected
+            and failed == 0
+            and executed_total == expected
+        ),
+    }
+
+
 def acceptance_status(
     *,
     gate_exit_code: int,
@@ -89,21 +113,19 @@ def acceptance_status(
     test_ids_unique: bool,
     build_clean: bool,
 ) -> tuple[bool, dict[str, bool]]:
+    totals = suite_totals(suites)
     all_suites_green = all(suites[suite.key]["status"] == "passed" for suite in SUITES)
     checks = {
         "nonRootRunner": uid != 0,
         "nativeExecution": execution_mode == "native",
         "testIdsUnique": test_ids_unique,
         "buildClean": build_clean,
-        **{
-            f"{suite.key}{suite.expected}Of{suite.expected}": suites[suite.key]["status"] == "passed"
-            for suite in SUITES
-        },
-        "nativeTotal90Of90": TOTAL_EXPECTED == 90 and all_suites_green,
+        "registeredSuitesComplete": bool(totals["registeredSuitesComplete"]),
+        "totalsMatch": bool(totals["totalsMatch"]),
+        "allSuitesGreen": all_suites_green,
         "gateExitCodeZero": gate_exit_code == 0,
     }
     return all(checks.values()), checks
-
 
 def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, object]:
     log_text = log_bytes.decode("utf-8", errors="replace")
@@ -122,8 +144,15 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
         test_ids_unique=test_ids_unique,
         build_clean=build_clean,
     )
+    totals = suite_totals(suites)
+    tested_commit = os.environ.get("MVS01_TESTED_COMMIT", os.environ.get("GITHUB_SHA", "unknown"))
+    authoritative_head = os.environ.get("MVS01_AUTHORITATIVE_BRANCH_HEAD", tested_commit)
+    relationship = os.environ.get(
+        "MVS01_COMMIT_RELATIONSHIP",
+        "same_commit" if tested_commit == authoritative_head else "different_unverified_head",
+    )
     return {
-        "schemaVersion": "1.0",
+        "schemaVersion": "1.1",
         "stage": "6R-11",
         "gate": "question-forest-minimum-town-readiness",
         "status": "accepted" if accepted else "rejected",
@@ -134,11 +163,18 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
         "finishedAtUtc": args.finished_at,
         "source": {
             "repository": os.environ.get("GITHUB_REPOSITORY", "local-workspace"),
-            "commit": os.environ.get("GITHUB_SHA", "unknown"),
-            "ref": os.environ.get("GITHUB_REF", "unknown"),
-            "workflow": os.environ.get("GITHUB_WORKFLOW", "local"),
+            "event": os.environ.get("GITHUB_EVENT_NAME", "local"),
+            "sourceRef": os.environ.get("GITHUB_REF", "unknown"),
+            "testedCommit": tested_commit,
+            "authoritativeBranch": os.environ.get("MVS01_AUTHORITATIVE_BRANCH", "local"),
+            "authoritativeBranchHead": authoritative_head,
+            "baseCommit": os.environ.get("MVS01_BASE_SHA", "unknown"),
+            "commitRelationship": relationship,
+            "workflowName": os.environ.get("GITHUB_WORKFLOW", "local"),
+            "workflowRef": os.environ.get("GITHUB_WORKFLOW_REF", "local"),
             "runId": os.environ.get("GITHUB_RUN_ID", "unknown"),
             "runAttempt": os.environ.get("GITHUB_RUN_ATTEMPT", "unknown"),
+            "jobName": os.environ.get("MVS01_JOB_NAME", "local"),
         },
         "runner": {
             "provider": "GitHub Actions" if os.environ.get("GITHUB_ACTIONS") == "true" else "local",
@@ -153,6 +189,7 @@ def build_evidence(args: argparse.Namespace, log_bytes: bytes) -> dict[str, obje
             "postgresql": args.postgresql_version,
         },
         "suites": suites,
+        "totals": totals,
         "gateExitCode": args.gate_exit_code,
         "acceptance": checks,
         "log": {
@@ -183,7 +220,8 @@ def write_summary(path: Path, evidence: dict[str, object]) -> None:
         lines.append(f"| {suite.label} | {passed}/{total} ({result['status']}) |")
     lines.extend(
         [
-            f"| Native合計 | 90/90={checks['nativeTotal90Of90']} |",
+            f"| Native合計 | {evidence['totals']['passedTotal']}/{evidence['totals']['expectedTotal']} (totalsMatch={checks['totalsMatch']}) |",
+            f"| 登録スイート欠落なし | {checks['registeredSuitesComplete']} |",
             f"| 試験ID一意性 | {checks['testIdsUnique']} |",
             f"| Build警告0・エラー0 | {checks['buildClean']} |",
             f"| 非root runner | {checks['nonRootRunner']} |",

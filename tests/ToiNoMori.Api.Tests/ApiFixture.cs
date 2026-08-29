@@ -21,6 +21,9 @@ public sealed class ApiFixture : IAsyncDisposable
 
     public InMemoryQuestionStore Store => _app.Services.GetRequiredService<InMemoryQuestionStore>();
 
+    public Guid PublicReadTenantId =>
+        _app.Services.GetRequiredService<PublicReadTenantContext>().TenantId;
+
     public SecurityAuditMetrics AuditMetrics =>
         _app.Services.GetRequiredService<SecurityAuditMetrics>();
 
